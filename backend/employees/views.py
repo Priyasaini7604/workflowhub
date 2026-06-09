@@ -3,14 +3,14 @@ from .models import Employee
 from .serializers import EmployeeSerializer, EmployeeListSerializer
 
 
-# Employee List 
+# Employee List
 class EmployeeListView(generics.ListAPIView):
     queryset = Employee.objects.all()
     serializer_class = EmployeeListSerializer
     permission_classes = [permissions.IsAuthenticated]
 
 
-# Employee Create 
+# Employee Create
 class EmployeeCreateView(generics.CreateAPIView):
     queryset = Employee.objects.all()
     serializer_class = EmployeeSerializer
