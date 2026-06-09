@@ -147,6 +147,17 @@ class Employee(models.Model):
         blank=True,
         related_name='updated_employees'
     )
+    
+    # --- Soft Delete ---
+    is_archived = models.BooleanField(default=False)
+    archived_at = models.DateTimeField(null=True, blank=True)
+    archived_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='archived_employees'
+    )
 
     def __str__(self):
         return f"{self.first_name} {self.last_name} - {self.designation}"

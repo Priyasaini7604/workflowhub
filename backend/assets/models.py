@@ -53,5 +53,9 @@ class Asset(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    # --- Soft Delete ---
+    is_archived = models.BooleanField(default=False)
+    archived_at = models.DateTimeField(null=True, blank=True)
+
     def __str__(self):
         return f"{self.asset_type} - {self.asset_id}"
