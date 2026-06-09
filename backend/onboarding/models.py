@@ -81,8 +81,7 @@ class OnboardingChecklist(models.Model):
     # --- Audit Information ---
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-     
-    # soft Delete----
+    # ----soft Delete----
     is_archived = models.BooleanField(default=False)
     archived_at = models.DateTimeField(null=True, blank=True)
 
