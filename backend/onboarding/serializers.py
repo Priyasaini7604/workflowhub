@@ -25,7 +25,7 @@ class OnboardingTaskCreateSerializer(serializers.ModelSerializer):
         fields = [
             'employee', 'task_name', 'description',
             'assigned_to_role', 'due_date', 'status',
-            
+
         ]
 
 

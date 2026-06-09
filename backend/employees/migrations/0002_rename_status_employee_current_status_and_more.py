@@ -37,12 +37,14 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='employee',
             name='alternate_mobile_number',
-            field=models.CharField(blank=True, max_length=15, validators=[django.core.validators.RegexValidator(message='Mobile number 10 to 15 digits hona chahiye!', regex='^\\d{10,15}$')]),
+            field=models.CharField(blank=True, max_length=15, validators=[django.core.validators.RegexValidator(
+                message='Mobile number 10 to 15 digits hona chahiye!', regex='^\\d{10,15}$')]),
         ),
         migrations.AddField(
             model_name='employee',
             name='blood_group',
-            field=models.CharField(blank=True, choices=[('A+', 'A+'), ('A-', 'A-'), ('B+', 'B+'), ('B-', 'B-'), ('O+', 'O+'), ('O-', 'O-'), ('AB+', 'AB+'), ('AB-', 'AB-')], max_length=5),
+            field=models.CharField(blank=True, choices=[('A+', 'A+'), ('A-', 'A-'), ('B+', 'B+'),
+                                   ('B-', 'B-'), ('O+', 'O+'), ('O-', 'O-'), ('AB+', 'AB+'), ('AB-', 'AB-')], max_length=5),
         ),
         migrations.AddField(
             model_name='employee',
@@ -58,7 +60,8 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='employee',
             name='created_by',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='created_employees', to=settings.AUTH_USER_MODEL),
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL,
+                                    related_name='created_employees', to=settings.AUTH_USER_MODEL),
         ),
         migrations.AddField(
             model_name='employee',
@@ -73,7 +76,8 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='employee',
             name='emergency_contact_number',
-            field=models.CharField(blank=True, max_length=15, validators=[django.core.validators.RegexValidator(message='Mobile number 10 to 15 digits hona chahiye!', regex='^\\d{10,15}$')]),
+            field=models.CharField(blank=True, max_length=15, validators=[django.core.validators.RegexValidator(
+                message='Mobile number 10 to 15 digits hona chahiye!', regex='^\\d{10,15}$')]),
         ),
         migrations.AddField(
             model_name='employee',
@@ -83,7 +87,8 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='employee',
             name='employee_type',
-            field=models.CharField(choices=[('permanent', 'Permanent'), ('contract', 'Contract'), ('intern', 'Intern')], default='permanent', max_length=20),
+            field=models.CharField(choices=[('permanent', 'Permanent'), ('contract', 'Contract'),
+                                   ('intern', 'Intern')], default='permanent', max_length=20),
         ),
         migrations.AddField(
             model_name='employee',
@@ -99,7 +104,8 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='employee',
             name='gender',
-            field=models.CharField(blank=True, choices=[('male', 'Male'), ('female', 'Female'), ('other', 'Other')], max_length=10),
+            field=models.CharField(blank=True, choices=[('male', 'Male'),
+                                   ('female', 'Female'), ('other', 'Other')], max_length=10),
         ),
         migrations.AddField(
             model_name='employee',
@@ -120,7 +126,8 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='employee',
             name='mobile_number',
-            field=models.CharField(blank=True, max_length=15, validators=[django.core.validators.RegexValidator(message='Mobile number 10 to 15 digits hona chahiye!', regex='^\\d{10,15}$')]),
+            field=models.CharField(blank=True, max_length=15, validators=[django.core.validators.RegexValidator(
+                message='Mobile number 10 to 15 digits hona chahiye!', regex='^\\d{10,15}$')]),
         ),
         migrations.AddField(
             model_name='employee',
@@ -160,11 +167,13 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='employee',
             name='updated_by',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='updated_employees', to=settings.AUTH_USER_MODEL),
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL,
+                                    related_name='updated_employees', to=settings.AUTH_USER_MODEL),
         ),
         migrations.AddField(
             model_name='employee',
             name='work_mode',
-            field=models.CharField(choices=[('remote', 'Remote'), ('hybrid', 'Hybrid'), ('office', 'Office')], default='office', max_length=10),
+            field=models.CharField(choices=[('remote', 'Remote'), ('hybrid', 'Hybrid'),
+                                   ('office', 'Office')], default='office', max_length=10),
         ),
     ]

@@ -2,6 +2,7 @@ from django.db import models
 from users.models import User
 from employees.models import Employee
 
+
 class Notification(models.Model):
 
     # --- Choices ---

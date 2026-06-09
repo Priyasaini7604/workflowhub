@@ -18,13 +18,15 @@ class Migration(migrations.Migration):
             name='AuditLog',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('action', models.CharField(choices=[('create', 'Create'), ('update', 'Update'), ('delete', 'Delete'), ('view', 'View')], max_length=20)),
+                ('action', models.CharField(choices=[('create', 'Create'), ('update',
+                 'Update'), ('delete', 'Delete'), ('view', 'View')], max_length=20)),
                 ('model_name', models.CharField(max_length=100)),
                 ('object_id', models.PositiveIntegerField()),
                 ('description', models.TextField(blank=True)),
                 ('ip_address', models.GenericIPAddressField(blank=True, null=True)),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('user', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='audit_logs', to=settings.AUTH_USER_MODEL)),
+                ('user', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL,
+                 related_name='audit_logs', to=settings.AUTH_USER_MODEL)),
             ],
         ),
     ]

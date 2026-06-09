@@ -24,12 +24,10 @@ class DocumentCreateView(generics.CreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
 
-
 class DocumentDetailView(generics.RetrieveAPIView):
     queryset = Document.objects.all()
     serializer_class = DocumentSerializer
     permission_classes = [permissions.IsAuthenticated]
-
 
 
 class DocumentVerifyView(generics.UpdateAPIView):
@@ -38,7 +36,7 @@ class DocumentVerifyView(generics.UpdateAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
 
-# Document Delete 
+# Document Delete
 class DocumentDeleteView(generics.DestroyAPIView):
     queryset = Document.objects.all()
     serializer_class = DocumentSerializer

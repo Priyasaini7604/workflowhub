@@ -2,6 +2,7 @@ from rest_framework import serializers
 from .models import Employee
 from users.serializers import UserSerializer
 
+
 class EmployeeSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
     full_name = serializers.SerializerMethodField()

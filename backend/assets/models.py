@@ -1,6 +1,7 @@
 from django.db import models
 from employees.models import Employee
 
+
 class Asset(models.Model):
 
     # --- Choices ---
@@ -30,7 +31,7 @@ class Asset(models.Model):
     brand = models.CharField(max_length=100, blank=True)
     model_name = models.CharField(max_length=100, blank=True)
     serial_number = models.CharField(max_length=100, unique=True, blank=True)
-    
+
     # --- Assignment Information ---
     assigned_to = models.ForeignKey(
         Employee,
@@ -41,7 +42,7 @@ class Asset(models.Model):
     )
     asset_issue_date = models.DateField(blank=True, null=True)
     asset_return_date = models.DateField(blank=True, null=True)
-    
+
     status = models.CharField(
         max_length=20,
         choices=ASSET_STATUS_CHOICES,

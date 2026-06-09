@@ -32,14 +32,14 @@ class OnboardingTaskUpdateView(generics.UpdateAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
 
-# Onboarding Task Delete 
+# Onboarding Task Delete
 class OnboardingTaskDeleteView(generics.DestroyAPIView):
     queryset = OnboardingTask.objects.all()
     serializer_class = OnboardingTaskSerializer
     permission_classes = [permissions.IsAuthenticated]
 
 
-# Onboarding Checklist 
+# Onboarding Checklist
 class OnboardingChecklistView(generics.RetrieveAPIView):
     serializer_class = OnboardingChecklistSerializer
     permission_classes = [permissions.IsAuthenticated]

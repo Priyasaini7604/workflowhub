@@ -18,16 +18,19 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('asset_id', models.CharField(max_length=20, unique=True)),
-                ('asset_type', models.CharField(choices=[('laptop', 'Laptop'), ('monitor', 'Monitor'), ('keyboard', 'Keyboard'), ('mouse', 'Mouse'), ('headset', 'Headset'), ('mobile', 'Mobile Device'), ('other', 'Other')], max_length=20)),
+                ('asset_type', models.CharField(choices=[('laptop', 'Laptop'), ('monitor', 'Monitor'), ('keyboard', 'Keyboard'), (
+                    'mouse', 'Mouse'), ('headset', 'Headset'), ('mobile', 'Mobile Device'), ('other', 'Other')], max_length=20)),
                 ('brand', models.CharField(blank=True, max_length=100)),
                 ('model_name', models.CharField(blank=True, max_length=100)),
                 ('serial_number', models.CharField(blank=True, max_length=100, unique=True)),
                 ('asset_issue_date', models.DateField(blank=True, null=True)),
                 ('asset_return_date', models.DateField(blank=True, null=True)),
-                ('status', models.CharField(choices=[('available', 'Available'), ('assigned', 'Assigned'), ('under_repair', 'Under Repair'), ('retired', 'Retired')], default='available', max_length=20)),
+                ('status', models.CharField(choices=[('available', 'Available'), ('assigned', 'Assigned'), (
+                    'under_repair', 'Under Repair'), ('retired', 'Retired')], default='available', max_length=20)),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
                 ('updated_at', models.DateTimeField(auto_now=True)),
-                ('assigned_to', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='assigned_assets', to='employees.employee')),
+                ('assigned_to', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL,
+                 related_name='assigned_assets', to='employees.employee')),
             ],
         ),
     ]

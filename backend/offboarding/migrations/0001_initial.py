@@ -20,8 +20,10 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('resignation_date', models.DateField(blank=True, null=True)),
-                ('exit_reason', models.CharField(blank=True, choices=[('resignation', 'Resignation'), ('termination', 'Termination'), ('contract_end', 'Contract End'), ('retirement', 'Retirement')], max_length=20)),
-                ('exit_interview_status', models.CharField(choices=[('pending', 'Pending'), ('scheduled', 'Scheduled'), ('completed', 'Completed'), ('waived', 'Waived')], default='pending', max_length=20)),
+                ('exit_reason', models.CharField(blank=True, choices=[('resignation', 'Resignation'), (
+                    'termination', 'Termination'), ('contract_end', 'Contract End'), ('retirement', 'Retirement')], max_length=20)),
+                ('exit_interview_status', models.CharField(choices=[('pending', 'Pending'), ('scheduled', 'Scheduled'), (
+                    'completed', 'Completed'), ('waived', 'Waived')], default='pending', max_length=20)),
                 ('asset_recovery_status', models.BooleanField(default=False)),
                 ('access_revocation_status', models.BooleanField(default=False)),
                 ('manager_clearance_status', models.BooleanField(default=False)),
@@ -29,7 +31,8 @@ class Migration(migrations.Migration):
                 ('final_clearance_status', models.BooleanField(default=False)),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
                 ('updated_at', models.DateTimeField(auto_now=True)),
-                ('employee', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='offboarding_checklist', to='employees.employee')),
+                ('employee', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE,
+                 related_name='offboarding_checklist', to='employees.employee')),
             ],
         ),
         migrations.CreateModel(
@@ -38,14 +41,18 @@ class Migration(migrations.Migration):
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('task_name', models.CharField(max_length=200)),
                 ('description', models.TextField(blank=True)),
-                ('assigned_to_role', models.CharField(choices=[('hr', 'HR'), ('it', 'IT Admin'), ('manager', 'Manager'), ('employee', 'Employee')], max_length=20)),
+                ('assigned_to_role', models.CharField(choices=[
+                 ('hr', 'HR'), ('it', 'IT Admin'), ('manager', 'Manager'), ('employee', 'Employee')], max_length=20)),
                 ('due_date', models.DateField(blank=True, null=True)),
-                ('status', models.CharField(choices=[('pending', 'Pending'), ('in_progress', 'In Progress'), ('completed', 'Completed')], default='pending', max_length=20)),
+                ('status', models.CharField(choices=[
+                 ('pending', 'Pending'), ('in_progress', 'In Progress'), ('completed', 'Completed')], default='pending', max_length=20)),
                 ('completed_at', models.DateTimeField(blank=True, null=True)),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
                 ('updated_at', models.DateTimeField(auto_now=True)),
-                ('completed_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='completed_offboarding_tasks', to=settings.AUTH_USER_MODEL)),
-                ('employee', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='offboarding_tasks', to='employees.employee')),
+                ('completed_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL,
+                 related_name='completed_offboarding_tasks', to=settings.AUTH_USER_MODEL)),
+                ('employee', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE,
+                 related_name='offboarding_tasks', to='employees.employee')),
             ],
         ),
     ]

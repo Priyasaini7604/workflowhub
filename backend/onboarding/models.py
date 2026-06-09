@@ -2,6 +2,7 @@ from django.db import models
 from employees.models import Employee
 from users.models import User
 
+
 class OnboardingTask(models.Model):
 
     # --- Choices ---
