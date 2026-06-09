@@ -1,18 +1,16 @@
 from rest_framework import generics, permissions
-from rest_framework.response import Response
-from rest_framework.views import APIView
 from .models import Employee
 from .serializers import EmployeeSerializer, EmployeeListSerializer
 
 
-# Employee List — Saare employees dekhna
+# Employee List 
 class EmployeeListView(generics.ListAPIView):
     queryset = Employee.objects.all()
     serializer_class = EmployeeListSerializer
     permission_classes = [permissions.IsAuthenticated]
 
 
-# Employee Create — Naya employee banana
+# Employee Create 
 class EmployeeCreateView(generics.CreateAPIView):
     queryset = Employee.objects.all()
     serializer_class = EmployeeSerializer
@@ -22,14 +20,14 @@ class EmployeeCreateView(generics.CreateAPIView):
         serializer.save(created_by=self.request.user)
 
 
-# Employee Detail — Ek employee ki poori detail
+# Employee Detail
 class EmployeeDetailView(generics.RetrieveAPIView):
     queryset = Employee.objects.all()
     serializer_class = EmployeeSerializer
     permission_classes = [permissions.IsAuthenticated]
 
 
-# Employee Update — Employee ki detail update karna
+# Employee Update
 class EmployeeUpdateView(generics.UpdateAPIView):
     queryset = Employee.objects.all()
     serializer_class = EmployeeSerializer
@@ -39,7 +37,7 @@ class EmployeeUpdateView(generics.UpdateAPIView):
         serializer.save(updated_by=self.request.user)
 
 
-# Employee Delete — Employee delete karna
+# Employee Delete
 class EmployeeDeleteView(generics.DestroyAPIView):
     queryset = Employee.objects.all()
     serializer_class = EmployeeSerializer
