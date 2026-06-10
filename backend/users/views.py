@@ -5,13 +5,14 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
 from .serializers import RegisterSerializer, UserSerializer, LoginSerializer
 from .models import User
+from permissions import IsHROrSuperAdmin
 
 
-# Register — Naya user banane ke liye
+# Register 
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = RegisterSerializer
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [IsHROrSuperAdmin]
 
 
 # Login — JWT token lene ke liye
@@ -41,10 +42,18 @@ class LoginView(APIView):
         })
 
 
-# Me — Apni profile dekhne ke liye
+# Me profile
 class MeView(generics.RetrieveAPIView):
     serializer_class = UserSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_object(self):
         return self.request.user
+    
+class UserDeactivateView(generics.UpdateAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    permission_classes = [IsHROrSuperAdmin]
+
+    def perform_update(self, serializer):
+        serializer.save(is_active=False)
