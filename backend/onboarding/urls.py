@@ -3,7 +3,7 @@ from .views import (
     OnboardingTaskListView,
     OnboardingTaskCreateView,
     OnboardingTaskUpdateView,
-    OnboardingTaskDeleteView,
+    OnboardingTaskArchiveView,
     OnboardingChecklistView,
     OnboardingChecklistUpdateView,
 )
@@ -13,7 +13,7 @@ urlpatterns = [
     path('<int:employee_id>/tasks/', OnboardingTaskListView.as_view(), name='onboarding-task-list'),
     path('tasks/create/', OnboardingTaskCreateView.as_view(), name='onboarding-task-create'),
     path('tasks/<int:pk>/update/', OnboardingTaskUpdateView.as_view(), name='onboarding-task-update'),
-    path('tasks/<int:pk>/delete/', OnboardingTaskDeleteView.as_view(), name='onboarding-task-delete'),
+    path('tasks/<int:pk>/archive/', OnboardingTaskArchiveView.as_view(), name='onboarding-task-archive'),
 
     # Checklist
     path('<int:employee_id>/checklist/', OnboardingChecklistView.as_view(), name='onboarding-checklist'),
