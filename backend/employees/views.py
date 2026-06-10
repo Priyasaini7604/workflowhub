@@ -1,6 +1,6 @@
-from rest_framework import generics, permissions
+from rest_framework import generics
 from .models import Employee
-from .serializers import EmployeeSerializer, EmployeeListSerializer
+from .serializers import EmployeeSerializer, EmployeeListSerializer, EmployeeArchiveSerializer
 from permissions import IsHROrSuperAdmin, IsHROrManagerOrSuperAdmin
 
 
@@ -45,12 +45,12 @@ class EmployeeUpdateView(generics.UpdateAPIView):
 
 
 class EmployeeArchiveView(generics.UpdateAPIView):
-    serializer_class = EmployeeSerializer
-    permission_classes = [IsHROrSuperAdmin]
+    serializer_class=EmployeeArchiveSerializer
+    permission_classes=[IsHROrSuperAdmin]
 
     def get_queryset(self):
         return Employee.objects.filte(is_archived=False)
-
+    
     def perform_update(self, serializer):
         from django.utils import timezone
         serializer.save(
