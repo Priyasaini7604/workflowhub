@@ -27,6 +27,8 @@ class OnboardingTaskCreateSerializer(serializers.ModelSerializer):
             'assigned_to_role', 'due_date', 'status',
 
         ]
+
+
 class OnboardingTaskArchiveSerializer(serializers.ModelSerializer):
     class Meta:
         model = OnboardingTask

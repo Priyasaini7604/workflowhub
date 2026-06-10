@@ -34,7 +34,8 @@ class AssetCreateSerializer(serializers.ModelSerializer):
         if value and Asset.objects.filter(serial_number=value).exists():
             raise serializers.ValidationError("This Serial Number is already exists!")
         return value
-    
+
+
 class AssetArchiveSerializer(serializers.ModelSerializer):
     class Meta:
         model = Asset

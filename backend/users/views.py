@@ -8,7 +8,7 @@ from .models import User
 from permissions import IsHROrSuperAdmin
 
 
-# Register 
+# Register
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = RegisterSerializer
@@ -49,7 +49,8 @@ class MeView(generics.RetrieveAPIView):
 
     def get_object(self):
         return self.request.user
-    
+
+
 class UserDeactivateView(generics.UpdateAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer

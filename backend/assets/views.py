@@ -5,22 +5,24 @@ from .serializers import AssetSerializer, AssetCreateSerializer, AssetArchiveSer
 from permissions import IsITAdminOrSuperAdmin
 
 # Asset List
+
+
 class AssetListView(generics.ListAPIView):
     serializer_class = AssetSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        user=self.request.user
+        user = self.request.user
 
-        if user.role in ['it','superadmin']:
+        if user.role in ['it', 'superadmin']:
             return Asset.objects.filter(is_archived=False)
-        
-        elif user.role =='manager':
+
+        elif user.role == 'manager':
             return Asset.objects.filter(
                 assigned_to__reporting_manager__user=user,
                 is_archived=False
             )
-        elif user.role=='employee':
+        elif user.role == 'employee':
             return Asset.objects.filter(
                 assigned_to__user=user,
                 is_archived=False
@@ -61,6 +63,8 @@ class AssetDetailView(generics.RetrieveAPIView):
         return Asset.objects.none()
 
 # Asset Update
+
+
 class AssetUpdateView(generics.UpdateAPIView):
     serializer_class = AssetCreateSerializer
     permission_classes = [IsITAdminOrSuperAdmin]

@@ -11,7 +11,6 @@ from .serializers import (
 from permissions import IsHROrSuperAdmin, IsHROrManagerOrSuperAdmin
 
 
-
 # Onboarding Task List of Employees
 class OnboardingTaskListView(generics.ListAPIView):
     serializer_class = OnboardingTaskSerializer
@@ -50,7 +49,7 @@ class OnboardingTaskListView(generics.ListAPIView):
         return OnboardingTask.objects.none()
 
 
-# Onboarding Task Create 
+# Onboarding Task Create
 class OnboardingTaskCreateView(generics.CreateAPIView):
     queryset = OnboardingTask.objects.all()
     serializer_class = OnboardingTaskCreateSerializer
@@ -70,7 +69,7 @@ class OnboardingTaskUpdateView(generics.UpdateAPIView):
 class OnboardingTaskArchiveView(generics.UpdateAPIView):
     serializer_class = OnboardingTaskArchiveSerializer
     permission_classes = [IsHROrSuperAdmin]
-    
+
     def get_queryset(self):
         return OnboardingTask.objects.filter(is_archived=False)
 
@@ -79,7 +78,6 @@ class OnboardingTaskArchiveView(generics.UpdateAPIView):
             is_archived=True,
             archived_at=timezone.now()
         )
-
 
 
 # Onboarding Checklist

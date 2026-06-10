@@ -73,6 +73,8 @@ class EmployeeListSerializer(serializers.ModelSerializer):
         if obj.middle_name:
             return f"{obj.first_name} {obj.middle_name} {obj.last_name}"
         return f"{obj.first_name} {obj.last_name}"
+
+
 class EmployeeArchiveSerializer(serializers.ModelSerializer):
     class Meta:
         model = Employee

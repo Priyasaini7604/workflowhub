@@ -45,12 +45,12 @@ class EmployeeUpdateView(generics.UpdateAPIView):
 
 
 class EmployeeArchiveView(generics.UpdateAPIView):
-    serializer_class=EmployeeSerializer
-    permission_classes=[IsHROrSuperAdmin]
+    serializer_class = EmployeeSerializer
+    permission_classes = [IsHROrSuperAdmin]
 
     def get_queryset(self):
         return Employee.objects.filte(is_archived=False)
-    
+
     def perform_update(self, serializer):
         from django.utils import timezone
         serializer.save(
