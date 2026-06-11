@@ -54,6 +54,7 @@ class OffboardingChecklistUpdateSerializer(serializers.ModelSerializer):
             'final_clearance_status',
         ]
 
+
 class OffboardingTaskArchiveSerializer(serializers.ModelSerializer):
     class Meta:
         model = OffboardingTask

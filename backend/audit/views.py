@@ -4,6 +4,8 @@ from .serializers import AuditLogSerializer, AuditLogCreateSerializer
 from permissions import IsHROrSuperAdmin
 
 # Audit Log List
+
+
 class AuditLogListView(generics.ListAPIView):
     serializer_class = AuditLogSerializer
     permission_classes = [IsHROrSuperAdmin]

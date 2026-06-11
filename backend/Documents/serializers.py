@@ -19,6 +19,8 @@ class DocumentSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'created_at', 'updated_at']
 
 # Document upload
+
+
 class DocumentCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Document
@@ -33,6 +35,7 @@ class DocumentVerifySerializer(serializers.ModelSerializer):
         fields = [
             'verification_status', 'verified_by', 'verified_at',
         ]
+
 
 class DocumentArchiveSerializer(serializers.ModelSerializer):
     class Meta:

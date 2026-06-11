@@ -20,7 +20,7 @@ class OffboardingTaskListView(generics.ListAPIView):
         user = self.request.user
         employee_id = self.kwargs.get('employee_id')
 
-        # HR, SuperAdmin 
+        # HR, SuperAdmin
         if user.role in ['hr', 'superadmin']:
             return OffboardingTask.objects.filter(
                 employee=employee_id,
@@ -35,7 +35,7 @@ class OffboardingTaskListView(generics.ListAPIView):
                 is_archived=False
             )
 
-        # Manager 
+        # Manager
         elif user.role == 'manager':
             return OffboardingTask.objects.filter(
                 employee=employee_id,
@@ -43,7 +43,7 @@ class OffboardingTaskListView(generics.ListAPIView):
                 is_archived=False
             )
 
-        # Employee 
+        # Employee
         elif user.role == 'employee':
             return OffboardingTask.objects.filter(
                 employee__user=user,
@@ -94,7 +94,7 @@ class OffboardingChecklistView(generics.RetrieveAPIView):
         return OffboardingChecklist.objects.get(employee=employee_id)
 
 
-# Offboarding Checklist Update 
+# Offboarding Checklist Update
 class OffboardingChecklistUpdateView(generics.UpdateAPIView):
     queryset = OffboardingChecklist.objects.all()
     serializer_class = OffboardingChecklistUpdateSerializer
