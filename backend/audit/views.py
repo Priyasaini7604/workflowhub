@@ -1,4 +1,4 @@
-from rest_framework import generics, permissions
+from rest_framework import generics
 from .models import AuditLog
 from .serializers import AuditLogSerializer, AuditLogCreateSerializer
 from permissions import IsHROrSuperAdmin
