@@ -1,56 +1,101 @@
 from rest_framework import generics, permissions
+from django.utils import timezone
 from .models import OffboardingTask, OffboardingChecklist
 from .serializers import (
     OffboardingTaskSerializer,
     OffboardingTaskCreateSerializer,
+    OffboardingTaskArchiveSerializer,
     OffboardingChecklistSerializer,
     OffboardingChecklistUpdateSerializer,
 )
+from permissions import IsHROrSuperAdmin, IsHROrManagerOrSuperAdmin
 
 
-# Offboarding Task List
+# Offboarding Task List — Role based
 class OffboardingTaskListView(generics.ListAPIView):
     serializer_class = OffboardingTaskSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
+        user = self.request.user
         employee_id = self.kwargs.get('employee_id')
-        return OffboardingTask.objects.filter(employee=employee_id)
+
+        # HR, SuperAdmin 
+        if user.role in ['hr', 'superadmin']:
+            return OffboardingTask.objects.filter(
+                employee=employee_id,
+                is_archived=False
+            )
+
+        # IT Admin → Sirf IT related tasks
+        elif user.role == 'it':
+            return OffboardingTask.objects.filter(
+                employee=employee_id,
+                assigned_to_role='it',
+                is_archived=False
+            )
+
+        # Manager 
+        elif user.role == 'manager':
+            return OffboardingTask.objects.filter(
+                employee=employee_id,
+                assigned_to_role='manager',
+                is_archived=False
+            )
+
+        # Employee 
+        elif user.role == 'employee':
+            return OffboardingTask.objects.filter(
+                employee__user=user,
+                is_archived=False
+            )
+
+        return OffboardingTask.objects.none()
 
 
 # Offboarding Task Create
 class OffboardingTaskCreateView(generics.CreateAPIView):
     queryset = OffboardingTask.objects.all()
     serializer_class = OffboardingTaskCreateSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsHROrSuperAdmin]
 
 
 # Offboarding Task Update
 class OffboardingTaskUpdateView(generics.UpdateAPIView):
-    queryset = OffboardingTask.objects.all()
     serializer_class = OffboardingTaskCreateSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsHROrManagerOrSuperAdmin]
+
+    def get_queryset(self):
+        return OffboardingTask.objects.filter(is_archived=False)
 
 
-# Offboarding Task Delete
-class OffboardingTaskDeleteView(generics.DestroyAPIView):
-    queryset = OffboardingTask.objects.all()
-    serializer_class = OffboardingTaskSerializer
-    permission_classes = [permissions.IsAuthenticated]
+# Offboarding Task Archive — Soft Delete
+class OffboardingTaskArchiveView(generics.UpdateAPIView):
+    serializer_class = OffboardingTaskArchiveSerializer
+    permission_classes = [IsHROrSuperAdmin]
+
+    def get_queryset(self):
+        return OffboardingTask.objects.filter(is_archived=False)
+
+    def perform_update(self, serializer):
+        serializer.save(
+            is_archived=True,
+            archived_at=timezone.now()
+        )
 
 
 # Offboarding Checklist
 class OffboardingChecklistView(generics.RetrieveAPIView):
     serializer_class = OffboardingChecklistSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsHROrManagerOrSuperAdmin]
 
     def get_object(self):
         employee_id = self.kwargs.get('employee_id')
         return OffboardingChecklist.objects.get(employee=employee_id)
 
 
-# Offboarding Checklist Update
+# Offboarding Checklist Update 
 class OffboardingChecklistUpdateView(generics.UpdateAPIView):
     queryset = OffboardingChecklist.objects.all()
     serializer_class = OffboardingChecklistUpdateSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsHROrSuperAdmin]

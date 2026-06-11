@@ -53,3 +53,8 @@ class OffboardingChecklistUpdateSerializer(serializers.ModelSerializer):
             'manager_clearance_status', 'hr_clearance_status',
             'final_clearance_status',
         ]
+
+class OffboardingTaskArchiveSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OffboardingTask
+        fields = ['is_archived', 'archived_at']

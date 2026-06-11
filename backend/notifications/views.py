@@ -5,9 +5,10 @@ from .serializers import (
     NotificationCreateSerializer,
     NotificationUpdateSerializer,
 )
+from permissions import IsHROrSuperAdmin
 
 
-# Notification List — Apni saari notifications dekhna
+# Notification List
 class NotificationListView(generics.ListAPIView):
     serializer_class = NotificationSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -18,22 +19,30 @@ class NotificationListView(generics.ListAPIView):
         ).order_by('-created_at')
 
 
-# Notification Create — Nai notification banana
+# Notification Create
 class NotificationCreateView(generics.CreateAPIView):
     queryset = Notification.objects.all()
     serializer_class = NotificationCreateSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsHROrSuperAdmin]
 
 
 # Notification Update — Read/Unread karna
 class NotificationUpdateView(generics.UpdateAPIView):
-    queryset = Notification.objects.all()
     serializer_class = NotificationUpdateSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return Notification.objects.filter(
+            recipient=self.request.user
+        )
 
 
 # Notification Delete — Notification delete karna
 class NotificationDeleteView(generics.DestroyAPIView):
-    queryset = Notification.objects.all()
     serializer_class = NotificationSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return Notification.objects.filter(
+            recipient=self.request.user
+        )

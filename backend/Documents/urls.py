@@ -4,7 +4,7 @@ from .views import (
     DocumentCreateView,
     DocumentDetailView,
     DocumentVerifyView,
-    DocumentDeleteView,
+    DocumentArchiveView,
 )
 
 urlpatterns = [
@@ -12,5 +12,5 @@ urlpatterns = [
     path('create/', DocumentCreateView.as_view(), name='document-create'),
     path('<int:pk>/', DocumentDetailView.as_view(), name='document-detail'),
     path('<int:pk>/verify/', DocumentVerifyView.as_view(), name='document-verify'),
-    path('<int:pk>/delete/', DocumentDeleteView.as_view(), name='document-delete'),
+    path('<int:pk>/archive/', DocumentArchiveView.as_view(), name='document-archive'),
 ]
