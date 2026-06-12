@@ -1,14 +1,14 @@
-from rest_framework import generics
+from rest_framework import generics,permissions
 from .models import AuditLog
 from .serializers import AuditLogSerializer, AuditLogCreateSerializer
-from permissions import IsHROrSuperAdmin
+from permissions import IsSuperAdmin
 
 # Audit Log List
 
 
 class AuditLogListView(generics.ListAPIView):
     serializer_class = AuditLogSerializer
-    permission_classes = [IsHROrSuperAdmin]
+    permission_classes = [IsSuperAdmin]
 
     def get_queryset(self):
         return AuditLog.objects.all().order_by('-created_at')
@@ -18,7 +18,7 @@ class AuditLogListView(generics.ListAPIView):
 class AuditLogCreateView(generics.CreateAPIView):
     queryset = AuditLog.objects.all()
     serializer_class = AuditLogCreateSerializer
-    permission_classes = [IsHROrSuperAdmin]
+    permission_classes = [permissions.IsAuthenticated]
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
@@ -27,7 +27,7 @@ class AuditLogCreateView(generics.CreateAPIView):
 # Audit Log Detail
 class AuditLogDetailView(generics.RetrieveAPIView):
     serializer_class = AuditLogSerializer
-    permission_classes = [IsHROrSuperAdmin]
+    permission_classes = [IsSuperAdmin]
 
     def get_queryset(self):
         return AuditLog.objects.all()
