@@ -60,6 +60,7 @@ class UserDeactivateView(generics.UpdateAPIView):
     def perform_update(self, serializer):
         serializer.save(is_active=False)
 
+
 class LogoutView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 

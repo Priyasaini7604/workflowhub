@@ -36,11 +36,11 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    
+
     # Third party
     'rest_framework',
     'corsheaders',
-    'rest_framework_simplejwt.token_blacklist', 
+    'rest_framework_simplejwt.token_blacklist',
 
 
     # Our apps
@@ -135,7 +135,6 @@ REST_FRAMEWORK = {
 
 # Custom User Model
 AUTH_USER_MODEL = 'users.User'
-
 
 
 SIMPLE_JWT = {
