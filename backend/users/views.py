@@ -6,6 +6,7 @@ from django.contrib.auth import authenticate
 from .serializers import RegisterSerializer, UserSerializer, LoginSerializer
 from .models import User
 from permissions import IsHROrSuperAdmin
+from rest_framework_simplejwt.tokens import RefreshToken, TokenError
 
 
 # Register
@@ -58,3 +59,21 @@ class UserDeactivateView(generics.UpdateAPIView):
 
     def perform_update(self, serializer):
         serializer.save(is_active=False)
+
+class LogoutView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        try:
+            refresh_token = request.data.get('refresh')
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+            return Response(
+                {'message': 'Successfully logged out!'},
+                status=status.HTTP_200_OK
+            )
+        except TokenError:
+            return Response(
+                {'error': 'Invalid token'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
