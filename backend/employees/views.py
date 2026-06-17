@@ -59,6 +59,7 @@ class EmployeeArchiveView(generics.UpdateAPIView):
             archived_by=self.request.user
         )
 
+
 class EmployeeStatusReportView(generics.ListAPIView):
     serializer_class = EmployeeReportSerializer
     permission_classes = [IsHROrSuperAdmin]

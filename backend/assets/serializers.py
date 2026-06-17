@@ -11,7 +11,7 @@ class AssetSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'asset_id', 'asset_type', 'brand', 'model_name', 'serial_number',
             'assigned_to', 'asset_issue_date', 'asset_return_date',
-            'status','condition', 'warranty_expiry_date',
+            'status', 'condition', 'warranty_expiry_date',
             'created_at', 'updated_at',
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
@@ -28,12 +28,14 @@ class AssetCreateSerializer(serializers.ModelSerializer):
 
     def validate_asset_id(self, value):
         if Asset.objects.filter(asset_id=value).exists():
-            raise serializers.ValidationError("This Asset ID is already exists!")
+            raise serializers.ValidationError(
+                "This Asset ID is already exists!")
         return value
 
     def validate_serial_number(self, value):
         if value and Asset.objects.filter(serial_number=value).exists():
-            raise serializers.ValidationError("This Serial Number is already exists!")
+            raise serializers.ValidationError(
+                "This Serial Number is already exists!")
         return value
 
 
@@ -41,6 +43,7 @@ class AssetArchiveSerializer(serializers.ModelSerializer):
     class Meta:
         model = Asset
         fields = ['is_archived', 'archived_at']
+
 
 class AssetReportSerializer(serializers.ModelSerializer):
     assigned_to_name = serializers.SerializerMethodField()

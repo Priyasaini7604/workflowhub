@@ -4,7 +4,8 @@ from .models import OnboardingTask, OnboardingChecklist
 
 @admin.register(OnboardingTask)
 class OnboardingTaskAdmin(admin.ModelAdmin):
-    list_display = ['employee', 'task_name', 'assigned_to_role', 'status', 'due_date']
+    list_display = ['employee', 'task_name',
+                    'assigned_to_role', 'status', 'due_date']
 
 
 @admin.register(OnboardingChecklist)

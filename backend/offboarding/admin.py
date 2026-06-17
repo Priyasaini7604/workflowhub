@@ -4,7 +4,8 @@ from .models import OffboardingTask, OffboardingChecklist
 
 @admin.register(OffboardingTask)
 class OffboardingTaskAdmin(admin.ModelAdmin):
-    list_display = ['employee', 'task_name', 'assigned_to_role', 'status', 'due_date']
+    list_display = ['employee', 'task_name',
+                    'assigned_to_role', 'status', 'due_date']
 
 
 @admin.register(OffboardingChecklist)

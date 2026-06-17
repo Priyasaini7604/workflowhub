@@ -17,7 +17,8 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Employee',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('id', models.BigAutoField(auto_created=True,
+                 primary_key=True, serialize=False, verbose_name='ID')),
                 ('employee_id', models.CharField(max_length=20, unique=True)),
                 ('department', models.CharField(max_length=100)),
                 ('designation', models.CharField(max_length=100)),

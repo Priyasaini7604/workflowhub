@@ -18,7 +18,8 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='OffboardingChecklist',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('id', models.BigAutoField(auto_created=True,
+                 primary_key=True, serialize=False, verbose_name='ID')),
                 ('resignation_date', models.DateField(blank=True, null=True)),
                 ('exit_reason', models.CharField(blank=True, choices=[('resignation', 'Resignation'), (
                     'termination', 'Termination'), ('contract_end', 'Contract End'), ('retirement', 'Retirement')], max_length=20)),
@@ -38,7 +39,8 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='OffboardingTask',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('id', models.BigAutoField(auto_created=True,
+                 primary_key=True, serialize=False, verbose_name='ID')),
                 ('task_name', models.CharField(max_length=200)),
                 ('description', models.TextField(blank=True)),
                 ('assigned_to_role', models.CharField(choices=[

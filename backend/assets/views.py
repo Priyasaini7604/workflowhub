@@ -1,7 +1,7 @@
 from rest_framework import generics, permissions
 from django.utils import timezone
 from .models import Asset
-from .serializers import AssetSerializer, AssetCreateSerializer, AssetArchiveSerializer,AssetReportSerializer
+from .serializers import AssetSerializer, AssetCreateSerializer, AssetArchiveSerializer, AssetReportSerializer
 from permissions import IsITAdminOrSuperAdmin
 
 # Asset List
@@ -98,6 +98,7 @@ class AssetAssignView(generics.UpdateAPIView):
 
     def perform_update(self, serializer):
         serializer.save(status='assigned')
+
 
 class AssetStatusReportView(generics.ListAPIView):
     serializer_class = AssetReportSerializer

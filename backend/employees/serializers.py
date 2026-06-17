@@ -80,6 +80,7 @@ class EmployeeArchiveSerializer(serializers.ModelSerializer):
         model = Employee
         fields = ['is_archived', 'archived_at', 'archived_by']
 
+
 class EmployeeReportSerializer(serializers.ModelSerializer):
     department = serializers.CharField()
     designation = serializers.CharField()

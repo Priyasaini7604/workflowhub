@@ -17,7 +17,8 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='AuditLog',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('id', models.BigAutoField(auto_created=True,
+                 primary_key=True, serialize=False, verbose_name='ID')),
                 ('action', models.CharField(choices=[('create', 'Create'), ('update',
                  'Update'), ('delete', 'Delete'), ('view', 'View')], max_length=20)),
                 ('model_name', models.CharField(max_length=100)),

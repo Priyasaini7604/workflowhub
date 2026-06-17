@@ -18,14 +18,16 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='OnboardingChecklist',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('id', models.BigAutoField(auto_created=True,
+                 primary_key=True, serialize=False, verbose_name='ID')),
                 ('offer_letter_uploaded', models.BooleanField(default=False)),
                 ('documents_submitted', models.BooleanField(default=False)),
                 ('documents_verified', models.BooleanField(default=False)),
                 ('background_verification_status', models.CharField(choices=[('pending', 'Pending'), ('in_progress', 'In Progress'), (
                     'completed', 'Completed'), ('failed', 'Failed')], default='pending', max_length=20)),
                 ('induction_completed', models.BooleanField(default=False)),
-                ('onboarding_completion_percentage', models.IntegerField(default=0)),
+                ('onboarding_completion_percentage',
+                 models.IntegerField(default=0)),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
                 ('updated_at', models.DateTimeField(auto_now=True)),
                 ('employee', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE,
@@ -35,7 +37,8 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='OnboardingTask',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('id', models.BigAutoField(auto_created=True,
+                 primary_key=True, serialize=False, verbose_name='ID')),
                 ('task_name', models.CharField(max_length=200)),
                 ('description', models.TextField(blank=True)),
                 ('assigned_to_role', models.CharField(choices=[

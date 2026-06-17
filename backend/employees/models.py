@@ -91,7 +91,8 @@ class Employee(models.Model):
         validators=[phone_validator],
         blank=True
     )
-    emergency_contact_relationship = models.CharField(max_length=50, blank=True)
+    emergency_contact_relationship = models.CharField(
+        max_length=50, blank=True)
 
     # --- 4. Employment Information ---
     employee_type = models.CharField(
