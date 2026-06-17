@@ -79,3 +79,37 @@ class EmployeeArchiveSerializer(serializers.ModelSerializer):
     class Meta:
         model = Employee
         fields = ['is_archived', 'archived_at', 'archived_by']
+
+class EmployeeReportSerializer(serializers.ModelSerializer):
+    department = serializers.CharField()
+    designation = serializers.CharField()
+    manager_name = serializers.SerializerMethodField()
+    asset_count = serializers.SerializerMethodField()
+    onboarding_percentage = serializers.SerializerMethodField()
+    full_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Employee
+        fields = [
+            'employee_id', 'full_name', 'department', 'designation',
+            'current_status', 'status_start_date', 'onboarding_percentage',
+            'asset_count', 'manager_name', 'employee_type', 'date_of_joining',
+        ]
+
+    def get_full_name(self, obj):
+        if obj.middle_name:
+            return f"{obj.first_name} {obj.middle_name} {obj.last_name}"
+        return f"{obj.first_name} {obj.last_name}"
+
+    def get_manager_name(self, obj):
+        if obj.reporting_manager:
+            return f"{obj.reporting_manager.first_name} {obj.reporting_manager.last_name}"
+        return None
+
+    def get_asset_count(self, obj):
+        return obj.assigned_assets.filter(is_archived=False).count()
+
+    def get_onboarding_percentage(self, obj):
+        if hasattr(obj, 'onboarding_checklist'):
+            return obj.onboarding_checklist.onboarding_completion_percentage
+        return 0

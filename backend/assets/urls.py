@@ -6,11 +6,13 @@ from .views import (
     AssetUpdateView,
     AssetArchiveView,
     AssetAssignView,
+    AssetStatusReportView,
 )
 
 urlpatterns = [
     path('', AssetListView.as_view(), name='asset-list'),
     path('create/', AssetCreateView.as_view(), name='asset-create'),
+    path('report/', AssetStatusReportView.as_view(), name='asset-status-report'),
     path('<int:pk>/', AssetDetailView.as_view(), name='asset-detail'),
     path('<int:pk>/update/', AssetUpdateView.as_view(), name='asset-update'),
     path('<int:pk>/archive/', AssetArchiveView.as_view(), name='asset-archive'),

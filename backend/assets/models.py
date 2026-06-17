@@ -22,6 +22,21 @@ class Asset(models.Model):
         ('retired', 'Retired'),
     ]
 
+    # --- Condition & Warranty ---
+    CONDITION_CHOICES = [
+        ('new', 'New'),
+        ('good', 'Good'),
+        ('fair', 'Fair'),
+        ('damaged', 'Damaged'),
+    ]
+
+    condition = models.CharField(
+        max_length=20,
+        choices=CONDITION_CHOICES,
+        default='good'
+    )
+    warranty_expiry_date = models.DateField(blank=True, null=True)
+
     # --- Asset Information ---
     asset_id = models.CharField(max_length=20, unique=True)
     asset_type = models.CharField(

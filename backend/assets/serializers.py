@@ -11,7 +11,7 @@ class AssetSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'asset_id', 'asset_type', 'brand', 'model_name', 'serial_number',
             'assigned_to', 'asset_issue_date', 'asset_return_date',
-            'status',
+            'status','condition', 'warranty_expiry_date',
             'created_at', 'updated_at',
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
@@ -23,6 +23,7 @@ class AssetCreateSerializer(serializers.ModelSerializer):
         fields = [
             'asset_id', 'asset_type', 'brand', 'model_name', 'serial_number',
             'assigned_to', 'asset_issue_date', 'asset_return_date', 'status',
+            'condition', 'warranty_expiry_date',
         ]
 
     def validate_asset_id(self, value):
@@ -40,3 +41,25 @@ class AssetArchiveSerializer(serializers.ModelSerializer):
     class Meta:
         model = Asset
         fields = ['is_archived', 'archived_at']
+
+class AssetReportSerializer(serializers.ModelSerializer):
+    assigned_to_name = serializers.SerializerMethodField()
+    department = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Asset
+        fields = [
+            'asset_id', 'asset_type', 'model_name', 'serial_number',
+            'assigned_to_name', 'department', 'status',
+            'condition', 'warranty_expiry_date',
+        ]
+
+    def get_assigned_to_name(self, obj):
+        if obj.assigned_to:
+            return f"{obj.assigned_to.first_name} {obj.assigned_to.last_name}"
+        return None
+
+    def get_department(self, obj):
+        if obj.assigned_to:
+            return obj.assigned_to.department
+        return None

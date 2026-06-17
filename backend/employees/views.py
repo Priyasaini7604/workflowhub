@@ -1,6 +1,6 @@
 from rest_framework import generics
 from .models import Employee
-from .serializers import EmployeeSerializer, EmployeeListSerializer, EmployeeArchiveSerializer
+from .serializers import EmployeeSerializer, EmployeeListSerializer, EmployeeArchiveSerializer, EmployeeReportSerializer
 from permissions import IsHROrSuperAdmin, IsHROrManagerOrSuperAdmin
 
 
@@ -58,3 +58,10 @@ class EmployeeArchiveView(generics.UpdateAPIView):
             archived_at=timezone.now(),
             archived_by=self.request.user
         )
+
+class EmployeeStatusReportView(generics.ListAPIView):
+    serializer_class = EmployeeReportSerializer
+    permission_classes = [IsHROrSuperAdmin]
+
+    def get_queryset(self):
+        return Employee.objects.filter(is_archived=False)
