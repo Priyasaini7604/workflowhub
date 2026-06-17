@@ -1,6 +1,7 @@
 from rest_framework import generics, permissions
 from django.utils import timezone
 from .models import Asset
+from audit.utils import create_audit_log
 from .serializers import AssetSerializer, AssetCreateSerializer, AssetArchiveSerializer, AssetReportSerializer
 from permissions import IsITAdminOrSuperAdmin
 
@@ -35,6 +36,17 @@ class AssetCreateView(generics.CreateAPIView):
     queryset = Asset.objects.all()
     serializer_class = AssetCreateSerializer
     permission_classes = [IsITAdminOrSuperAdmin]
+
+    def perform_create(self, serializer):
+        asset = serializer.save()
+        create_audit_log(
+            user=self.request.user,
+            action='create',
+            model_name='Asset',
+            object_id=asset.id,
+            description=f'Asset {asset.asset_id} created',
+            request=self.request
+        )
 
 
 # Asset Detail
@@ -72,6 +84,17 @@ class AssetUpdateView(generics.UpdateAPIView):
     def get_queryset(self):
         return Asset.objects.filter(is_archived=False)
 
+    def perform_update(self, serializer):
+        asset = serializer.save()
+        create_audit_log(
+            user=self.request.user,
+            action='update',
+            model_name='Asset',
+            object_id=asset.id,
+            description=f'Asset {asset.asset_id} updated',
+            request=self.request
+        )
+
 
 # Asset Archive
 class AssetArchiveView(generics.UpdateAPIView):
@@ -82,9 +105,17 @@ class AssetArchiveView(generics.UpdateAPIView):
         return Asset.objects.filter(is_archived=False)
 
     def perform_update(self, serializer):
-        serializer.save(
+        asset = serializer.save(
             is_archived=True,
             archived_at=timezone.now()
+        )
+        create_audit_log(
+            user=self.request.user,
+            action='delete',
+            model_name='Asset',
+            object_id=asset.id,
+            description=f'Asset {asset.asset_id} archived',
+            request=self.request
         )
 
 
@@ -97,7 +128,15 @@ class AssetAssignView(generics.UpdateAPIView):
         return Asset.objects.filter(is_archived=False)
 
     def perform_update(self, serializer):
-        serializer.save(status='assigned')
+        asset = serializer.save(status='assigned')
+        create_audit_log(
+            user=self.request.user,
+            action='update',
+            model_name='Asset',
+            object_id=asset.id,
+            description=f'Asset {asset.asset_id} assigned to {asset.assigned_to}',
+            request=self.request
+        )
 
 
 class AssetStatusReportView(generics.ListAPIView):
