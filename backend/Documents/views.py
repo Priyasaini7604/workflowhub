@@ -88,7 +88,10 @@ class DocumentVerifyView(generics.UpdateAPIView):
             action='update',
             model_name='Document',
             object_id=document.id,
-            description=f'Document "{document.document_type}" verification status changed to {document.verification_status}',
+            description=(
+                f'Document "{document.document_type}" verification '
+                f'status changed to {document.verification_status}'
+            ),
             request=self.request
         )
 
