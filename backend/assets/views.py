@@ -6,6 +6,7 @@ from .serializers import (
     AssetSerializer,
     AssetCreateSerializer,
     AssetReportSerializer,
+    AssetArchiveSerializer,
     AssetAllocationHistorySerializer,
 )
 from permissions import IsITAdminOrSuperAdmin
