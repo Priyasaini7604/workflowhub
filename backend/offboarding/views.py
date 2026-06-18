@@ -1,5 +1,6 @@
 from rest_framework import generics, permissions
 from django.utils import timezone
+from audit.utils import create_audit_log
 from .models import OffboardingTask, OffboardingChecklist
 from .serializers import (
     OffboardingTaskSerializer,
@@ -59,6 +60,17 @@ class OffboardingTaskCreateView(generics.CreateAPIView):
     serializer_class = OffboardingTaskCreateSerializer
     permission_classes = [IsHROrSuperAdmin]
 
+    def perform_create(self, serializer):
+        task = serializer.save()
+        create_audit_log(
+            user=self.request.user,
+            action='create',
+            model_name='OffboardingTask',
+            object_id=task.id,
+            description=f'Offboarding task "{task.task_name}" created for {task.employee}',
+            request=self.request
+        )
+
 
 # Offboarding Task Update
 class OffboardingTaskUpdateView(generics.UpdateAPIView):
@@ -67,6 +79,17 @@ class OffboardingTaskUpdateView(generics.UpdateAPIView):
 
     def get_queryset(self):
         return OffboardingTask.objects.filter(is_archived=False)
+
+    def perform_update(self, serializer):
+        task = serializer.save()
+        create_audit_log(
+            user=self.request.user,
+            action='update',
+            model_name='OffboardingTask',
+            object_id=task.id,
+            description=f'Offboarding task "{task.task_name}" updated',
+            request=self.request
+        )
 
 
 # Offboarding Task Archive — Soft Delete
@@ -78,9 +101,17 @@ class OffboardingTaskArchiveView(generics.UpdateAPIView):
         return OffboardingTask.objects.filter(is_archived=False)
 
     def perform_update(self, serializer):
-        serializer.save(
+        task = serializer.save(
             is_archived=True,
             archived_at=timezone.now()
+        )
+        create_audit_log(
+            user=self.request.user,
+            action='delete',
+            model_name='OffboardingTask',
+            object_id=task.id,
+            description=f'Offboarding task "{task.task_name}" archived',
+            request=self.request
         )
 
 
@@ -99,3 +130,14 @@ class OffboardingChecklistUpdateView(generics.UpdateAPIView):
     queryset = OffboardingChecklist.objects.all()
     serializer_class = OffboardingChecklistUpdateSerializer
     permission_classes = [IsHROrSuperAdmin]
+
+    def perform_update(self, serializer):
+        checklist = serializer.save()
+        create_audit_log(
+            user=self.request.user,
+            action='update',
+            model_name='OffboardingChecklist',
+            object_id=checklist.id,
+            description=f'Offboarding checklist updated for {checklist.employee}',
+            request=self.request
+        )

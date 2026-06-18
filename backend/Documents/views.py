@@ -1,5 +1,6 @@
 from rest_framework import generics, permissions
 from django.utils import timezone
+from audit.utils import create_audit_log
 from .models import Document
 from .serializers import (
     DocumentSerializer,
@@ -42,6 +43,17 @@ class DocumentCreateView(generics.CreateAPIView):
     serializer_class = DocumentCreateSerializer
     permission_classes = [permissions.IsAuthenticated]
 
+    def perform_create(self, serializer):
+        document = serializer.save()
+        create_audit_log(
+            user=self.request.user,
+            action='create',
+            model_name='Document',
+            object_id=document.id,
+            description=f'Document "{document.document_type}" uploaded for {document.employee}',
+            request=self.request
+        )
+
 
 class DocumentDetailView(generics.RetrieveAPIView):
     serializer_class = DocumentSerializer
@@ -69,6 +81,17 @@ class DocumentVerifyView(generics.UpdateAPIView):
     def get_queryset(self):
         return Document.objects.filter(is_archived=False)
 
+    def perform_update(self, serializer):
+        document = serializer.save()
+        create_audit_log(
+            user=self.request.user,
+            action='update',
+            model_name='Document',
+            object_id=document.id,
+            description=f'Document "{document.document_type}" verification status changed to {document.verification_status}',
+            request=self.request
+        )
+
 
 # Document Archive
 class DocumentArchiveView(generics.UpdateAPIView):
@@ -79,7 +102,15 @@ class DocumentArchiveView(generics.UpdateAPIView):
         return Document.objects.filter(is_archived=False)
 
     def perform_update(self, serializer):
-        serializer.save(
+        document = serializer.save(
             is_archived=True,
             archived_at=timezone.now()
+        )
+        create_audit_log(
+            user=self.request.user,
+            action='delete',
+            model_name='Document',
+            object_id=document.id,
+            description=f'Document "{document.document_type}" archived',
+            request=self.request
         )
