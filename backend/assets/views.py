@@ -12,6 +12,8 @@ from .serializers import (
 from permissions import IsITAdminOrSuperAdmin
 
 # Asset List
+
+
 class AssetListView(generics.ListAPIView):
     serializer_class = AssetSerializer
     permission_classes = [permissions.IsAuthenticated]
