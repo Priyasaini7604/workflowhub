@@ -2,12 +2,15 @@ from rest_framework import generics, permissions
 from django.utils import timezone
 from .models import Asset, AssetAllocationHistory
 from audit.utils import create_audit_log
-from .serializers import AssetSerializer, AssetCreateSerializer, AssetArchiveSerializer, AssetReportSerializer, AssetAllocationHistorySerializer
+from .serializers import (
+    AssetSerializer,
+    AssetCreateSerializer,
+    AssetReportSerializer,
+    AssetAllocationHistorySerializer,
+)
 from permissions import IsITAdminOrSuperAdmin
 
 # Asset List
-
-
 class AssetListView(generics.ListAPIView):
     serializer_class = AssetSerializer
     permission_classes = [permissions.IsAuthenticated]
