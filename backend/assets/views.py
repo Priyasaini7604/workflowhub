@@ -1,8 +1,8 @@
 from rest_framework import generics, permissions
 from django.utils import timezone
-from .models import Asset
+from .models import Asset, AssetAllocationHistory
 from audit.utils import create_audit_log
-from .serializers import AssetSerializer, AssetCreateSerializer, AssetArchiveSerializer, AssetReportSerializer
+from .serializers import AssetSerializer, AssetCreateSerializer, AssetArchiveSerializer, AssetReportSerializer, AssetAllocationHistorySerializer
 from permissions import IsITAdminOrSuperAdmin
 
 # Asset List
@@ -129,6 +129,14 @@ class AssetAssignView(generics.UpdateAPIView):
 
     def perform_update(self, serializer):
         asset = serializer.save(status='assigned')
+
+        if asset.assigned_to:
+            AssetAllocationHistory.objects.create(
+                asset=asset,
+                employee=asset.assigned_to,
+                assigned_date=asset.asset_issue_date or timezone.now().date(),
+                assigned_by=self.request.user
+            )
         create_audit_log(
             user=self.request.user,
             action='update',
@@ -145,3 +153,16 @@ class AssetStatusReportView(generics.ListAPIView):
 
     def get_queryset(self):
         return Asset.objects.filter(is_archived=False)
+
+# Asset Allocation History — Sirf IT Admin/SuperAdmin
+
+
+class AssetAllocationHistoryView(generics.ListAPIView):
+    serializer_class = AssetAllocationHistorySerializer
+    permission_classes = [IsITAdminOrSuperAdmin]
+
+    def get_queryset(self):
+        asset_id = self.kwargs.get('asset_id')
+        return AssetAllocationHistory.objects.filter(
+            asset=asset_id
+        ).order_by('-assigned_date')

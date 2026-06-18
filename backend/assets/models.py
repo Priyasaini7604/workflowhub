@@ -74,3 +74,34 @@ class Asset(models.Model):
 
     def __str__(self):
         return f"{self.asset_type} - {self.asset_id}"
+
+
+class AssetAllocationHistory(models.Model):
+
+    asset = models.ForeignKey(
+        Asset,
+        on_delete=models.CASCADE,
+        related_name='allocation_history'
+    )
+    employee = models.ForeignKey(
+        'employees.Employee',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='asset_allocation_history'
+    )
+    assigned_date = models.DateField()
+    returned_date = models.DateField(blank=True, null=True)
+    assigned_by = models.ForeignKey(
+        'users.User',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='allocations_made'
+    )
+    remarks = models.TextField(blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.asset} - {self.employee} ({self.assigned_date})"

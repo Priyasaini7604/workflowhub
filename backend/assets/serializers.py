@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Asset
+from .models import Asset, AssetAllocationHistory
 from employees.serializers import EmployeeListSerializer
 
 
@@ -66,3 +66,18 @@ class AssetReportSerializer(serializers.ModelSerializer):
         if obj.assigned_to:
             return obj.assigned_to.department
         return None
+
+
+class AssetAllocationHistorySerializer(serializers.ModelSerializer):
+    employee = EmployeeListSerializer(read_only=True)
+    asset_id = serializers.CharField(source='asset.asset_id', read_only=True)
+    asset_type = serializers.CharField(source='asset.asset_type', read_only=True)
+
+    class Meta:
+        model = AssetAllocationHistory
+        fields = [
+            'id', 'asset', 'asset_id', 'asset_type', 'employee',
+            'assigned_date', 'returned_date', 'assigned_by', 'remarks',
+            'created_at',
+        ]
+        read_only_fields = ['id', 'created_at']
