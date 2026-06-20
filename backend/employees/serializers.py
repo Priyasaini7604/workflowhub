@@ -1,10 +1,10 @@
 from rest_framework import serializers
 from .models import Employee
-from users.serializers import UserSerializer
+from users.models import User
 
 
 class EmployeeSerializer(serializers.ModelSerializer):
-    user = UserSerializer(read_only=True)
+    user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
     full_name = serializers.SerializerMethodField()
 
     class Meta:
