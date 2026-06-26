@@ -1,0 +1,21 @@
+@import "tailwindcss";
+@theme {
+  --color-brand-bg: #060b14;
+  --color-brand-card: #0a1628;
+  --color-brand-input: #0f1a2e;
+  --color-brand-border: #1e293b;
+  --color-brand-blue: #2563eb;
+  --color-brand-accent: #3b82f6;
+}
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0px 1000px #0f1a2e inset !important;
+  -webkit-text-fill-color: #f1f5f9 !important;
+  caret-color: #f1f5f9;
+}
+
+input[type="checkbox"] {
+  accent-color: #2563eb;
+  background-color: #0f1a2e;
+}
