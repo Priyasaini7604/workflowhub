@@ -65,5 +65,5 @@ built with Django REST Framework and React.
 - ✅ Phase 3 — Serializers
 - ✅ Phase 4 — Views
 - ✅ Phase 5 — URLs
-- ⏳ Phase 6 — Permissions
-- ⏳ Phase 7 — JWT Auth
+- ✅Phase 6 — Permissions
+- ✅ Phase 7 — JWT Auth
