@@ -5,7 +5,7 @@ built with Django REST Framework and React.
 
 ## Tech Stack
 - Backend: Django + Django REST Framework
-- Frontend: React (in progress)
+- Frontend: React + Vite + Tailwind CSS v4
 - Database: MySQL
 - Authentication: JWT (JSON Web Tokens)
 - Authorization: Role-Based Access Control (RBAC)
@@ -67,3 +67,4 @@ built with Django REST Framework and React.
 - ✅ Phase 5 — URLs
 - ✅Phase 6 — Permissions
 - ✅ Phase 7 — JWT Auth
+- 🔄 Phase 8 — Frontend (React) — In Progress
