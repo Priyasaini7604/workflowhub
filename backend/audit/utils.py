@@ -14,5 +14,3 @@ def create_audit_log(user, action, model_name, object_id, description='', reques
         description=description,
         ip_address=ip_address
     )
-
-    

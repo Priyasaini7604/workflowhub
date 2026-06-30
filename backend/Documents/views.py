@@ -96,6 +96,8 @@ class DocumentVerifyView(generics.UpdateAPIView):
         )
 
 # Document Archive
+
+
 class DocumentArchiveView(generics.UpdateAPIView):
     serializer_class = DocumentArchiveSerializer
     permission_classes = [IsHROrSuperAdmin]

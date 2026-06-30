@@ -22,7 +22,8 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='asset',
             name='condition',
-            field=models.CharField(choices=[('new', 'New'), ('good', 'Good'), ('fair', 'Fair'), ('damaged', 'Damaged')], default='good', max_length=20),
+            field=models.CharField(choices=[('new', 'New'), ('good', 'Good'), (
+                'fair', 'Fair'), ('damaged', 'Damaged')], default='good', max_length=20),
         ),
         migrations.AddField(
             model_name='asset',
@@ -37,14 +38,18 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='AssetAllocationHistory',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('id', models.BigAutoField(auto_created=True,
+                 primary_key=True, serialize=False, verbose_name='ID')),
                 ('assigned_date', models.DateField()),
                 ('returned_date', models.DateField(blank=True, null=True)),
                 ('remarks', models.TextField(blank=True)),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('asset', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='allocation_history', to='assets.asset')),
-                ('assigned_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='allocations_made', to=settings.AUTH_USER_MODEL)),
-                ('employee', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='asset_allocation_history', to='employees.employee')),
+                ('asset', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE,
+                 related_name='allocation_history', to='assets.asset')),
+                ('assigned_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL,
+                 related_name='allocations_made', to=settings.AUTH_USER_MODEL)),
+                ('employee', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL,
+                 related_name='asset_allocation_history', to='employees.employee')),
             ],
         ),
     ]

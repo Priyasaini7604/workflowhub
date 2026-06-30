@@ -71,7 +71,8 @@ class AssetReportSerializer(serializers.ModelSerializer):
 class AssetAllocationHistorySerializer(serializers.ModelSerializer):
     employee = EmployeeListSerializer(read_only=True)
     asset_id = serializers.CharField(source='asset.asset_id', read_only=True)
-    asset_type = serializers.CharField(source='asset.asset_type', read_only=True)
+    asset_type = serializers.CharField(
+        source='asset.asset_type', read_only=True)
 
     class Meta:
         model = AssetAllocationHistory
