@@ -121,7 +121,7 @@ USE_TZ = True
 # Static files
 STATIC_URL = 'static/'
 
-# CORS — React frontend ko allow karo
+# CORS — React frontend allow
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
 ]

@@ -75,7 +75,7 @@ class OnboardingTaskUpdateView(generics.UpdateAPIView):
 
     def get_queryset(self):
         return OnboardingTask.objects.filter(is_archived=False)
-
+    
     def perform_update(self, serializer):
         task = serializer.save()
         create_audit_log(

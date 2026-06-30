@@ -95,7 +95,6 @@ class DocumentVerifyView(generics.UpdateAPIView):
             request=self.request
         )
 
-
 # Document Archive
 class DocumentArchiveView(generics.UpdateAPIView):
     serializer_class = DocumentArchiveSerializer
