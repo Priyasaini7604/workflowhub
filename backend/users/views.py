@@ -28,7 +28,6 @@ class LoginView(APIView):
         username_or_email = serializer.validated_data['username']
         password = serializer.validated_data['password']
 
-        
         try:
             user_obj = User.objects.get(
                 Q(username=username_or_email) | Q(email=username_or_email)
@@ -39,7 +38,6 @@ class LoginView(APIView):
                 status=status.HTTP_401_UNAUTHORIZED
             )
 
-        
         user = authenticate(username=user_obj.username, password=password)
 
         if user is None:
@@ -56,6 +54,8 @@ class LoginView(APIView):
         })
 
 # Me profile
+
+
 class MeView(generics.RetrieveAPIView):
     serializer_class = UserSerializer
     permission_classes = [permissions.IsAuthenticated]
