@@ -7,6 +7,9 @@ import Layout from "./components/Layout";
 import AddEmployeePage from "./pages/AddEmployeePage";
 import EmployeeDetailPage from './pages/EmployeeDetailPage';
 import EditEmployeePage from "./pages/EditEmployeePage";
+import AssetsPage from "./pages/AssetsPage";
+import AddAssetPage from "./pages/AddAssetPage";
+import AssetDetailPage from "./pages/AssetDetailPage";
 
 const App = () => {
   return (
@@ -44,19 +47,43 @@ const App = () => {
             </ProtectedRoute>
         }
       />
-      <Route path="/employees/:id" element={
-    <ProtectedRoute><Layout><EmployeeDetailPage /></Layout></ProtectedRoute>
-      } />
-      <Route
-  path="/employees/:id/edit"
-  element={
-    <ProtectedRoute>
-      <Layout>
-        <EditEmployeePage />
-      </Layout>
-    </ProtectedRoute>
-  }
-/>
+        <Route path="/employees/:id" element={
+        <ProtectedRoute><Layout><EmployeeDetailPage /></Layout></ProtectedRoute>
+          } />
+          <Route
+      path="/employees/:id/edit"
+      element={
+        <ProtectedRoute>
+          <Layout>
+            <EditEmployeePage />
+          </Layout>
+        </ProtectedRoute>
+      }
+    />
+  <Route
+    path="/assets"
+    element={
+      <ProtectedRoute>
+        <Layout>
+          <AssetsPage />
+        </Layout>
+      </ProtectedRoute>
+    }
+  />
+    <Route
+      path="/assets/add"
+      element={
+        <ProtectedRoute>
+          <Layout>
+            <AddAssetPage />
+          </Layout>
+        </ProtectedRoute>
+      }
+    />
+    <Route path="/assets/:id" element={
+        <ProtectedRoute><Layout><AssetDetailPage /></Layout></ProtectedRoute>
+          } />
+    
       </Routes>
     </BrowserRouter>
   );

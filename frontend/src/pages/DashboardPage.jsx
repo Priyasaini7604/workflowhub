@@ -1,7 +1,9 @@
 import { useAuth } from "../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 const DashboardPage = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   return (
     <div>
@@ -64,12 +66,14 @@ const DashboardPage = () => {
         <h3 style={{ fontSize: "14px", fontWeight: 500, color: "#f1f5f9", margin: "0 0 16px" }}>Quick Actions</h3>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "12px" }}>
           {[
-            { label: "Add Employee", bg: "#1e3a5f", color: "#3b82f6" },
-            { label: "Add Asset", bg: "#064e3b", color: "#10b981" },
-            { label: "Leave Requests", bg: "#451a03", color: "#f59e0b" },
-            { label: "View Reports", bg: "#1e1b4b", color: "#818cf8" },
+            { label: "Add Employee", bg: "#1e3a5f", color: "#3b82f6", path: "/employees/add" },
+            { label: "Add Asset", bg: "#064e3b", color: "#10b981", path: "/assets/add" },
+            { label: "Leave Requests", bg: "#451a03", color: "#f59e0b", path: "/leaves" },
+            { label: "View Reports", bg: "#1e1b4b", color: "#818cf8", path: "/reports" },
           ].map((item) => (
-            <button key={item.label}
+            <button
+              key={item.label}
+              onClick={() => navigate(item.path)}
               style={{ background: item.bg, color: item.color, border: `0.5px solid ${item.color}33`, borderRadius: "8px", padding: "12px 16px", fontSize: "12px", fontWeight: 500, cursor: "pointer", textAlign: "left" }}>
               {item.label}
             </button>
