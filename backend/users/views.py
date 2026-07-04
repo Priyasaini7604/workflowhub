@@ -6,6 +6,7 @@ from .serializers import RegisterSerializer, UserSerializer, LoginSerializer
 from .models import User
 from permissions import IsHROrSuperAdmin
 from rest_framework_simplejwt.tokens import RefreshToken, TokenError
+from django.db.models import Q
 
 
 # Register
@@ -16,6 +17,7 @@ class RegisterView(generics.CreateAPIView):
 
 
 # Login — JWT token lene ke liye
+
 class LoginView(APIView):
     permission_classes = [permissions.AllowAny]
 
@@ -23,14 +25,26 @@ class LoginView(APIView):
         serializer = LoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        user = authenticate(
-            username=serializer.validated_data['username'],
-            password=serializer.validated_data['password']
-        )
+        username_or_email = serializer.validated_data['username']
+        password = serializer.validated_data['password']
+
+        
+        try:
+            user_obj = User.objects.get(
+                Q(username=username_or_email) | Q(email=username_or_email)
+            )
+        except User.DoesNotExist:
+            return Response(
+                {'error': 'Invalid credentials'},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
+        
+        user = authenticate(username=user_obj.username, password=password)
 
         if user is None:
             return Response(
-                {'error': 'Invalid username or password'},
+                {'error': 'Invalid credentials'},
                 status=status.HTTP_401_UNAUTHORIZED
             )
 
@@ -40,7 +54,6 @@ class LoginView(APIView):
             'access': str(refresh.access_token),
             'user': UserSerializer(user).data
         })
-
 
 # Me profile
 class MeView(generics.RetrieveAPIView):

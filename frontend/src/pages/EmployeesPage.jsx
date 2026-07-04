@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import axiosInstance from "../api/axiosInstance";
 
 const statusColors = {
@@ -8,6 +9,7 @@ const statusColors = {
 };
 
 const EmployeesPage = () => {
+  const navigate = useNavigate();
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -42,7 +44,9 @@ const EmployeesPage = () => {
           <h2 style={{ fontSize: "22px", fontWeight: 500, color: "#f1f5f9", margin: "0 0 4px" }}>Employee Management</h2>
           <p style={{ fontSize: "13px", color: "#64748b", margin: 0 }}>Manage all employees</p>
         </div>
-        <button style={{ background: "#2563eb", color: "#eff6ff", border: "none", borderRadius: "8px", padding: "10px 18px", fontSize: "13px", fontWeight: 500, cursor: "pointer", display: "flex", alignItems: "center", gap: "6px" }}>
+        <button
+          onClick={() => navigate("/employees/add")}
+          style={{ background: "#2563eb", color: "#eff6ff", border: "none", borderRadius: "8px", padding: "10px 18px", fontSize: "13px", fontWeight: 500, cursor: "pointer" }}>
           + Add Employee
         </button>
       </div>
@@ -74,7 +78,6 @@ const EmployeesPage = () => {
           <p style={{ color: "#64748b", fontSize: "13px" }}>Loading employees...</p>
         </div>
       ) : (
-        /* Table */
         <div style={{ background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "12px", overflow: "hidden" }}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
@@ -122,8 +125,16 @@ const EmployeesPage = () => {
                       </td>
                       <td style={{ padding: "14px 16px" }}>
                         <div style={{ display: "flex", gap: "6px" }}>
-                          <button style={{ background: "#1e3a5f", color: "#3b82f6", border: "none", borderRadius: "6px", padding: "5px 10px", fontSize: "11px", cursor: "pointer" }}>View</button>
-                          <button style={{ background: "#064e3b", color: "#10b981", border: "none", borderRadius: "6px", padding: "5px 10px", fontSize: "11px", cursor: "pointer" }}>Edit</button>
+                          <button
+                            onClick={() => navigate(`/employees/${emp.id}/`)}
+                            style={{ background: "#1e3a5f", color: "#3b82f6", border: "none", borderRadius: "6px", padding: "5px 10px", fontSize: "11px", cursor: "pointer" }}>
+                            View
+                          </button>
+                          <button
+                            onClick={() => navigate(`/employees/${emp.id}/edit`)}
+                            style={{ background: "#064e3b", color: "#10b981", border: "none", borderRadius: "6px", padding: "5px 10px", fontSize: "11px", cursor: "pointer" }}>
+                            Edit
+                          </button>
                         </div>
                       </td>
                     </tr>

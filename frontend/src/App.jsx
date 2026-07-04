@@ -4,6 +4,8 @@ import DashboardPage from "./pages/DashboardPage";
 import EmployeesPage from "./pages/EmployeesPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Layout from "./components/Layout";
+import AddEmployeePage from "./pages/AddEmployeePage";
+import EmployeeDetailPage from './pages/EmployeeDetailPage';
 
 const App = () => {
   return (
@@ -31,6 +33,19 @@ const App = () => {
             </ProtectedRoute>
           }
         />
+         <Route
+          path="/employees/add"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <AddEmployeePage />
+              </Layout>
+            </ProtectedRoute>
+        }
+      />
+      <Route path="/employees/:id" element={
+  <ProtectedRoute><Layout><EmployeeDetailPage /></Layout></ProtectedRoute>
+} />
       </Routes>
     </BrowserRouter>
   );
