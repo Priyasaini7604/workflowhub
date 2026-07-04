@@ -6,6 +6,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import Layout from "./components/Layout";
 import AddEmployeePage from "./pages/AddEmployeePage";
 import EmployeeDetailPage from './pages/EmployeeDetailPage';
+import EditEmployeePage from "./pages/EditEmployeePage";
 
 const App = () => {
   return (
@@ -44,8 +45,18 @@ const App = () => {
         }
       />
       <Route path="/employees/:id" element={
-  <ProtectedRoute><Layout><EmployeeDetailPage /></Layout></ProtectedRoute>
-} />
+    <ProtectedRoute><Layout><EmployeeDetailPage /></Layout></ProtectedRoute>
+      } />
+      <Route
+  path="/employees/:id/edit"
+  element={
+    <ProtectedRoute>
+      <Layout>
+        <EditEmployeePage />
+      </Layout>
+    </ProtectedRoute>
+  }
+/>
       </Routes>
     </BrowserRouter>
   );
