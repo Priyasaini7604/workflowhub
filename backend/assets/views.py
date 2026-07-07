@@ -44,7 +44,7 @@ class AssetCreateView(generics.CreateAPIView):
     permission_classes = [IsITAdminOrSuperAdmin]
 
     def generate_asset_id(self):
-    # Sab existing asset IDs dekho
+        # Sab existing asset IDs dekho
         existing_ids = Asset.objects.values_list('asset_id', flat=True)
         num = 1
         while True:
@@ -159,7 +159,9 @@ class AssetAssignView(generics.UpdateAPIView):
             action='update',
             model_name='Asset',
             object_id=asset.id,
-            description=f'Asset {asset.asset_id} assigned to {asset.assigned_to}',
+            description=f'Asset {
+                asset.asset_id} assigned to {
+                asset.assigned_to}',
             request=self.request
         )
 
