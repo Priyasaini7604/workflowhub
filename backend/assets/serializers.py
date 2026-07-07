@@ -31,8 +31,10 @@ class AssetSerializer(serializers.ModelSerializer):
         if self.instance:
             qs = qs.exclude(pk=self.instance.pk)
         if qs.exists():
-            raise serializers.ValidationError("This Serial Number already exists!")
+            raise serializers.ValidationError(
+                "This Serial Number already exists!")
         return value
+
 
 class AssetCreateSerializer(serializers.ModelSerializer):
     class Meta:
@@ -58,7 +60,8 @@ class AssetCreateSerializer(serializers.ModelSerializer):
         if self.instance:
             qs = qs.exclude(pk=self.instance.pk)
         if qs.exists():
-            raise serializers.ValidationError("This Serial Number already exists!")
+            raise serializers.ValidationError(
+                "This Serial Number already exists!")
         return value
 
 
