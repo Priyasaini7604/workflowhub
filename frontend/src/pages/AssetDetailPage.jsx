@@ -205,7 +205,13 @@ const AssetDetailPage = () => {
         <div style={gridStyle}>
           <div>
             <p style={fieldLabel}>ASSIGNED TO</p>
-            <p style={fieldValue}>{asset?.assigned_to ? `Employee #${asset.assigned_to}` : "Unassigned"}</p>
+            <p style={fieldValue}>
+  {asset?.assigned_to 
+    ? asset.assigned_to.full_name 
+      ? `${asset.assigned_to.full_name} — ${asset.assigned_to.designation}`
+      : `${asset.assigned_to.employee_id} — ${asset.assigned_to.designation}`
+    : "Unassigned"}
+</p>
           </div>
           <div>
             <p style={fieldLabel}>ISSUE DATE</p>

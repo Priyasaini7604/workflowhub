@@ -32,7 +32,7 @@ const EmployeesPage = () => {
   };
 
   const filteredEmployees = employees.filter((emp) =>
-    `${emp.first_name} ${emp.last_name}`.toLowerCase().includes(search.toLowerCase()) ||
+    emp.full_name?.toLowerCase().includes(search.toLowerCase()) ||
     emp.employee_id?.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -82,7 +82,8 @@ const EmployeesPage = () => {
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr style={{ borderBottom: "0.5px solid #1e293b" }}>
-                <th style={{ padding: "14px 16px", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>EMPLOYEE</th>
+                <th style={{ padding: "14px 16px", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>NAME</th>
+                <th style={{ padding: "14px 16px", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>EMPLOYEE ID</th>
                 <th style={{ padding: "14px 16px", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>DEPARTMENT</th>
                 <th style={{ padding: "14px 16px", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>DESIGNATION</th>
                 <th style={{ padding: "14px 16px", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>STATUS</th>
@@ -92,7 +93,7 @@ const EmployeesPage = () => {
             <tbody>
               {filteredEmployees.length === 0 ? (
                 <tr>
-                  <td colSpan="5" style={{ padding: "40px", textAlign: "center", fontSize: "13px", color: "#475569" }}>
+                  <td colSpan="6" style={{ padding: "40px", textAlign: "center", fontSize: "13px", color: "#475569" }}>
                     No employees found
                   </td>
                 </tr>
@@ -105,17 +106,15 @@ const EmployeesPage = () => {
                         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                           <div style={{ width: "32px", height: "32px", background: "#1e3a5f", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                             <span style={{ fontSize: "12px", color: "#3b82f6", fontWeight: 500 }}>
-                              {emp.first_name?.charAt(0)}
+                              {emp.full_name?.charAt(0).toUpperCase()}
                             </span>
                           </div>
-                          <div>
-                            <p style={{ fontSize: "13px", color: "#f1f5f9", margin: 0 }}>
-                              {emp.first_name} {emp.last_name}
-                            </p>
-                            <p style={{ fontSize: "11px", color: "#475569", margin: 0 }}>{emp.employee_id}</p>
-                          </div>
+                          <p style={{ fontSize: "13px", color: "#f1f5f9", margin: 0, whiteSpace: "nowrap" }}>
+                            {emp.full_name}
+                          </p>
                         </div>
                       </td>
+                      <td style={{ padding: "14px 16px", fontSize: "12px", color: "#64748b" }}>{emp.employee_id}</td>
                       <td style={{ padding: "14px 16px", fontSize: "12px", color: "#64748b" }}>{emp.department}</td>
                       <td style={{ padding: "14px 16px", fontSize: "12px", color: "#64748b" }}>{emp.designation}</td>
                       <td style={{ padding: "14px 16px" }}>
@@ -126,15 +125,11 @@ const EmployeesPage = () => {
                       <td style={{ padding: "14px 16px" }}>
                         <div style={{ display: "flex", gap: "6px" }}>
                           <button
-                            onClick={() => navigate(`/employees/${emp.id}/`)}
-                            style={{ background: "#1e3a5f", color: "#3b82f6", border: "none", borderRadius: "6px", padding: "5px 10px", fontSize: "11px", cursor: "pointer" }}>
-                            View
-                          </button>
+                            onClick={() => navigate(`/employees/${emp.id}`)}
+                            style={{ background: "#1e3a5f", color: "#3b82f6", border: "none", borderRadius: "6px", padding: "5px 10px", fontSize: "11px", cursor: "pointer" }}>View</button>
                           <button
                             onClick={() => navigate(`/employees/${emp.id}/edit`)}
-                            style={{ background: "#064e3b", color: "#10b981", border: "none", borderRadius: "6px", padding: "5px 10px", fontSize: "11px", cursor: "pointer" }}>
-                            Edit
-                          </button>
+                            style={{ background: "#064e3b", color: "#10b981", border: "none", borderRadius: "6px", padding: "5px 10px", fontSize: "11px", cursor: "pointer" }}>Edit</button>
                         </div>
                       </td>
                     </tr>

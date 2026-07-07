@@ -123,7 +123,9 @@ const AssetsPage = () => {
                         <p style={{ fontSize: "11px", color: "#475569", margin: 0 }}>{asset.model_name || "—"}</p>
                       </td>
                       <td style={{ padding: "14px 16px", fontSize: "12px", color: "#64748b" }}>
-                        {asset.assigned_to ? `Employee #${asset.assigned_to}` : "Unassigned"}
+                        {asset.assigned_to 
+  ? asset.assigned_to.full_name || asset.assigned_to.employee_id 
+  : "Unassigned"}
                       </td>
                       <td style={{ padding: "14px 16px" }}>
                         <span style={{ background: statusStyle.bg, color: statusStyle.text, borderRadius: "20px", padding: "3px 10px", fontSize: "11px" }}>

@@ -10,6 +10,7 @@ import EditEmployeePage from "./pages/EditEmployeePage";
 import AssetsPage from "./pages/AssetsPage";
 import AddAssetPage from "./pages/AddAssetPage";
 import AssetDetailPage from "./pages/AssetDetailPage";
+import EditAssetPage from "./pages/EditAssetPage";
 
 const App = () => {
   return (
@@ -83,7 +84,16 @@ const App = () => {
     <Route path="/assets/:id" element={
         <ProtectedRoute><Layout><AssetDetailPage /></Layout></ProtectedRoute>
           } />
-    
+          <Route
+      path="/assets/:id/edit"
+      element={
+        <ProtectedRoute>
+          <Layout>
+            <EditAssetPage />
+          </Layout>
+        </ProtectedRoute>
+      }
+    />
       </Routes>
     </BrowserRouter>
   );
