@@ -45,7 +45,7 @@ const AddAssetPage = () => {
       await axiosInstance.post("/assets/create/", {
         ...formData,
         warranty_expiry_date: formData.warranty_expiry_date || null,
-        asset_id: "AUTO", // backend auto generate karega
+        
       });
       navigate("/assets");
     } catch (err) {

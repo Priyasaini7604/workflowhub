@@ -37,6 +37,7 @@ class AssetSerializer(serializers.ModelSerializer):
 
 
 class AssetCreateSerializer(serializers.ModelSerializer):
+    asset_id = serializers.CharField(required=False, allow_blank=True)
     class Meta:
         model = Asset
         fields = [

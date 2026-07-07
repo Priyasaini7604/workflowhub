@@ -1,9 +1,40 @@
+import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
+import axiosInstance from "../api/axiosInstance";
 
 const DashboardPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [stats, setStats] = useState({
+    employees: "--",
+    assets: "--",
+    pending_leaves: "--",
+  });
+
+  useEffect(() => {
+    fetchStats();
+  }, []);
+
+  const fetchStats = async () => {
+    try {
+      const [empResponse, assetResponse] = await Promise.all([
+        axiosInstance.get("/employees/"),
+        axiosInstance.get("/assets/"),
+      ]);
+
+      const employees = empResponse.data.results || empResponse.data;
+      const assets = assetResponse.data.results || assetResponse.data;
+
+      setStats({
+        employees: employees.length,
+        assets: assets.length,
+        pending_leaves: "--",
+      });
+    } catch (err) {
+      console.error("Failed to fetch stats");
+    }
+  };
 
   return (
     <div>
@@ -20,7 +51,9 @@ const DashboardPage = () => {
       {/* Stats Cards */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px", marginBottom: "2rem" }}>
 
-        <div style={{ background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "12px", padding: "20px" }}>
+        <div
+          onClick={() => navigate("/employees")}
+          style={{ background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "12px", padding: "20px", cursor: "pointer" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
             <p style={{ fontSize: "11px", fontWeight: 500, color: "#64748b", margin: 0, letterSpacing: "0.8px" }}>EMPLOYEES</p>
             <div style={{ width: "32px", height: "32px", background: "#1e3a5f", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -29,11 +62,13 @@ const DashboardPage = () => {
               </svg>
             </div>
           </div>
-          <p style={{ fontSize: "28px", fontWeight: 500, color: "#f1f5f9", margin: "0 0 4px" }}>--</p>
+          <p style={{ fontSize: "28px", fontWeight: 500, color: "#f1f5f9", margin: "0 0 4px" }}>{stats.employees}</p>
           <p style={{ fontSize: "11px", color: "#475569", margin: 0 }}>Total employees</p>
         </div>
 
-        <div style={{ background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "12px", padding: "20px" }}>
+        <div
+          onClick={() => navigate("/assets")}
+          style={{ background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "12px", padding: "20px", cursor: "pointer" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
             <p style={{ fontSize: "11px", fontWeight: 500, color: "#64748b", margin: 0, letterSpacing: "0.8px" }}>IT ASSETS</p>
             <div style={{ width: "32px", height: "32px", background: "#064e3b", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -42,7 +77,7 @@ const DashboardPage = () => {
               </svg>
             </div>
           </div>
-          <p style={{ fontSize: "28px", fontWeight: 500, color: "#f1f5f9", margin: "0 0 4px" }}>--</p>
+          <p style={{ fontSize: "28px", fontWeight: 500, color: "#f1f5f9", margin: "0 0 4px" }}>{stats.assets}</p>
           <p style={{ fontSize: "11px", color: "#475569", margin: 0 }}>Total assets</p>
         </div>
 
@@ -55,7 +90,7 @@ const DashboardPage = () => {
               </svg>
             </div>
           </div>
-          <p style={{ fontSize: "28px", fontWeight: 500, color: "#f1f5f9", margin: "0 0 4px" }}>--</p>
+          <p style={{ fontSize: "28px", fontWeight: 500, color: "#f1f5f9", margin: "0 0 4px" }}>{stats.pending_leaves}</p>
           <p style={{ fontSize: "11px", color: "#475569", margin: 0 }}>Awaiting approval</p>
         </div>
 
