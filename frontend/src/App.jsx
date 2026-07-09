@@ -13,6 +13,7 @@ import AssetDetailPage from "./pages/AssetDetailPage";
 import EditAssetPage from "./pages/EditAssetPage";
 import OnboardingPage from "./pages/OnboardingPage";
 import OffboardingPage from "./pages/OffboardingPage";
+import ReportsPage from "./pages/ReportsPage";
 
 const App = () => {
   return (
@@ -116,6 +117,16 @@ const App = () => {
         </ProtectedRoute>
       }
     />
+    <Route
+  path="/reports"
+  element={
+    <ProtectedRoute>
+      <Layout>
+        <ReportsPage />
+      </Layout>
+    </ProtectedRoute>
+  }
+/>
       </Routes>
     </BrowserRouter>
   );
