@@ -48,8 +48,11 @@ class IsHROrManagerOrSuperAdmin(permissions.BasePermission):
 
 class IsAuthenticatedAndActive(permissions.BasePermission):
     def has_permission(self, request, view):
-        return (
-            request.user and
-            request.user.is_authenticated and
-            not getattr(request.user, 'is_archived', False)
-        )
+        if not (request.user and request.user.is_authenticated):
+            return False
+
+        employee_profile = getattr(request.user, 'employee_profile', None)
+        if employee_profile is not None and employee_profile.is_archived:
+            return False
+
+        return True

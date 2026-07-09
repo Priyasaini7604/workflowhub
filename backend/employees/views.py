@@ -68,15 +68,19 @@ class EmployeeArchiveView(generics.UpdateAPIView):
     permission_classes = [IsHROrSuperAdmin]
 
     def get_queryset(self):
-        return Employee.objects.filte(is_archived=False)
+        return Employee.objects.filter(is_archived=False)
 
     def perform_update(self, serializer):
-
         employee = serializer.save(
             is_archived=True,
             archived_at=timezone.now(),
             archived_by=self.request.user
         )
+
+        # Deactivate the linked user account so they can't log in anymore
+        employee.user.is_active = False
+        employee.user.save(update_fields=['is_active'])
+
         create_audit_log(
             user=self.request.user,
             action='delete',
