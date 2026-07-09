@@ -9,6 +9,7 @@ const menuItems = {
     { label: "Leave Management", icon: "📅", path: "/leaves" },
     { label: "Documents", icon: "📄", path: "/documents" },
     { label: "Reports", icon: "📊", path: "/reports" },
+    { label: "Onboarding", icon: "🚀", path: "/onboarding" },
   ],
   hr_admin: [
     { label: "Dashboard", icon: "🏠", path: "/dashboard" },
@@ -16,6 +17,7 @@ const menuItems = {
     { label: "Leave Management", icon: "📅", path: "/leaves" },
     { label: "Documents", icon: "📄", path: "/documents" },
     { label: "Reports", icon: "📊", path: "/reports" },
+    { label: "Onboarding", icon: "🚀", path: "/onboarding" },
   ],
   it_manager: [
     { label: "Dashboard", icon: "🏠", path: "/dashboard" },

@@ -11,6 +11,7 @@ import AssetsPage from "./pages/AssetsPage";
 import AddAssetPage from "./pages/AddAssetPage";
 import AssetDetailPage from "./pages/AssetDetailPage";
 import EditAssetPage from "./pages/EditAssetPage";
+import OnboardingPage from "./pages/OnboardingPage";
 
 const App = () => {
   return (
@@ -90,6 +91,16 @@ const App = () => {
         <ProtectedRoute>
           <Layout>
             <EditAssetPage />
+          </Layout>
+        </ProtectedRoute>
+      }
+    />
+        <Route
+      path="/onboarding"
+      element={
+        <ProtectedRoute>
+          <Layout>
+            <OnboardingPage />
           </Layout>
         </ProtectedRoute>
       }
