@@ -10,6 +10,7 @@ const menuItems = {
     { label: "Documents", icon: "📄", path: "/documents" },
     { label: "Reports", icon: "📊", path: "/reports" },
     { label: "Onboarding", icon: "🚀", path: "/onboarding" },
+    { label: "Offboarding", icon: "🚀", path: "/offboarding" },
   ],
   hr_admin: [
     { label: "Dashboard", icon: "🏠", path: "/dashboard" },
@@ -18,6 +19,7 @@ const menuItems = {
     { label: "Documents", icon: "📄", path: "/documents" },
     { label: "Reports", icon: "📊", path: "/reports" },
     { label: "Onboarding", icon: "🚀", path: "/onboarding" },
+    { label: "Offboarding", icon: "🚀", path: "/offboarding" },
   ],
   it_manager: [
     { label: "Dashboard", icon: "🏠", path: "/dashboard" },
