@@ -1,12 +1,15 @@
 @import "tailwindcss";
-@theme {
-  --color-brand-bg: #060b14;
-  --color-brand-card: #0a1628;
-  --color-brand-input: #0f1a2e;
-  --color-brand-border: #1e293b;
-  --color-brand-blue: #2563eb;
-  --color-brand-accent: #3b82f6;
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
 input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus {
@@ -17,5 +20,11 @@ input:-webkit-autofill:focus {
 
 input[type="checkbox"] {
   accent-color: #2563eb;
-  background-color: #0f1a2e;
+  colorScheme: dark;
+}
+
+@media (max-width: 768px) {
+  .hidden-mobile {
+    display: none !important;
+  }
 }

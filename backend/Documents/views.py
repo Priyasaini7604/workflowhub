@@ -50,7 +50,9 @@ class DocumentCreateView(generics.CreateAPIView):
             action='create',
             model_name='Document',
             object_id=document.id,
-            description=f'Document "{document.document_type}" uploaded for {document.employee}',
+            description=f'Document "{
+                document.document_type}" uploaded for {
+                document.employee}',
             request=self.request
         )
 
@@ -81,8 +83,15 @@ class DocumentVerifyView(generics.UpdateAPIView):
     def get_queryset(self):
         return Document.objects.filter(is_archived=False)
 
+    def post(self, request, *args, **kwargs):
+        return self.partial_update(request, *args, **kwargs)
+
     def perform_update(self, serializer):
-        document = serializer.save()
+        document = serializer.save(
+            verification_status='verified',
+            verified_by=self.request.user,
+            verified_at=timezone.now()
+        )
         create_audit_log(
             user=self.request.user,
             action='update',
@@ -95,8 +104,9 @@ class DocumentVerifyView(generics.UpdateAPIView):
             request=self.request
         )
 
-
 # Document Archive
+
+
 class DocumentArchiveView(generics.UpdateAPIView):
     serializer_class = DocumentArchiveSerializer
     permission_classes = [IsHROrSuperAdmin]

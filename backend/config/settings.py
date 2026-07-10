@@ -121,7 +121,7 @@ USE_TZ = True
 # Static files
 STATIC_URL = 'static/'
 
-# CORS — React frontend ko allow karo
+# CORS — React frontend allow
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
 ]
@@ -144,3 +144,6 @@ SIMPLE_JWT = {
     'BLACKLIST_AFTER_ROTATION': True,
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'

@@ -18,5 +18,6 @@ urlpatterns = [
     path('<int:pk>/update/', AssetUpdateView.as_view(), name='asset-update'),
     path('<int:pk>/archive/', AssetArchiveView.as_view(), name='asset-archive'),
     path('<int:pk>/assign/', AssetAssignView.as_view(), name='asset-assign'),
-    path('<int:asset_id>/history/', AssetAllocationHistoryView.as_view(), name='asset-allocation-history'),
+    path('<int:asset_id>/history/', AssetAllocationHistoryView.as_view(),
+         name='asset-allocation-history'),
 ]

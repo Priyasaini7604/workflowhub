@@ -16,8 +16,29 @@ class AssetSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
 
+    def validate_asset_id(self, value):
+        qs = Asset.objects.filter(asset_id=value)
+        if self.instance:
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists():
+            raise serializers.ValidationError("This Asset ID already exists!")
+        return value
+
+    def validate_serial_number(self, value):
+        if not value:
+            return value
+        qs = Asset.objects.filter(serial_number=value)
+        if self.instance:
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists():
+            raise serializers.ValidationError(
+                "This Serial Number already exists!")
+        return value
+
 
 class AssetCreateSerializer(serializers.ModelSerializer):
+    asset_id = serializers.CharField(required=False, allow_blank=True)
+
     class Meta:
         model = Asset
         fields = [
@@ -27,15 +48,22 @@ class AssetCreateSerializer(serializers.ModelSerializer):
         ]
 
     def validate_asset_id(self, value):
-        if Asset.objects.filter(asset_id=value).exists():
-            raise serializers.ValidationError(
-                "This Asset ID is already exists!")
+        qs = Asset.objects.filter(asset_id=value)
+        if self.instance:
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists():
+            raise serializers.ValidationError("This Asset ID already exists!")
         return value
 
     def validate_serial_number(self, value):
-        if value and Asset.objects.filter(serial_number=value).exists():
+        if not value:
+            return value
+        qs = Asset.objects.filter(serial_number=value)
+        if self.instance:
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists():
             raise serializers.ValidationError(
-                "This Serial Number is already exists!")
+                "This Serial Number already exists!")
         return value
 
 
@@ -71,7 +99,8 @@ class AssetReportSerializer(serializers.ModelSerializer):
 class AssetAllocationHistorySerializer(serializers.ModelSerializer):
     employee = EmployeeListSerializer(read_only=True)
     asset_id = serializers.CharField(source='asset.asset_id', read_only=True)
-    asset_type = serializers.CharField(source='asset.asset_type', read_only=True)
+    asset_type = serializers.CharField(
+        source='asset.asset_type', read_only=True)
 
     class Meta:
         model = AssetAllocationHistory

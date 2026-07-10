@@ -17,3 +17,11 @@ db.sqlite3
 
 # ZIP files
 *.zip
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+
+# Media files
+backend/media/
+backend/Documents/*.pdf

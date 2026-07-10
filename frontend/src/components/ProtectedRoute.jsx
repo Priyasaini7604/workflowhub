@@ -4,21 +4,18 @@ import { useAuth } from "../context/AuthContext";
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
 
-  // Ab bhi check ho rahi hai localStorage — wait karo
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-500">Loading...</p>
+      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#060b14" }}>
+        <p style={{ color: "#64748b" }}>Loading...</p>
       </div>
     );
   }
 
-  // User nahi hai → Login pe bhejo
   if (!user) {
     return <Navigate to="/login" replace />;
   }
 
-  // User hai → Page dikhao
   return children;
 };
 

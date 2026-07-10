@@ -1,29 +1,154 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import LoginPage from "./pages/LoginPage";
 import DashboardPage from "./pages/DashboardPage";
+import EmployeesPage from "./pages/EmployeesPage";
 import ProtectedRoute from "./components/ProtectedRoute";
+import Layout from "./components/Layout";
+import AddEmployeePage from "./pages/AddEmployeePage";
+import EmployeeDetailPage from './pages/EmployeeDetailPage';
+import EditEmployeePage from "./pages/EditEmployeePage";
+import AssetsPage from "./pages/AssetsPage";
+import AddAssetPage from "./pages/AddAssetPage";
+import AssetDetailPage from "./pages/AssetDetailPage";
+import EditAssetPage from "./pages/EditAssetPage";
+import OnboardingPage from "./pages/OnboardingPage";
+import OffboardingPage from "./pages/OffboardingPage";
+import ReportsPage from "./pages/ReportsPage";
+import DocumentsPage from "./pages/DocumentsPage";
+import AuditLogsPage from "./pages/AuditLogsPage";
 
 const App = () => {
   return (
     <BrowserRouter>
       <Routes>
-
-        {/* Root → Login pe redirect */}
         <Route path="/" element={<Navigate to="/login" replace />} />
-
-        {/* Login page — sabke liye accessible */}
         <Route path="/login" element={<LoginPage />} />
-
-        {/* Protected routes — sirf logged in users ke liye */}
         <Route
           path="/dashboard"
           element={
             <ProtectedRoute>
-              <DashboardPage />
+              <Layout>
+                <DashboardPage />
+              </Layout>
             </ProtectedRoute>
           }
         />
-
+        <Route
+          path="/employees"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <EmployeesPage />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+         <Route
+          path="/employees/add"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <AddEmployeePage />
+              </Layout>
+            </ProtectedRoute>
+        }
+      />
+        <Route path="/employees/:id" element={
+        <ProtectedRoute><Layout><EmployeeDetailPage /></Layout></ProtectedRoute>
+          } />
+          <Route
+      path="/employees/:id/edit"
+      element={
+        <ProtectedRoute>
+          <Layout>
+            <EditEmployeePage />
+          </Layout>
+        </ProtectedRoute>
+      }
+    />
+  <Route
+    path="/assets"
+    element={
+      <ProtectedRoute>
+        <Layout>
+          <AssetsPage />
+        </Layout>
+      </ProtectedRoute>
+    }
+  />
+    <Route
+      path="/assets/add"
+      element={
+        <ProtectedRoute>
+          <Layout>
+            <AddAssetPage />
+          </Layout>
+        </ProtectedRoute>
+      }
+    />
+    <Route path="/assets/:id" element={
+        <ProtectedRoute><Layout><AssetDetailPage /></Layout></ProtectedRoute>
+          } />
+          <Route
+      path="/assets/:id/edit"
+      element={
+        <ProtectedRoute>
+          <Layout>
+            <EditAssetPage />
+          </Layout>
+        </ProtectedRoute>
+      }
+    />
+        <Route
+      path="/onboarding"
+      element={
+        <ProtectedRoute>
+          <Layout>
+            <OnboardingPage />
+          </Layout>
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/offboarding"
+      element={
+        <ProtectedRoute>
+          <Layout>
+            <OffboardingPage />
+          </Layout>
+        </ProtectedRoute>
+      }
+    />
+    <Route
+  path="/reports"
+  element={
+    <ProtectedRoute>
+      <Layout>
+        <ReportsPage />
+      </Layout>
+    </ProtectedRoute>
+  }
+/>
+  <Route
+  path="/documents"
+  element={
+    <ProtectedRoute>
+      <Layout>
+        <DocumentsPage />
+      </Layout>
+    </ProtectedRoute>
+  }
+  />
+  <Route
+  path="/audit-logs"
+  element={
+    <ProtectedRoute>
+      <Layout>
+        <AuditLogsPage />
+      </Layout>
+    </ProtectedRoute>
+  }
+  />
       </Routes>
     </BrowserRouter>
   );

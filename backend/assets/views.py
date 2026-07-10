@@ -43,8 +43,19 @@ class AssetCreateView(generics.CreateAPIView):
     serializer_class = AssetCreateSerializer
     permission_classes = [IsITAdminOrSuperAdmin]
 
+    def generate_asset_id(self):
+        # Sab existing asset IDs dekho
+        existing_ids = Asset.objects.values_list('asset_id', flat=True)
+        num = 1
+        while True:
+            new_id = f"AST{num:03d}"
+            if new_id not in existing_ids:
+                return new_id
+            num += 1
+
     def perform_create(self, serializer):
-        asset = serializer.save()
+        asset_id = self.generate_asset_id()
+        asset = serializer.save(asset_id=asset_id)
         create_audit_log(
             user=self.request.user,
             action='create',
@@ -148,7 +159,9 @@ class AssetAssignView(generics.UpdateAPIView):
             action='update',
             model_name='Asset',
             object_id=asset.id,
-            description=f'Asset {asset.asset_id} assigned to {asset.assigned_to}',
+            description=f'Asset {
+                asset.asset_id} assigned to {
+                asset.assigned_to}',
             request=self.request
         )
 

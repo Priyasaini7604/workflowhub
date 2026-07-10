@@ -1,6 +1,5 @@
 import axios from "axios";
 
-// 1. Axios instance with baseURL
 const axiosInstance = axios.create({
   baseURL: "http://localhost:8000/api",
   headers: {
@@ -8,7 +7,6 @@ const axiosInstance = axios.create({
   },
 });
 
-// 2. Request Interceptor
 axiosInstance.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("access_token");
@@ -20,7 +18,6 @@ axiosInstance.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// 3. Response Interceptor — If 401 error comes then logout 
 axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {
