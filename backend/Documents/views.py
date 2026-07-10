@@ -80,9 +80,16 @@ class DocumentVerifyView(generics.UpdateAPIView):
 
     def get_queryset(self):
         return Document.objects.filter(is_archived=False)
+    
+    def post(self, request, *args, **kwargs):
+        return self.partial_update(request, *args, **kwargs)
 
     def perform_update(self, serializer):
-        document = serializer.save()
+        document = serializer.save(
+            verification_status='verified',
+            verified_by=self.request.user,
+            verified_at=timezone.now()
+        )
         create_audit_log(
             user=self.request.user,
             action='update',
@@ -93,7 +100,7 @@ class DocumentVerifyView(generics.UpdateAPIView):
                 f'status changed to {document.verification_status}'
             ),
             request=self.request
-        )
+    )
 
 # Document Archive
 
@@ -104,6 +111,7 @@ class DocumentArchiveView(generics.UpdateAPIView):
 
     def get_queryset(self):
         return Document.objects.filter(is_archived=False)
+    
 
     def perform_update(self, serializer):
         document = serializer.save(

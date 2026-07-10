@@ -14,6 +14,7 @@ import EditAssetPage from "./pages/EditAssetPage";
 import OnboardingPage from "./pages/OnboardingPage";
 import OffboardingPage from "./pages/OffboardingPage";
 import ReportsPage from "./pages/ReportsPage";
+import DocumentsPage from "./pages/DocumentsPage";
 
 const App = () => {
   return (
@@ -127,6 +128,17 @@ const App = () => {
     </ProtectedRoute>
   }
 />
+  <Route
+  path="/documents"
+  element={
+    <ProtectedRoute>
+      <Layout>
+        <DocumentsPage />
+      </Layout>
+    </ProtectedRoute>
+  }
+  />
+
       </Routes>
     </BrowserRouter>
   );
