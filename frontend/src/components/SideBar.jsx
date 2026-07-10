@@ -11,6 +11,7 @@ const menuItems = {
     { label: "Reports", icon: "📊", path: "/reports" },
     { label: "Onboarding", icon: "🚀", path: "/onboarding" },
     { label: "Offboarding", icon: "🚀", path: "/offboarding" },
+    { label: "Audit Logs", icon: "📋", path: "/audit-logs" },
   ],
   hr_admin: [
     { label: "Dashboard", icon: "🏠", path: "/dashboard" },

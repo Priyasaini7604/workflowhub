@@ -15,6 +15,7 @@ import OnboardingPage from "./pages/OnboardingPage";
 import OffboardingPage from "./pages/OffboardingPage";
 import ReportsPage from "./pages/ReportsPage";
 import DocumentsPage from "./pages/DocumentsPage";
+import AuditLogsPage from "./pages/AuditLogsPage";
 
 const App = () => {
   return (
@@ -138,7 +139,16 @@ const App = () => {
     </ProtectedRoute>
   }
   />
-
+  <Route
+  path="/audit-logs"
+  element={
+    <ProtectedRoute>
+      <Layout>
+        <AuditLogsPage />
+      </Layout>
+    </ProtectedRoute>
+  }
+  />
       </Routes>
     </BrowserRouter>
   );
