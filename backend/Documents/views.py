@@ -50,7 +50,9 @@ class DocumentCreateView(generics.CreateAPIView):
             action='create',
             model_name='Document',
             object_id=document.id,
-            description=f'Document "{document.document_type}" uploaded for {document.employee}',
+            description=f'Document "{
+                document.document_type}" uploaded for {
+                document.employee}',
             request=self.request
         )
 
@@ -80,7 +82,7 @@ class DocumentVerifyView(generics.UpdateAPIView):
 
     def get_queryset(self):
         return Document.objects.filter(is_archived=False)
-    
+
     def post(self, request, *args, **kwargs):
         return self.partial_update(request, *args, **kwargs)
 
@@ -100,7 +102,7 @@ class DocumentVerifyView(generics.UpdateAPIView):
                 f'status changed to {document.verification_status}'
             ),
             request=self.request
-    )
+        )
 
 # Document Archive
 
@@ -111,7 +113,6 @@ class DocumentArchiveView(generics.UpdateAPIView):
 
     def get_queryset(self):
         return Document.objects.filter(is_archived=False)
-    
 
     def perform_update(self, serializer):
         document = serializer.save(
