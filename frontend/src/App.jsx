@@ -16,6 +16,7 @@ import OffboardingPage from "./pages/OffboardingPage";
 import ReportsPage from "./pages/ReportsPage";
 import DocumentsPage from "./pages/DocumentsPage";
 import AuditLogsPage from "./pages/AuditLogsPage";
+import MyProfilePage from "./pages/MyProfilePage";
 
 const App = () => {
   return (
@@ -149,6 +150,16 @@ const App = () => {
     </ProtectedRoute>
   }
   />
+  <Route
+  path="/my-profile"
+  element={
+    <ProtectedRoute>
+      <Layout>
+        <MyProfilePage />
+      </Layout>
+    </ProtectedRoute>
+  }
+/>
       </Routes>
     </BrowserRouter>
   );

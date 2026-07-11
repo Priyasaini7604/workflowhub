@@ -6,6 +6,7 @@ from .views import (
     EmployeeUpdateView,
     EmployeeArchiveView,
     EmployeeStatusReportView,
+    MyProfileView,
 )
 
 urlpatterns = [
@@ -17,4 +18,5 @@ urlpatterns = [
     path('<int:pk>/update/', EmployeeUpdateView.as_view(), name='employee-update'),
     path('<int:pk>/archive/', EmployeeArchiveView.as_view(),
          name='employee-archive'),
+    path('me/', MyProfileView.as_view(), name='my-profile'),
 ]
