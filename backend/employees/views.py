@@ -1,4 +1,4 @@
-from rest_framework import generics,permissions
+from rest_framework import generics, permissions
 from .models import Employee
 from django.utils import timezone
 from .serializers import EmployeeSerializer, EmployeeListSerializer, EmployeeArchiveSerializer, EmployeeReportSerializer
@@ -97,6 +97,7 @@ class EmployeeStatusReportView(generics.ListAPIView):
 
     def get_queryset(self):
         return Employee.objects.filter(is_archived=False)
+
 
 class MyProfileView(generics.RetrieveUpdateAPIView):
     serializer_class = EmployeeSerializer
