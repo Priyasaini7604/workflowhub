@@ -106,6 +106,7 @@ class OffboardingChecklist(models.Model):
     archived_at = models.DateTimeField(null=True, blank=True)
 
     offboarding_completion_percentage = models.IntegerField(default=0)
+
     def save(self, *args, **kwargs):
         fields_to_check = [
             self.exit_interview_status == 'completed',
@@ -123,5 +124,3 @@ class OffboardingChecklist(models.Model):
 
     def __str__(self):
         return f"{self.employee} - Offboarding Checklist"
-
-    
