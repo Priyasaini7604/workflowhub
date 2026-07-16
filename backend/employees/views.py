@@ -17,13 +17,27 @@ class EmployeeListView(generics.ListAPIView):
 
 
 # Employee Create
+
 class EmployeeCreateView(generics.CreateAPIView):
     queryset = Employee.objects.all()
     serializer_class = EmployeeSerializer
     permission_classes = [IsHROrSuperAdmin]
 
+    def generate_employee_id(self):
+        existing_ids = Employee.objects.values_list('employee_id', flat=True)
+        num = 1
+        while True:
+            new_id = f"EMP{num:03d}"
+            if new_id not in existing_ids:
+                return new_id
+            num += 1
+
     def perform_create(self, serializer):
-        employee = serializer.save(created_by=self.request.user)
+        employee_id = self.generate_employee_id()
+        employee = serializer.save(
+            employee_id=employee_id,
+            created_by=self.request.user
+        )
         create_audit_log(
             user=self.request.user,
             action='create',

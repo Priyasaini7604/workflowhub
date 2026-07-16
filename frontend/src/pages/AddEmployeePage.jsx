@@ -104,7 +104,7 @@ const AddEmployeePage = () => {
         employee_type: formData.employee_type,
         work_mode: formData.work_mode,
         reporting_manager: formData.reporting_manager || null,
-        employee_id: "AUTO",  // backend override karega
+        
       });
 
       navigate("/employees");

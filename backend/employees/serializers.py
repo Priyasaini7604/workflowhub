@@ -46,7 +46,7 @@ class EmployeeSerializer(serializers.ModelSerializer):
             'created_by',
             'updated_by',
         ]
-        read_only_fields = ['id', 'created_at', 'updated_at']
+        read_only_fields = ['id','employee_id', 'created_at', 'updated_at']
 
     def get_full_name(self, obj):
         if obj.middle_name:
