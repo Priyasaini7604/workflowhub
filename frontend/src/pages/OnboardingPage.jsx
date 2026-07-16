@@ -349,6 +349,18 @@ const OnboardingPage = () => {
                                 <span style={{ background: statusStyle.bg, color: statusStyle.text, borderRadius: "20px", padding: "3px 10px", fontSize: "11px" }}>
                                   {doc.verification_status}
                                 </span>
+                                {doc.document_file ? (
+                                  <a
+                                    href={doc.document_file}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    style={{ background: "#1e293b", color: "#94a3b8", border: "none", borderRadius: "6px", padding: "5px 10px", fontSize: "11px", textDecoration: "none" }}
+                                  >
+                                    View
+                                  </a>
+                                ) : (
+                                  <span style={{ fontSize: "11px", color: "#475569" }}>No file</span>
+                                )}
                                 {doc.verification_status === "pending" && (
                                   <button
                                     onClick={() => handleVerifyDocument(doc.id)}

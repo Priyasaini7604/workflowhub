@@ -11,6 +11,14 @@ from .serializers import (
 )
 from permissions import IsHROrSuperAdmin, IsHROrManagerOrSuperAdmin
 
+DEFAULT_OFFBOARDING_TASKS = [
+    ('Recover company laptop and IT assets', 'it'),
+    ('Revoke system and email access', 'it'),
+    ('Conduct exit interview', 'hr'),
+    ('Manager sign-off and handover', 'manager'),
+    ('Complete HR final settlement clearance', 'hr'),
+]
+
 
 # Offboarding Task List — Role based
 class OffboardingTaskListView(generics.ListAPIView):
@@ -87,9 +95,32 @@ class OffboardingTaskUpdateView(generics.UpdateAPIView):
             action='update',
             model_name='OffboardingTask',
             object_id=task.id,
-            description=f'Offboarding task "{task.task_name}" updated',
+            description=f'Offboarding task "{task.task_name}" marked as {task.status}',
             request=self.request
         )
+
+        checklist, _ = OffboardingChecklist.objects.get_or_create(
+            employee=task.employee
+        )
+
+        if task.status == 'completed':
+            if task.task_name == 'Recover company laptop and IT assets':
+                checklist.asset_recovery_status = True
+            elif task.task_name == 'Revoke system and email access':
+                checklist.access_revocation_status = True
+            elif task.task_name == 'Conduct exit interview':
+                checklist.exit_interview_status = 'completed'
+            elif task.task_name == 'Manager sign-off and handover':
+                checklist.manager_clearance_status = True
+            elif task.task_name == 'Complete HR final settlement clearance':
+                checklist.hr_clearance_status = True
+
+        # Final clearance auto-derives once the four operational clearances are done
+        if (checklist.asset_recovery_status and checklist.access_revocation_status
+                and checklist.manager_clearance_status and checklist.hr_clearance_status):
+            checklist.final_clearance_status = True
+
+        checklist.save()
 
 
 # Offboarding Task Archive — Soft Delete
@@ -122,7 +153,19 @@ class OffboardingChecklistView(generics.RetrieveAPIView):
 
     def get_object(self):
         employee_id = self.kwargs.get('employee_id')
-        return OffboardingChecklist.objects.get(employee=employee_id)
+        checklist, created = OffboardingChecklist.objects.get_or_create(
+            employee_id=employee_id
+        )
+        if created:
+            OffboardingTask.objects.bulk_create([
+                OffboardingTask(
+                    employee_id=employee_id,
+                    task_name=name,
+                    assigned_to_role=role,
+                )
+                for name, role in DEFAULT_OFFBOARDING_TASKS
+            ])
+        return checklist
 
 
 # Offboarding Checklist Update
