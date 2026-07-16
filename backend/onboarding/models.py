@@ -104,6 +104,7 @@ class OnboardingChecklist(models.Model):
 
     def __str__(self):
         return f"{self.employee} - Onboarding Checklist"
+
     def __str__(self):
         return f"{self.employee} - Onboarding Checklist"
 

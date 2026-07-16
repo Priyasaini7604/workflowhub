@@ -72,7 +72,9 @@ class OnboardingTaskCreateView(generics.CreateAPIView):
             action='create',
             model_name='OnboardingTask',
             object_id=task.id,
-            description=f'Onboarding task "{task.task_name}" created for {task.employee}',
+            description=f'Onboarding task "{
+                task.task_name}" created for {
+                task.employee}',
             request=self.request
         )
 
@@ -92,10 +94,12 @@ class OnboardingTaskUpdateView(generics.UpdateAPIView):
             action='update',
             model_name='OnboardingTask',
             object_id=task.id,
-            description=f'Onboarding task "{task.task_name}" marked as {task.status}',
+            description=f'Onboarding task "{
+                task.task_name}" marked as {
+                task.status}',
             request=self.request
         )
-    
+
         # --- Sync specific tasks to checklist ---
         checklist, _ = OnboardingChecklist.objects.get_or_create(
             employee=task.employee
@@ -157,6 +161,8 @@ class OnboardingChecklistView(generics.RetrieveAPIView):
         return checklist
 
 # Onboarding Checklist Update
+
+
 class OnboardingChecklistUpdateView(generics.UpdateAPIView):
     queryset = OnboardingChecklist.objects.all()
     serializer_class = OnboardingChecklistUpdateSerializer
@@ -169,6 +175,7 @@ class OnboardingChecklistUpdateView(generics.UpdateAPIView):
             action='update',
             model_name='OnboardingChecklist',
             object_id=checklist.id,
-            description=f'Onboarding checklist updated for {checklist.employee}',
+            description=f'Onboarding checklist updated for {
+                checklist.employee}',
             request=self.request
         )

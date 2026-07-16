@@ -53,7 +53,9 @@ class DocumentCreateView(generics.CreateAPIView):
             action='create',
             model_name='Document',
             object_id=document.id,
-            description=f'Document "{document.document_type}" uploaded for {document.employee}',
+            description=f'Document "{
+                document.document_type}" uploaded for {
+                document.employee}',
             request=self.request
         )
 
