@@ -22,6 +22,13 @@ const DOCUMENT_TYPE_LABELS = {
 // everything else (resume, aadhaar, etc.) belongs to onboarding.
 const OFFBOARDING_DOCUMENT_TYPES = ["exit_document", "other"];
 
+const EXIT_REASON_CHOICES = [
+  { value: "resignation", label: "Resignation" },
+  { value: "termination", label: "Termination" },
+  { value: "contract_end", label: "Contract End" },
+  { value: "retirement", label: "Retirement" },
+];
+
 const OffboardingPage = () => {
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -29,6 +36,9 @@ const OffboardingPage = () => {
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [tasks, setTasks] = useState([]);
   const [checklist, setChecklist] = useState(null);
+  const [exitReasonInput, setExitReasonInput] = useState("");
+  const [resignationDateInput, setResignationDateInput] = useState("");
+  const [savingExitInfo, setSavingExitInfo] = useState(false);
   const [documents, setDocuments] = useState([]);
   const [auditLogs, setAuditLogs] = useState([]);
   const [tasksLoading, setTasksLoading] = useState(false);
@@ -58,6 +68,8 @@ const OffboardingPage = () => {
       // avoids a race where tasks/ resolves before those default rows exist.
       const checklistResponse = await axiosInstance.get(`/offboarding/${employeeId}/checklist/`);
       setChecklist(checklistResponse.data);
+      setExitReasonInput(checklistResponse.data.exit_reason || "");
+      setResignationDateInput(checklistResponse.data.resignation_date || "");
 
       const [tasksResponse, documentsResponse, auditLogsResponse] = await Promise.all([
         axiosInstance.get(`/offboarding/${employeeId}/tasks/`),
@@ -106,6 +118,22 @@ const OffboardingPage = () => {
       console.error("Failed to verify document", err);
     } finally {
       setVerifyingDocId(null);
+    }
+  };
+
+  const handleSaveExitInfo = async () => {
+    if (!checklist?.id) return;
+    setSavingExitInfo(true);
+    try {
+      await axiosInstance.patch(`/offboarding/checklist/${checklist.id}/update/`, {
+        exit_reason: exitReasonInput || "",
+        resignation_date: resignationDateInput || null,
+      });
+      fetchOffboardingData(selectedEmployee.id);
+    } catch (err) {
+      console.error("Failed to save exit info", err);
+    } finally {
+      setSavingExitInfo(false);
     }
   };
 
@@ -253,14 +281,28 @@ const OffboardingPage = () => {
                         </div>
                       </div>
 
-                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px", marginBottom: "16px" }}>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px", marginBottom: "10px", alignItems: "end" }}>
                         <div>
-                          <p style={{ fontSize: "11px", color: "#64748b", margin: "0 0 4px", letterSpacing: "0.8px" }}>EXIT REASON</p>
-                          <p style={{ fontSize: "13px", color: "#f1f5f9", margin: 0, textTransform: "capitalize" }}>{checklist.exit_reason || "—"}</p>
+                          <label style={{ display: "block", fontSize: "11px", color: "#64748b", margin: "0 0 4px", letterSpacing: "0.8px" }}>EXIT REASON</label>
+                          <select
+                            value={exitReasonInput}
+                            onChange={(e) => setExitReasonInput(e.target.value)}
+                            style={{ width: "100%", background: "#0f1a2e", border: "0.5px solid #1e3a5f", borderRadius: "6px", padding: "7px 8px", fontSize: "12px", color: "#f1f5f9", outline: "none", boxSizing: "border-box" }}
+                          >
+                            <option value="">Select reason</option>
+                            {EXIT_REASON_CHOICES.map((r) => (
+                              <option key={r.value} value={r.value}>{r.label}</option>
+                            ))}
+                          </select>
                         </div>
                         <div>
-                          <p style={{ fontSize: "11px", color: "#64748b", margin: "0 0 4px", letterSpacing: "0.8px" }}>RESIGNATION DATE</p>
-                          <p style={{ fontSize: "13px", color: "#f1f5f9", margin: 0 }}>{checklist.resignation_date || "—"}</p>
+                          <label style={{ display: "block", fontSize: "11px", color: "#64748b", margin: "0 0 4px", letterSpacing: "0.8px" }}>RESIGNATION DATE</label>
+                          <input
+                            type="date"
+                            value={resignationDateInput}
+                            onChange={(e) => setResignationDateInput(e.target.value)}
+                            style={{ width: "100%", background: "#0f1a2e", border: "0.5px solid #1e3a5f", borderRadius: "6px", padding: "7px 8px", fontSize: "12px", color: "#f1f5f9", outline: "none", boxSizing: "border-box" }}
+                          />
                         </div>
                         <div>
                           <p style={{ fontSize: "11px", color: "#64748b", margin: "0 0 4px", letterSpacing: "0.8px" }}>EXIT INTERVIEW</p>
@@ -269,6 +311,14 @@ const OffboardingPage = () => {
                           </span>
                         </div>
                       </div>
+
+                      <button
+                        onClick={handleSaveExitInfo}
+                        disabled={savingExitInfo}
+                        style={{ background: "#2563eb", color: "#eff6ff", border: "none", borderRadius: "6px", padding: "6px 14px", fontSize: "12px", cursor: "pointer", marginBottom: "16px", opacity: savingExitInfo ? 0.6 : 1 }}
+                      >
+                        {savingExitInfo ? "Saving..." : "Save Exit Info"}
+                      </button>
 
                       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
                         {[

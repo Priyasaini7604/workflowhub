@@ -3,6 +3,47 @@ import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../api/axiosInstance";
 
+// Shared responsive styles injected once for all dashboards
+const DashboardResponsiveStyles = () => (
+  <style>{`
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+      margin-bottom: 2rem;
+    }
+    .dashboard-actions-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 12px;
+    }
+    @media (max-width: 640px) {
+      .dashboard-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+      }
+      .dashboard-actions-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+      }
+      .dashboard-card {
+        padding: 14px !important;
+      }
+      .dashboard-card-value {
+        font-size: 22px !important;
+      }
+      .dashboard-title {
+        font-size: 18px !important;
+      }
+    }
+    @media (max-width: 380px) {
+      .dashboard-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  `}</style>
+);
+
 // ============ SUPER ADMIN DASHBOARD ============
 const SuperAdminDashboard = ({ navigate }) => {
   const [stats, setStats] = useState({ employees: "--", assets: "--", active: "--", available: "--" });
@@ -31,29 +72,30 @@ const SuperAdminDashboard = ({ navigate }) => {
 
   return (
     <div>
+      <DashboardResponsiveStyles />
       <div style={{ marginBottom: "2rem" }}>
-        <h2 style={{ fontSize: "22px", fontWeight: 500, color: "#f1f5f9", margin: "0 0 4px" }}>Super Admin Dashboard</h2>
+        <h2 className="dashboard-title" style={{ fontSize: "22px", fontWeight: 500, color: "#f1f5f9", margin: "0 0 4px" }}>Super Admin Dashboard</h2>
         <p style={{ fontSize: "13px", color: "#64748b", margin: 0 }}>Full system overview</p>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "16px", marginBottom: "2rem" }}>
+      <div className="dashboard-grid">
         {[
           { label: "TOTAL EMPLOYEES", value: stats.employees, color: "#3b82f6", bg: "#1e3a5f", path: "/employees" },
           { label: "ACTIVE EMPLOYEES", value: stats.active, color: "#10b981", bg: "#064e3b", path: "/employees" },
           { label: "TOTAL ASSETS", value: stats.assets, color: "#f59e0b", bg: "#451a03", path: "/assets" },
           { label: "AVAILABLE ASSETS", value: stats.available, color: "#818cf8", bg: "#1e1b4b", path: "/assets" },
         ].map((item) => (
-          <div key={item.label} onClick={() => navigate(item.path)}
+          <div key={item.label} className="dashboard-card" onClick={() => navigate(item.path)}
             style={{ background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "12px", padding: "20px", cursor: "pointer" }}>
             <p style={{ fontSize: "11px", color: "#64748b", margin: "0 0 8px", letterSpacing: "0.8px" }}>{item.label}</p>
-            <p style={{ fontSize: "28px", fontWeight: 500, color: item.color, margin: 0 }}>{item.value}</p>
+            <p className="dashboard-card-value" style={{ fontSize: "28px", fontWeight: 500, color: item.color, margin: 0 }}>{item.value}</p>
           </div>
         ))}
       </div>
 
       <div style={{ background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "12px", padding: "24px" }}>
         <h3 style={{ fontSize: "14px", fontWeight: 500, color: "#f1f5f9", margin: "0 0 16px" }}>Quick Actions</h3>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "12px" }}>
+        <div className="dashboard-actions-grid">
           {[
             { label: "Add Employee", bg: "#1e3a5f", color: "#3b82f6", path: "/employees/add" },
             { label: "Add Asset", bg: "#064e3b", color: "#10b981", path: "/assets/add" },
@@ -95,29 +137,30 @@ const HRAdminDashboard = ({ navigate }) => {
 
   return (
     <div>
+      <DashboardResponsiveStyles />
       <div style={{ marginBottom: "2rem" }}>
-        <h2 style={{ fontSize: "22px", fontWeight: 500, color: "#f1f5f9", margin: "0 0 4px" }}>HR Admin Dashboard</h2>
+        <h2 className="dashboard-title" style={{ fontSize: "22px", fontWeight: 500, color: "#f1f5f9", margin: "0 0 4px" }}>HR Admin Dashboard</h2>
         <p style={{ fontSize: "13px", color: "#64748b", margin: 0 }}>Employee management overview</p>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "16px", marginBottom: "2rem" }}>
+      <div className="dashboard-grid">
         {[
           { label: "TOTAL EMPLOYEES", value: stats.employees, color: "#3b82f6" },
           { label: "ACTIVE", value: stats.active, color: "#10b981" },
           { label: "ON LEAVE", value: stats.on_leave, color: "#f59e0b" },
           { label: "INACTIVE", value: stats.inactive, color: "#94a3b8" },
         ].map((item) => (
-          <div key={item.label} onClick={() => navigate("/employees")}
+          <div key={item.label} className="dashboard-card" onClick={() => navigate("/employees")}
             style={{ background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "12px", padding: "20px", cursor: "pointer" }}>
             <p style={{ fontSize: "11px", color: "#64748b", margin: "0 0 8px", letterSpacing: "0.8px" }}>{item.label}</p>
-            <p style={{ fontSize: "28px", fontWeight: 500, color: item.color, margin: 0 }}>{item.value}</p>
+            <p className="dashboard-card-value" style={{ fontSize: "28px", fontWeight: 500, color: item.color, margin: 0 }}>{item.value}</p>
           </div>
         ))}
       </div>
 
       <div style={{ background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "12px", padding: "24px" }}>
         <h3 style={{ fontSize: "14px", fontWeight: 500, color: "#f1f5f9", margin: "0 0 16px" }}>Quick Actions</h3>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "12px" }}>
+        <div className="dashboard-actions-grid">
           {[
             { label: "Add Employee", bg: "#1e3a5f", color: "#3b82f6", path: "/employees/add" },
             { label: "Onboarding", bg: "#064e3b", color: "#10b981", path: "/onboarding" },
@@ -159,29 +202,30 @@ const ITManagerDashboard = ({ navigate }) => {
 
   return (
     <div>
+      <DashboardResponsiveStyles />
       <div style={{ marginBottom: "2rem" }}>
-        <h2 style={{ fontSize: "22px", fontWeight: 500, color: "#f1f5f9", margin: "0 0 4px" }}>IT Manager Dashboard</h2>
+        <h2 className="dashboard-title" style={{ fontSize: "22px", fontWeight: 500, color: "#f1f5f9", margin: "0 0 4px" }}>IT Manager Dashboard</h2>
         <p style={{ fontSize: "13px", color: "#64748b", margin: 0 }}>Asset management overview</p>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "16px", marginBottom: "2rem" }}>
+      <div className="dashboard-grid">
         {[
           { label: "TOTAL ASSETS", value: stats.total, color: "#3b82f6" },
           { label: "AVAILABLE", value: stats.available, color: "#10b981" },
           { label: "ASSIGNED", value: stats.assigned, color: "#f59e0b" },
           { label: "UNDER REPAIR", value: stats.repair, color: "#fca5a5" },
         ].map((item) => (
-          <div key={item.label} onClick={() => navigate("/assets")}
+          <div key={item.label} className="dashboard-card" onClick={() => navigate("/assets")}
             style={{ background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "12px", padding: "20px", cursor: "pointer" }}>
             <p style={{ fontSize: "11px", color: "#64748b", margin: "0 0 8px", letterSpacing: "0.8px" }}>{item.label}</p>
-            <p style={{ fontSize: "28px", fontWeight: 500, color: item.color, margin: 0 }}>{item.value}</p>
+            <p className="dashboard-card-value" style={{ fontSize: "28px", fontWeight: 500, color: item.color, margin: 0 }}>{item.value}</p>
           </div>
         ))}
       </div>
 
       <div style={{ background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "12px", padding: "24px" }}>
         <h3 style={{ fontSize: "14px", fontWeight: 500, color: "#f1f5f9", margin: "0 0 16px" }}>Quick Actions</h3>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "12px" }}>
+        <div className="dashboard-actions-grid">
           {[
             { label: "Add Asset", bg: "#064e3b", color: "#10b981", path: "/assets/add" },
             { label: "View Assets", bg: "#1e3a5f", color: "#3b82f6", path: "/assets" },
@@ -217,22 +261,23 @@ const ManagerDashboard = ({ navigate }) => {
 
   return (
     <div>
+      <DashboardResponsiveStyles />
       <div style={{ marginBottom: "2rem" }}>
-        <h2 style={{ fontSize: "22px", fontWeight: 500, color: "#f1f5f9", margin: "0 0 4px" }}>Manager Dashboard</h2>
+        <h2 className="dashboard-title" style={{ fontSize: "22px", fontWeight: 500, color: "#f1f5f9", margin: "0 0 4px" }}>Manager Dashboard</h2>
         <p style={{ fontSize: "13px", color: "#64748b", margin: 0 }}>Your team overview</p>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "16px", marginBottom: "2rem" }}>
-        <div onClick={() => navigate("/employees")}
+      <div className="dashboard-grid">
+        <div className="dashboard-card" onClick={() => navigate("/employees")}
           style={{ background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "12px", padding: "20px", cursor: "pointer" }}>
           <p style={{ fontSize: "11px", color: "#64748b", margin: "0 0 8px", letterSpacing: "0.8px" }}>TEAM MEMBERS</p>
-          <p style={{ fontSize: "28px", fontWeight: 500, color: "#3b82f6", margin: 0 }}>{stats.team}</p>
+          <p className="dashboard-card-value" style={{ fontSize: "28px", fontWeight: 500, color: "#3b82f6", margin: 0 }}>{stats.team}</p>
         </div>
       </div>
 
       <div style={{ background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "12px", padding: "24px" }}>
         <h3 style={{ fontSize: "14px", fontWeight: 500, color: "#f1f5f9", margin: "0 0 16px" }}>Quick Actions</h3>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "12px" }}>
+        <div className="dashboard-actions-grid">
           {[
             { label: "View Team", bg: "#1e3a5f", color: "#3b82f6", path: "/employees" },
             { label: "View Reports", bg: "#1e1b4b", color: "#818cf8", path: "/reports" },
@@ -250,22 +295,73 @@ const ManagerDashboard = ({ navigate }) => {
 
 // ============ EMPLOYEE DASHBOARD ============
 const EmployeeDashboard = ({ navigate, username }) => {
+  const [stats, setStats] = useState({ assets: "--", documents: "--", pending: "--" });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        // Get own employee profile first (gives us the employee id)
+        const profileRes = await axiosInstance.get("/employees/me/");
+        const empId = profileRes.data.id;
+
+        const [assetRes, docRes] = await Promise.all([
+          axiosInstance.get("/assets/"),
+          axiosInstance.get(`/documents/${empId}/list/`),
+        ]);
+
+        const allAssets = assetRes.data.results || assetRes.data;
+        const myAssets = allAssets.filter((a) => a.assigned_to?.id === empId);
+
+        const myDocuments = docRes.data.results || docRes.data;
+
+        setStats({
+          assets: myAssets.length,
+          documents: myDocuments.length,
+          pending: myDocuments.filter((d) => d.verification_status === "pending").length,
+        });
+      } catch (err) {
+        console.error("Failed to fetch employee dashboard stats", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchStats();
+  }, []);
+
   return (
     <div>
+      <DashboardResponsiveStyles />
       <div style={{ marginBottom: "2rem" }}>
-        <h2 style={{ fontSize: "22px", fontWeight: 500, color: "#f1f5f9", margin: "0 0 4px" }}>
+        <h2 className="dashboard-title" style={{ fontSize: "22px", fontWeight: 500, color: "#f1f5f9", margin: "0 0 4px" }}>
           Welcome, {username}! 👋
         </h2>
         <p style={{ fontSize: "13px", color: "#64748b", margin: 0 }}>Your personal workspace</p>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px" }}>
+      {/* Real-data stat cards */}
+      <div className="dashboard-grid">
         {[
-          { label: "My Profile", desc: "View and update your profile", icon: "👤", color: "#3b82f6", bg: "#1e3a5f", path: "/my-profile" },
-          { label: "My Assets", desc: "View assigned assets", icon: "💻", color: "#10b981", bg: "#064e3b", path: "/my-assets" },
-          { label: "My Documents", desc: "Upload and view documents", icon: "📄", color: "#f59e0b", bg: "#451a03", path: "/my-profile" },
+          { label: "MY ASSETS", value: loading ? "--" : stats.assets, color: "#10b981", path: "/my-assets" },
+          { label: "MY DOCUMENTS", value: loading ? "--" : stats.documents, color: "#f59e0b", path: "/my-profile" },
+          { label: "PENDING VERIFICATION", value: loading ? "--" : stats.pending, color: "#818cf8", path: "/my-profile" },
         ].map((item) => (
-          <div key={item.label} onClick={() => navigate(item.path)}
+          <div key={item.label} className="dashboard-card" onClick={() => navigate(item.path)}
+            style={{ background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "12px", padding: "20px", cursor: "pointer" }}>
+            <p style={{ fontSize: "11px", color: "#64748b", margin: "0 0 8px", letterSpacing: "0.8px" }}>{item.label}</p>
+            <p className="dashboard-card-value" style={{ fontSize: "28px", fontWeight: 500, color: item.color, margin: 0 }}>{item.value}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Navigation cards */}
+      <div className="dashboard-grid">
+        {[
+          { label: "My Profile", desc: "View and update your profile", icon: "👤", color: "#3b82f6", path: "/my-profile" },
+          { label: "My Assets", desc: "View assigned assets", icon: "💻", color: "#10b981", path: "/my-assets" },
+          { label: "My Documents", desc: "Upload and view documents", icon: "📄", color: "#f59e0b", path: "/my-profile" },
+        ].map((item) => (
+          <div key={item.label} className="dashboard-card" onClick={() => navigate(item.path)}
             style={{ background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "12px", padding: "20px", cursor: "pointer" }}>
             <span style={{ fontSize: "24px" }}>{item.icon}</span>
             <p style={{ fontSize: "14px", fontWeight: 500, color: item.color, margin: "8px 0 4px" }}>{item.label}</p>

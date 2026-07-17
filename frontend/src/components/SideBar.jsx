@@ -29,9 +29,9 @@ const menuItems = {
   ],
   employee: [
     { label: "Dashboard", icon: "🏠", path: "/dashboard" },
-    { label: "My Assets", icon: "💻", path: "/my-assets" },
-    { label: "My Leaves", icon: "📅", path: "/my-leaves" },
-    { label: "Documents", icon: "📄", path: "/documents" },
+    // { label: "My Assets", icon: "💻", path: "/my-assets" },
+    // { label: "My Leaves", icon: "📅", path: "/my-leaves" },
+    // { label: "Documents", icon: "📄", path: "/documents" },
     { label: "My Profile", icon: "👤", path: "/my-profile" },
   ],
 };

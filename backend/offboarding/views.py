@@ -1,6 +1,7 @@
 from rest_framework import generics, permissions
 from django.utils import timezone
 from audit.utils import create_audit_log
+from employees.models import Employee
 from .models import OffboardingTask, OffboardingChecklist
 from .serializers import (
     OffboardingTaskSerializer,
@@ -10,6 +11,27 @@ from .serializers import (
     OffboardingChecklistUpdateSerializer,
 )
 from permissions import IsHROrSuperAdmin, IsHROrManagerOrSuperAdmin
+
+def sync_employee_lifecycle_from_checklist(checklist):
+    """Keep Employee lifecycle fields in sync with the offboarding checklist,
+    so HR doesn't have to manually re-type the same dates in Edit Employee."""
+    employee = checklist.employee
+    today = timezone.now().date()
+    changed = False
+
+    if checklist.resignation_date and not employee.notice_period_start_date:
+        employee.notice_period_start_date = checklist.resignation_date
+        changed = True
+
+    if checklist.final_clearance_status and employee.current_status != 'inactive':
+        employee.last_working_date = today
+        employee.exit_date = today
+        employee.current_status = 'inactive'
+        employee.status_start_date = today
+        changed = True
+
+    if changed:
+        employee.save()
 
 DEFAULT_OFFBOARDING_TASKS = [
     ('Recover company laptop and IT assets', 'it'),
@@ -98,6 +120,7 @@ class OffboardingTaskUpdateView(generics.UpdateAPIView):
             description=f'Offboarding task "{task.task_name}" marked as {task.status}',
             request=self.request
         )
+        
 
         checklist, _ = OffboardingChecklist.objects.get_or_create(
             employee=task.employee
@@ -121,6 +144,7 @@ class OffboardingTaskUpdateView(generics.UpdateAPIView):
             checklist.final_clearance_status = True
 
         checklist.save()
+        sync_employee_lifecycle_from_checklist(checklist)
 
 
 # Offboarding Task Archive — Soft Delete
@@ -184,3 +208,5 @@ class OffboardingChecklistUpdateView(generics.UpdateAPIView):
             description=f'Offboarding checklist updated for {checklist.employee}',
             request=self.request
         )
+        sync_employee_lifecycle_from_checklist(checklist)
+
