@@ -1,7 +1,6 @@
 from rest_framework import generics, permissions
 from django.utils import timezone
 from audit.utils import create_audit_log
-from employees.models import Employee
 from .models import OffboardingTask, OffboardingChecklist
 from .serializers import (
     OffboardingTaskSerializer,
