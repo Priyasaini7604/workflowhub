@@ -12,6 +12,7 @@ from .serializers import (
 )
 from permissions import IsHROrSuperAdmin, IsHROrManagerOrSuperAdmin
 
+
 def sync_employee_lifecycle_from_checklist(checklist):
     """Keep Employee lifecycle fields in sync with the offboarding checklist,
     so HR doesn't have to manually re-type the same dates in Edit Employee."""
@@ -32,6 +33,7 @@ def sync_employee_lifecycle_from_checklist(checklist):
 
     if changed:
         employee.save()
+
 
 DEFAULT_OFFBOARDING_TASKS = [
     ('Recover company laptop and IT assets', 'it'),
@@ -97,7 +99,9 @@ class OffboardingTaskCreateView(generics.CreateAPIView):
             action='create',
             model_name='OffboardingTask',
             object_id=task.id,
-            description=f'Offboarding task "{task.task_name}" created for {task.employee}',
+            description=f'Offboarding task "{
+                task.task_name}" created for {
+                task.employee}',
             request=self.request
         )
 
@@ -117,10 +121,11 @@ class OffboardingTaskUpdateView(generics.UpdateAPIView):
             action='update',
             model_name='OffboardingTask',
             object_id=task.id,
-            description=f'Offboarding task "{task.task_name}" marked as {task.status}',
+            description=f'Offboarding task "{
+                task.task_name}" marked as {
+                task.status}',
             request=self.request
         )
-        
 
         checklist, _ = OffboardingChecklist.objects.get_or_create(
             employee=task.employee
@@ -138,7 +143,8 @@ class OffboardingTaskUpdateView(generics.UpdateAPIView):
             elif task.task_name == 'Complete HR final settlement clearance':
                 checklist.hr_clearance_status = True
 
-        # Final clearance auto-derives once the four operational clearances are done
+        # Final clearance auto-derives once the four operational clearances are
+        # done
         if (checklist.asset_recovery_status and checklist.access_revocation_status
                 and checklist.manager_clearance_status and checklist.hr_clearance_status):
             checklist.final_clearance_status = True
@@ -205,8 +211,8 @@ class OffboardingChecklistUpdateView(generics.UpdateAPIView):
             action='update',
             model_name='OffboardingChecklist',
             object_id=checklist.id,
-            description=f'Offboarding checklist updated for {checklist.employee}',
+            description=f'Offboarding checklist updated for {
+                checklist.employee}',
             request=self.request
         )
         sync_employee_lifecycle_from_checklist(checklist)
-
