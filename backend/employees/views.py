@@ -2,7 +2,7 @@ from rest_framework import generics, permissions
 from .models import Employee
 from django.utils import timezone
 from .serializers import EmployeeSerializer, EmployeeListSerializer, EmployeeArchiveSerializer, EmployeeReportSerializer
-from permissions import IsHROrSuperAdmin, IsHROrManagerOrSuperAdmin,IsITAdmin
+from permissions import IsHROrSuperAdmin, IsHROrManagerOrSuperAdmin, IsITAdmin
 from audit.utils import create_audit_log
 
 # Employee List

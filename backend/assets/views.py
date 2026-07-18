@@ -126,7 +126,8 @@ class AssetUpdateView(generics.UpdateAPIView):
                     open_history.save()
 
                 # If this employee no longer holds ANY assets, and they have
-                # an offboarding checklist in progress, auto-tick Asset Recovery.
+                # an offboarding checklist in progress, auto-tick Asset
+                # Recovery.
                 self._maybe_mark_asset_recovery_complete(old_assigned_to)
 
             # Now assigned to someone new (fresh assignment or reassignment)
