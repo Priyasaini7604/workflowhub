@@ -2,7 +2,7 @@ from rest_framework import generics, permissions
 from .models import Employee
 from django.utils import timezone
 from .serializers import EmployeeSerializer, EmployeeListSerializer, EmployeeArchiveSerializer, EmployeeReportSerializer
-from permissions import IsHROrSuperAdmin, IsHROrManagerOrSuperAdmin
+from permissions import IsHROrSuperAdmin, IsHROrManagerOrSuperAdmin,IsITAdmin
 from audit.utils import create_audit_log
 
 # Employee List
@@ -10,7 +10,7 @@ from audit.utils import create_audit_log
 
 class EmployeeListView(generics.ListAPIView):
     serializer_class = EmployeeListSerializer
-    permission_classes = [IsHROrManagerOrSuperAdmin]
+    permission_classes = [IsHROrManagerOrSuperAdmin | IsITAdmin]
 
     def get_queryset(self):
         return Employee.objects.filter(is_archived=False)

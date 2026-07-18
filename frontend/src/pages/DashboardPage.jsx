@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../api/axiosInstance";
+import { getEffectiveAssetStatus } from "../utils/assetStatus";
 
 // Shared responsive styles injected once for all dashboards
 const DashboardResponsiveStyles = () => (
@@ -61,7 +62,7 @@ const SuperAdminDashboard = ({ navigate }) => {
           employees: employees.length,
           assets: assets.length,
           active: employees.filter(e => e.current_status === "active").length,
-          available: assets.filter(a => a.status === "available").length,
+          available: assets.filter(a => getEffectiveAssetStatus(a) === "available").length,
         });
       } catch (err) {
         console.error("Failed to fetch stats");
@@ -180,7 +181,7 @@ const HRAdminDashboard = ({ navigate }) => {
 
 // ============ IT MANAGER DASHBOARD ============
 const ITManagerDashboard = ({ navigate }) => {
-  const [stats, setStats] = useState({ total: "--", available: "--", assigned: "--", repair: "--" });
+  const [stats, setStats] = useState({ total: "--", available: "--", assigned: "--", repair: "--", retired: "--" });
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -189,9 +190,10 @@ const ITManagerDashboard = ({ navigate }) => {
         const assets = response.data.results || response.data;
         setStats({
           total: assets.length,
-          available: assets.filter(a => a.status === "available").length,
-          assigned: assets.filter(a => a.status === "assigned").length,
-          repair: assets.filter(a => a.status === "under_repair").length,
+          available: assets.filter(a => getEffectiveAssetStatus(a) === "available").length,
+          assigned: assets.filter(a => getEffectiveAssetStatus(a) === "assigned").length,
+          repair: assets.filter(a => getEffectiveAssetStatus(a) === "under_repair").length,
+          retired: assets.filter(a => getEffectiveAssetStatus(a) === "retired").length,
         });
       } catch (err) {
         console.error("Failed to fetch stats");
@@ -210,12 +212,13 @@ const ITManagerDashboard = ({ navigate }) => {
 
       <div className="dashboard-grid">
         {[
-          { label: "TOTAL ASSETS", value: stats.total, color: "#3b82f6" },
-          { label: "AVAILABLE", value: stats.available, color: "#10b981" },
-          { label: "ASSIGNED", value: stats.assigned, color: "#f59e0b" },
-          { label: "UNDER REPAIR", value: stats.repair, color: "#fca5a5" },
+          { label: "TOTAL ASSETS", value: stats.total, color: "#3b82f6", path: "/assets/stock-overview" },
+          { label: "AVAILABLE", value: stats.available, color: "#10b981", path: "/assets/stock-overview" },
+          { label: "ASSIGNED", value: stats.assigned, color: "#f59e0b", path: "/assets/stock-overview" },
+          { label: "UNDER REPAIR", value: stats.repair, color: "#fca5a5", path: "/assets/stock-overview" },
+          { label: "RETIRED", value: stats.retired, color: "#94a3b8", path: "/assets/stock-overview" },
         ].map((item) => (
-          <div key={item.label} className="dashboard-card" onClick={() => navigate("/assets")}
+          <div key={item.label} className="dashboard-card" onClick={() => navigate(item.path)}
             style={{ background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "12px", padding: "20px", cursor: "pointer" }}>
             <p style={{ fontSize: "11px", color: "#64748b", margin: "0 0 8px", letterSpacing: "0.8px" }}>{item.label}</p>
             <p className="dashboard-card-value" style={{ fontSize: "28px", fontWeight: 500, color: item.color, margin: 0 }}>{item.value}</p>
@@ -229,7 +232,9 @@ const ITManagerDashboard = ({ navigate }) => {
           {[
             { label: "Add Asset", bg: "#064e3b", color: "#10b981", path: "/assets/add" },
             { label: "View Assets", bg: "#1e3a5f", color: "#3b82f6", path: "/assets" },
-            { label: "View Reports", bg: "#1e1b4b", color: "#818cf8", path: "/reports" },
+            { label: "Stock Overview", bg: "#1e1b4b", color: "#818cf8", path: "/assets/stock-overview" },
+            { label: "Employee Assets", bg: "#0f1a2e", color: "#94a3b8", path: "/it/employee-assets" },
+            { label: "View Reports", bg: "#451a03", color: "#f59e0b", path: "/reports" },
           ].map((item) => (
             <button key={item.label} onClick={() => navigate(item.path)}
               style={{ background: item.bg, color: item.color, border: `0.5px solid ${item.color}33`, borderRadius: "8px", padding: "12px 16px", fontSize: "12px", fontWeight: 500, cursor: "pointer", textAlign: "left" }}>
@@ -343,8 +348,8 @@ const EmployeeDashboard = ({ navigate, username }) => {
       <div className="dashboard-grid">
         {[
           { label: "MY ASSETS", value: loading ? "--" : stats.assets, color: "#10b981", path: "/my-assets" },
-          { label: "MY DOCUMENTS", value: loading ? "--" : stats.documents, color: "#f59e0b", path: "/my-profile" },
-          { label: "PENDING VERIFICATION", value: loading ? "--" : stats.pending, color: "#818cf8", path: "/my-profile" },
+          { label: "MY DOCUMENTS", value: loading ? "--" : stats.documents, color: "#f59e0b", path: "/my-documents" },
+          { label: "PENDING VERIFICATION", value: loading ? "--" : stats.pending, color: "#818cf8", path: "/my-documents" },
         ].map((item) => (
           <div key={item.label} className="dashboard-card" onClick={() => navigate(item.path)}
             style={{ background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "12px", padding: "20px", cursor: "pointer" }}>
@@ -359,7 +364,7 @@ const EmployeeDashboard = ({ navigate, username }) => {
         {[
           { label: "My Profile", desc: "View and update your profile", icon: "👤", color: "#3b82f6", path: "/my-profile" },
           { label: "My Assets", desc: "View assigned assets", icon: "💻", color: "#10b981", path: "/my-assets" },
-          { label: "My Documents", desc: "Upload and view documents", icon: "📄", color: "#f59e0b", path: "/my-profile" },
+          { label: "My Documents", desc: "Upload and view documents", icon: "📄", color: "#f59e0b", path: "/my-documents" },
         ].map((item) => (
           <div key={item.label} className="dashboard-card" onClick={() => navigate(item.path)}
             style={{ background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "12px", padding: "20px", cursor: "pointer" }}>
@@ -382,9 +387,9 @@ const DashboardPage = () => {
     switch (user?.role) {
       case "superadmin":
         return <SuperAdminDashboard navigate={navigate} />;
-      case "hr_admin":
+      case "hr":
         return <HRAdminDashboard navigate={navigate} />;
-      case "it_manager":
+      case "it":
         return <ITManagerDashboard navigate={navigate} />;
       case "manager":
         return <ManagerDashboard navigate={navigate} />;

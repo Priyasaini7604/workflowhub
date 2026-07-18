@@ -102,7 +102,43 @@ class AssetUpdateView(generics.UpdateAPIView):
         return Asset.objects.filter(is_archived=False)
 
     def perform_update(self, serializer):
+        # Capture assignment state BEFORE save overwrites it in the DB.
+        # self.get_object() re-queries the DB — since serializer.save()
+        # hasn't run yet, this still reflects the pre-update row.
+        old_asset = self.get_object()
+        old_assigned_to = old_asset.assigned_to
+
         asset = serializer.save()
+        new_assigned_to = asset.assigned_to
+        today = timezone.now().date()
+
+        if old_assigned_to != new_assigned_to:
+            # Was assigned to someone before, and that's changed (returned,
+            # or reassigned to someone else) — close their open history row.
+            if old_assigned_to is not None:
+                open_history = AssetAllocationHistory.objects.filter(
+                    asset=asset,
+                    employee=old_assigned_to,
+                    returned_date__isnull=True
+                ).order_by('-assigned_date').first()
+                if open_history:
+                    open_history.returned_date = asset.asset_return_date or today
+                    open_history.save()
+
+                # If this employee no longer holds ANY assets, and they have
+                # an offboarding checklist in progress, auto-tick Asset Recovery.
+                self._maybe_mark_asset_recovery_complete(old_assigned_to)
+
+            # Now assigned to someone new (fresh assignment or reassignment)
+            # — open a new history row for them.
+            if new_assigned_to is not None:
+                AssetAllocationHistory.objects.create(
+                    asset=asset,
+                    employee=new_assigned_to,
+                    assigned_date=asset.asset_issue_date or today,
+                    assigned_by=self.request.user
+                )
+
         create_audit_log(
             user=self.request.user,
             action='update',
@@ -111,6 +147,28 @@ class AssetUpdateView(generics.UpdateAPIView):
             description=f'Asset {asset.asset_id} updated',
             request=self.request
         )
+
+    def _maybe_mark_asset_recovery_complete(self, employee):
+        # Local import avoids a circular import between the assets and
+        # offboarding apps at module load time.
+        from offboarding.models import OffboardingChecklist
+
+        still_holding_assets = Asset.objects.filter(
+            assigned_to=employee,
+            is_archived=False
+        ).exists()
+
+        if not still_holding_assets:
+            checklist = OffboardingChecklist.objects.filter(
+                employee=employee,
+                asset_recovery_status=False
+            ).first()
+            if checklist:
+                # Use .save() (not queryset .update()) so the model's
+                # overridden save() recalculates
+                # offboarding_completion_percentage correctly.
+                checklist.asset_recovery_status = True
+                checklist.save()
 
 
 # Asset Archive

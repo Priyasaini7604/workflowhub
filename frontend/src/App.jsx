@@ -18,6 +18,9 @@ import DocumentsPage from "./pages/DocumentsPage";
 import AuditLogsPage from "./pages/AuditLogsPage";
 import MyProfilePage from "./pages/MyProfilePage";
 import MyAssetsPage from "./pages/MyAssetsPage";
+import MyDocumentsPage from "./pages/MyDocumentsPage";
+import ITEmployeeAssetsPage from "./pages/ITEmployeeAssetsPage";
+import StockOverviewPage from "./pages/StockOverviewPage";
 
 const App = () => {
   return (
@@ -91,6 +94,16 @@ const App = () => {
     <Route path="/assets/:id" element={
         <ProtectedRoute><Layout><AssetDetailPage /></Layout></ProtectedRoute>
           } />
+          <Route
+      path="/assets/stock-overview"
+      element={
+        <ProtectedRoute>
+          <Layout>
+            <StockOverviewPage />
+          </Layout>
+        </ProtectedRoute>
+      }
+    />
           <Route
       path="/assets/:id/edit"
       element={
@@ -167,6 +180,26 @@ const App = () => {
     <ProtectedRoute>
       <Layout>
         <MyAssetsPage />
+      </Layout>
+    </ProtectedRoute>
+  }
+/>
+<Route
+  path="/my-documents"
+  element={
+    <ProtectedRoute>
+      <Layout>
+        <MyDocumentsPage />
+      </Layout>
+    </ProtectedRoute>
+  }
+/>
+<Route
+  path="/it/employee-assets"
+  element={
+    <ProtectedRoute>
+      <Layout>
+        <ITEmployeeAssetsPage />
       </Layout>
     </ProtectedRoute>
   }

@@ -13,7 +13,7 @@ const menuItems = {
     { label: "Offboarding", icon: "🚀", path: "/offboarding" },
     { label: "Audit Logs", icon: "📋", path: "/audit-logs" },
   ],
-  hr_admin: [
+  hr: [
     { label: "Dashboard", icon: "🏠", path: "/dashboard" },
     { label: "Employees", icon: "👥", path: "/employees" },
     { label: "Leave Management", icon: "📅", path: "/leaves" },
@@ -22,16 +22,18 @@ const menuItems = {
     { label: "Onboarding", icon: "🚀", path: "/onboarding" },
     { label: "Offboarding", icon: "🚀", path: "/offboarding" },
   ],
-  it_manager: [
+  it: [
     { label: "Dashboard", icon: "🏠", path: "/dashboard" },
     { label: "IT Assets", icon: "💻", path: "/assets" },
+    { label: "Stock Overview", icon: "📦", path: "/assets/stock-overview" },
+    { label: "Employee Assets", icon: "👥", path: "/it/employee-assets" },
     { label: "Reports", icon: "📊", path: "/reports" },
   ],
   employee: [
     { label: "Dashboard", icon: "🏠", path: "/dashboard" },
-    // { label: "My Assets", icon: "💻", path: "/my-assets" },
-    // { label: "My Leaves", icon: "📅", path: "/my-leaves" },
-    // { label: "Documents", icon: "📄", path: "/documents" },
+    { label: "My Assets", icon: "💻", path: "/my-assets" },
+    { label: "My Leaves", icon: "📅", path: "/my-leaves" },
+    { label: "My Documents", icon: "📄", path: "/my-documents" },
     { label: "My Profile", icon: "👤", path: "/my-profile" },
   ],
 };
@@ -50,6 +52,17 @@ const Sidebar = () => {
   };
 
   const firstLetter = user?.username?.charAt(0).toUpperCase() || "U";
+
+  // Splits a menu path like "/my-profile?tab=documents" into pathname + search
+  // so active-state highlighting works correctly even for query-param routes.
+  const isItemActive = (itemPath) => {
+    const [itemPathname, itemQuery] = itemPath.split("?");
+    if (location.pathname !== itemPathname) return false;
+    if (itemQuery) {
+      return location.search === `?${itemQuery}`;
+    }
+    return !location.search;
+  };
 
   return (
     <div style={{
@@ -90,7 +103,7 @@ const Sidebar = () => {
         {/* Menu Items */}
         <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
           {items.map((item) => {
-            const isActive = location.pathname === item.path;
+            const isActive = isItemActive(item.path);
             return (
               <button
                 key={item.path}

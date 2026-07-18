@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import axiosInstance from "../api/axiosInstance";
+import { useAuth } from "../context/AuthContext";
 
 const statusColors = {
   active: { bg: "#064e3b", text: "#10b981" },
@@ -12,7 +13,22 @@ const statusColors = {
 };
 
 const ReportsPage = () => {
-  const [activeTab, setActiveTab] = useState("employees");
+  const { user } = useAuth();
+  // IT Manager only gets asset-related reports — no employee/HR data access.
+  const isAssetOnly = user?.role === "it";
+
+  // assetReport rows (from /assets/report/) have `assigned_to_name` (a flat
+  // string), not the `assigned_to` object that getEffectiveAssetStatus
+  // expects (that helper is for the regular /assets/ list shape). So this
+  // page needs its own version for anything derived from assetReport.
+  const getReportAssetStatus = (asset) => {
+    if (asset.status === "retired") return "retired";
+    if (asset.status === "under_repair") return "under_repair";
+    if (asset.assigned_to_name) return "assigned";
+    return "available";
+  };
+
+  const [activeTab, setActiveTab] = useState(isAssetOnly ? "assets" : "employees");
   const [employeeReport, setEmployeeReport] = useState([]);
   const [assetReport, setAssetReport] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -22,20 +38,48 @@ const ReportsPage = () => {
     fetchReports();
   }, []);
 
+  const [assetEmployeeIdMap, setAssetEmployeeIdMap] = useState({});
+
   const fetchReports = async () => {
     setLoading(true);
+    setError("");
     try {
-      const [empResponse, assetResponse] = await Promise.all([
-        axiosInstance.get("/employees/report/"),
-        axiosInstance.get("/assets/report/"),
-      ]);
-      setEmployeeReport(empResponse.data.results || empResponse.data);
-      setAssetReport(assetResponse.data.results || assetResponse.data);
+      if (isAssetOnly) {
+        // Fetch report (for condition/warranty columns) AND the full assets
+        // list (which has assigned_to.employee_id) so we can show the
+        // employee ID next to the name — the report endpoint only gives a name.
+        const [assetResponse, fullAssetsResponse] = await Promise.all([
+          axiosInstance.get("/assets/report/"),
+          axiosInstance.get("/assets/"),
+        ]);
+        setAssetReport(assetResponse.data.results || assetResponse.data);
+        buildEmployeeIdMap(fullAssetsResponse.data.results || fullAssetsResponse.data);
+      } else {
+        const [empResponse, assetResponse, fullAssetsResponse] = await Promise.all([
+          axiosInstance.get("/employees/report/"),
+          axiosInstance.get("/assets/report/"),
+          axiosInstance.get("/assets/"),
+        ]);
+        setEmployeeReport(empResponse.data.results || empResponse.data);
+        setAssetReport(assetResponse.data.results || assetResponse.data);
+        buildEmployeeIdMap(fullAssetsResponse.data.results || fullAssetsResponse.data);
+      }
     } catch (err) {
       setError("Failed to load reports");
     } finally {
       setLoading(false);
     }
+  };
+
+  // Maps asset_id (e.g. "AST001") -> assigned employee's employee_id (e.g. "EMP001")
+  const buildEmployeeIdMap = (fullAssets) => {
+    const map = {};
+    fullAssets.forEach((a) => {
+      if (a.assigned_to?.employee_id) {
+        map[a.asset_id] = a.assigned_to.employee_id;
+      }
+    });
+    setAssetEmployeeIdMap(map);
   };
 
   const tabStyle = (tab) => ({
@@ -53,28 +97,36 @@ const ReportsPage = () => {
     <div>
       {/* Header */}
       <div style={{ marginBottom: "24px" }}>
-        <h2 style={{ fontSize: "22px", fontWeight: 500, color: "#f1f5f9", margin: "0 0 4px" }}>Reports & Analytics</h2>
-        <p style={{ fontSize: "13px", color: "#64748b", margin: 0 }}>View employee and asset reports</p>
+        <h2 style={{ fontSize: "22px", fontWeight: 500, color: "#f1f5f9", margin: "0 0 4px" }}>
+          {isAssetOnly ? "Asset Reports & Analytics" : "Reports & Analytics"}
+        </h2>
+        <p style={{ fontSize: "13px", color: "#64748b", margin: 0 }}>
+          {isAssetOnly ? "View IT asset reports" : "View employee and asset reports"}
+        </p>
       </div>
 
       {/* Stats Summary */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "12px", marginBottom: "24px" }}>
-        <div style={{ background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "12px", padding: "16px" }}>
-          <p style={{ fontSize: "11px", color: "#64748b", margin: "0 0 6px", letterSpacing: "0.8px" }}>TOTAL EMPLOYEES</p>
-          <p style={{ fontSize: "24px", fontWeight: 500, color: "#3b82f6", margin: 0 }}>{employeeReport.length}</p>
-        </div>
-        <div style={{ background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "12px", padding: "16px" }}>
-          <p style={{ fontSize: "11px", color: "#64748b", margin: "0 0 6px", letterSpacing: "0.8px" }}>ACTIVE</p>
-          <p style={{ fontSize: "24px", fontWeight: 500, color: "#10b981", margin: 0 }}>
-            {employeeReport.filter(e => e.current_status === "active").length}
-          </p>
-        </div>
-        <div style={{ background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "12px", padding: "16px" }}>
-          <p style={{ fontSize: "11px", color: "#64748b", margin: "0 0 6px", letterSpacing: "0.8px" }}>ON LEAVE</p>
-          <p style={{ fontSize: "24px", fontWeight: 500, color: "#f59e0b", margin: 0 }}>
-            {employeeReport.filter(e => e.current_status === "on_leave").length}
-          </p>
-        </div>
+        {!isAssetOnly && (
+          <>
+            <div style={{ background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "12px", padding: "16px" }}>
+              <p style={{ fontSize: "11px", color: "#64748b", margin: "0 0 6px", letterSpacing: "0.8px" }}>TOTAL EMPLOYEES</p>
+              <p style={{ fontSize: "24px", fontWeight: 500, color: "#3b82f6", margin: 0 }}>{employeeReport.length}</p>
+            </div>
+            <div style={{ background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "12px", padding: "16px" }}>
+              <p style={{ fontSize: "11px", color: "#64748b", margin: "0 0 6px", letterSpacing: "0.8px" }}>ACTIVE</p>
+              <p style={{ fontSize: "24px", fontWeight: 500, color: "#10b981", margin: 0 }}>
+                {employeeReport.filter(e => e.current_status === "active").length}
+              </p>
+            </div>
+            <div style={{ background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "12px", padding: "16px" }}>
+              <p style={{ fontSize: "11px", color: "#64748b", margin: "0 0 6px", letterSpacing: "0.8px" }}>ON LEAVE</p>
+              <p style={{ fontSize: "24px", fontWeight: 500, color: "#f59e0b", margin: 0 }}>
+                {employeeReport.filter(e => e.current_status === "on_leave").length}
+              </p>
+            </div>
+          </>
+        )}
         <div style={{ background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "12px", padding: "16px" }}>
           <p style={{ fontSize: "11px", color: "#64748b", margin: "0 0 6px", letterSpacing: "0.8px" }}>TOTAL ASSETS</p>
           <p style={{ fontSize: "24px", fontWeight: 500, color: "#3b82f6", margin: 0 }}>{assetReport.length}</p>
@@ -82,26 +134,44 @@ const ReportsPage = () => {
         <div style={{ background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "12px", padding: "16px" }}>
           <p style={{ fontSize: "11px", color: "#64748b", margin: "0 0 6px", letterSpacing: "0.8px" }}>AVAILABLE ASSETS</p>
           <p style={{ fontSize: "24px", fontWeight: 500, color: "#10b981", margin: 0 }}>
-            {assetReport.filter(a => a.status === "available").length}
+            {assetReport.filter(a => getReportAssetStatus(a) === "available").length}
           </p>
         </div>
         <div style={{ background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "12px", padding: "16px" }}>
           <p style={{ fontSize: "11px", color: "#64748b", margin: "0 0 6px", letterSpacing: "0.8px" }}>ASSIGNED ASSETS</p>
           <p style={{ fontSize: "24px", fontWeight: 500, color: "#f59e0b", margin: 0 }}>
-            {assetReport.filter(a => a.status === "assigned").length}
+            {assetReport.filter(a => getReportAssetStatus(a) === "assigned").length}
           </p>
         </div>
+        {isAssetOnly && (
+          <>
+            <div style={{ background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "12px", padding: "16px" }}>
+              <p style={{ fontSize: "11px", color: "#64748b", margin: "0 0 6px", letterSpacing: "0.8px" }}>UNDER REPAIR</p>
+              <p style={{ fontSize: "24px", fontWeight: 500, color: "#fca5a5", margin: 0 }}>
+                {assetReport.filter(a => getReportAssetStatus(a) === "under_repair").length}
+              </p>
+            </div>
+            <div style={{ background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "12px", padding: "16px" }}>
+              <p style={{ fontSize: "11px", color: "#64748b", margin: "0 0 6px", letterSpacing: "0.8px" }}>RETIRED</p>
+              <p style={{ fontSize: "24px", fontWeight: 500, color: "#94a3b8", margin: 0 }}>
+                {assetReport.filter(a => getReportAssetStatus(a) === "retired").length}
+              </p>
+            </div>
+          </>
+        )}
       </div>
 
-      {/* Tabs */}
-      <div style={{ display: "flex", gap: "8px", marginBottom: "16px" }}>
-        <button style={tabStyle("employees")} onClick={() => setActiveTab("employees")}>
-          👥 Employee Report
-        </button>
-        <button style={tabStyle("assets")} onClick={() => setActiveTab("assets")}>
-          💻 Asset Report
-        </button>
-      </div>
+      {/* Tabs — only show Employee Report tab if not asset-only */}
+      {!isAssetOnly && (
+        <div style={{ display: "flex", gap: "8px", marginBottom: "16px" }}>
+          <button style={tabStyle("employees")} onClick={() => setActiveTab("employees")}>
+            👥 Employee Report
+          </button>
+          <button style={tabStyle("assets")} onClick={() => setActiveTab("assets")}>
+            💻 Asset Report
+          </button>
+        </div>
+      )}
 
       {/* Error */}
       {error && (
@@ -118,92 +188,103 @@ const ReportsPage = () => {
       ) : (
         <>
           {/* Employee Report Table */}
-          {activeTab === "employees" && (
+          {!isAssetOnly && activeTab === "employees" && (
             <div style={{ background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "12px", overflow: "hidden" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                <thead>
-                  <tr style={{ borderBottom: "0.5px solid #1e293b" }}>
-                    <th style={{ padding: "14px 16px", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>EMPLOYEE ID</th>
-                    <th style={{ padding: "14px 16px", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>NAME</th>
-                    <th style={{ padding: "14px 16px", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>DEPARTMENT</th>
-                    <th style={{ padding: "14px 16px", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>DESIGNATION</th>
-                    <th style={{ padding: "14px 16px", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>STATUS</th>
-                    <th style={{ padding: "14px 16px", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>JOINING DATE</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {employeeReport.length === 0 ? (
-                    <tr>
-                      <td colSpan="6" style={{ padding: "40px", textAlign: "center", fontSize: "13px", color: "#475569" }}>No data found</td>
+              <div style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "700px" }}>
+                  <thead>
+                    <tr style={{ borderBottom: "0.5px solid #1e293b" }}>
+                      <th style={{ padding: "14px 16px", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>EMPLOYEE ID</th>
+                      <th style={{ padding: "14px 16px", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>NAME</th>
+                      <th style={{ padding: "14px 16px", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>DEPARTMENT</th>
+                      <th style={{ padding: "14px 16px", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>DESIGNATION</th>
+                      <th style={{ padding: "14px 16px", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>STATUS</th>
+                      <th style={{ padding: "14px 16px", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>JOINING DATE</th>
                     </tr>
-                  ) : (
-                    employeeReport.map((emp) => {
-                      const statusStyle = statusColors[emp.current_status] || statusColors.active;
-                      return (
-                        <tr key={emp.employee_id} style={{ borderBottom: "0.5px solid #1e293b" }}>
-                          <td style={{ padding: "14px 16px", fontSize: "12px", color: "#64748b" }}>{emp.employee_id}</td>
-                          <td style={{ padding: "14px 16px", fontSize: "13px", color: "#f1f5f9" }}>{emp.full_name}</td>
-                          <td style={{ padding: "14px 16px", fontSize: "12px", color: "#64748b" }}>{emp.department}</td>
-                          <td style={{ padding: "14px 16px", fontSize: "12px", color: "#64748b" }}>{emp.designation}</td>
-                          <td style={{ padding: "14px 16px" }}>
-                            <span style={{ background: statusStyle.bg, color: statusStyle.text, borderRadius: "20px", padding: "3px 10px", fontSize: "11px" }}>
-                              {emp.current_status}
-                            </span>
-                          </td>
-                          <td style={{ padding: "14px 16px", fontSize: "12px", color: "#64748b" }}>{emp.date_of_joining}</td>
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {employeeReport.length === 0 ? (
+                      <tr>
+                        <td colSpan="6" style={{ padding: "40px", textAlign: "center", fontSize: "13px", color: "#475569" }}>No data found</td>
+                      </tr>
+                    ) : (
+                      employeeReport.map((emp) => {
+                        const statusStyle = statusColors[emp.current_status] || statusColors.active;
+                        return (
+                          <tr key={emp.employee_id} style={{ borderBottom: "0.5px solid #1e293b" }}>
+                            <td style={{ padding: "14px 16px", fontSize: "12px", color: "#64748b" }}>{emp.employee_id}</td>
+                            <td style={{ padding: "14px 16px", fontSize: "13px", color: "#f1f5f9" }}>{emp.full_name}</td>
+                            <td style={{ padding: "14px 16px", fontSize: "12px", color: "#64748b" }}>{emp.department}</td>
+                            <td style={{ padding: "14px 16px", fontSize: "12px", color: "#64748b" }}>{emp.designation}</td>
+                            <td style={{ padding: "14px 16px" }}>
+                              <span style={{ background: statusStyle.bg, color: statusStyle.text, borderRadius: "20px", padding: "3px 10px", fontSize: "11px" }}>
+                                {emp.current_status}
+                              </span>
+                            </td>
+                            <td style={{ padding: "14px 16px", fontSize: "12px", color: "#64748b" }}>{emp.date_of_joining}</td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
 
           {/* Asset Report Table */}
-          {activeTab === "assets" && (
+          {(isAssetOnly || activeTab === "assets") && (
             <div style={{ background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "12px", overflow: "hidden" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                <thead>
-                  <tr style={{ borderBottom: "0.5px solid #1e293b" }}>
-                    <th style={{ padding: "14px 16px", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>ASSET ID</th>
-                    <th style={{ padding: "14px 16px", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>TYPE</th>
-                    <th style={{ padding: "14px 16px", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>MODEL</th>
-                    <th style={{ padding: "14px 16px", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>ASSIGNED TO</th>
-                    <th style={{ padding: "14px 16px", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>DEPARTMENT</th>
-                    <th style={{ padding: "14px 16px", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>STATUS</th>
-                    <th style={{ padding: "14px 16px", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>CONDITION</th>
-                    <th style={{ padding: "14px 16px", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>WARRANTY</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {assetReport.length === 0 ? (
-                    <tr>
-                      <td colSpan="8" style={{ padding: "40px", textAlign: "center", fontSize: "13px", color: "#475569" }}>No data found</td>
+              <div style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "800px" }}>
+                  <thead>
+                    <tr style={{ borderBottom: "0.5px solid #1e293b" }}>
+                      <th style={{ padding: "14px 16px", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>ASSET ID</th>
+                      <th style={{ padding: "14px 16px", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>TYPE</th>
+                      <th style={{ padding: "14px 16px", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>MODEL</th>
+                      <th style={{ padding: "14px 16px", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>ASSIGNED TO</th>
+                      <th style={{ padding: "14px 16px", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>DEPARTMENT</th>
+                      <th style={{ padding: "14px 16px", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>STATUS</th>
+                      <th style={{ padding: "14px 16px", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>CONDITION</th>
+                      <th style={{ padding: "14px 16px", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>WARRANTY</th>
                     </tr>
-                  ) : (
-                    assetReport.map((asset) => {
-                      const statusStyle = statusColors[asset.status] || statusColors.available;
-                      return (
-                        <tr key={asset.asset_id} style={{ borderBottom: "0.5px solid #1e293b" }}>
-                          <td style={{ padding: "14px 16px", fontSize: "12px", color: "#64748b" }}>{asset.asset_id}</td>
-                          <td style={{ padding: "14px 16px", fontSize: "12px", color: "#64748b" }}>{asset.asset_type}</td>
-                          <td style={{ padding: "14px 16px", fontSize: "12px", color: "#f1f5f9" }}>{asset.model_name || "—"}</td>
-                          <td style={{ padding: "14px 16px", fontSize: "12px", color: "#64748b" }}>{asset.assigned_to_name || "Unassigned"}</td>
-                          <td style={{ padding: "14px 16px", fontSize: "12px", color: "#64748b" }}>{asset.department || "—"}</td>
-                          <td style={{ padding: "14px 16px" }}>
-                            <span style={{ background: statusStyle.bg, color: statusStyle.text, borderRadius: "20px", padding: "3px 10px", fontSize: "11px" }}>
-                              {asset.status}
-                            </span>
-                          </td>
-                          <td style={{ padding: "14px 16px", fontSize: "12px", color: "#64748b" }}>{asset.condition}</td>
-                          <td style={{ padding: "14px 16px", fontSize: "12px", color: "#64748b" }}>{asset.warranty_expiry_date || "—"}</td>
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {assetReport.length === 0 ? (
+                      <tr>
+                        <td colSpan="8" style={{ padding: "40px", textAlign: "center", fontSize: "13px", color: "#475569" }}>No data found</td>
+                      </tr>
+                    ) : (
+                      assetReport.map((asset) => {
+                        const effectiveStatus = getReportAssetStatus(asset);
+                        const statusStyle = statusColors[effectiveStatus] || statusColors.available;
+                        return (
+                          <tr key={asset.asset_id} style={{ borderBottom: "0.5px solid #1e293b" }}>
+                            <td style={{ padding: "14px 16px", fontSize: "12px", color: "#64748b" }}>{asset.asset_id}</td>
+                            <td style={{ padding: "14px 16px", fontSize: "12px", color: "#64748b" }}>{asset.asset_type}</td>
+                            <td style={{ padding: "14px 16px", fontSize: "12px", color: "#f1f5f9" }}>{asset.model_name || "—"}</td>
+                            <td style={{ padding: "14px 16px", fontSize: "12px", color: "#64748b" }}>
+                              {asset.assigned_to_name
+                                ? assetEmployeeIdMap[asset.asset_id]
+                                  ? `${asset.assigned_to_name} (${assetEmployeeIdMap[asset.asset_id]})`
+                                  : asset.assigned_to_name
+                                : "Unassigned"}
+                            </td>
+                            <td style={{ padding: "14px 16px", fontSize: "12px", color: "#64748b" }}>{asset.department || "—"}</td>
+                            <td style={{ padding: "14px 16px" }}>
+                              <span style={{ background: statusStyle.bg, color: statusStyle.text, borderRadius: "20px", padding: "3px 10px", fontSize: "11px" }}>
+                                {effectiveStatus}
+                              </span>
+                            </td>
+                            <td style={{ padding: "14px 16px", fontSize: "12px", color: "#64748b" }}>{asset.condition}</td>
+                            <td style={{ padding: "14px 16px", fontSize: "12px", color: "#64748b" }}>{asset.warranty_expiry_date || "—"}</td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </>
