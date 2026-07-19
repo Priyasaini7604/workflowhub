@@ -1,7 +1,6 @@
 from rest_framework import generics, permissions
 from rest_framework.exceptions import PermissionDenied
 from django.utils import timezone
-from django.shortcuts import get_object_or_404
 from audit.utils import create_audit_log
 from employees.models import Employee
 from .models import OffboardingTask, OffboardingChecklist
@@ -135,7 +134,6 @@ class OffboardingTaskUpdateView(generics.UpdateAPIView):
                 assigned_to_role='manager',
                 employee__reporting_manager__user=user
             )
-
         return base
 
     def perform_update(self, serializer):
