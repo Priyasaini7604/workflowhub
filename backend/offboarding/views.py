@@ -210,7 +210,8 @@ class OffboardingChecklistView(generics.RetrieveAPIView):
         employee_id = self.kwargs.get('employee_id')
 
         # Manager can only view checklists for their own team members.
-        if user.role == 'manager' and not _is_managers_team_member(user, employee_id):
+        if user.role == 'manager' and not _is_managers_team_member(
+                user, employee_id):
             raise PermissionDenied(
                 "You can only view offboarding data for your own team members."
             )
