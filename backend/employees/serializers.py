@@ -56,6 +56,9 @@ class EmployeeSerializer(serializers.ModelSerializer):
 
 class EmployeeListSerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField()
+    # role lives on the linked User account, not on Employee itself —
+    # pull it through so the frontend can show it (HR/Manager/IT/etc).
+    role = serializers.CharField(source='user.role', read_only=True)
 
     class Meta:
         model = Employee
@@ -65,8 +68,13 @@ class EmployeeListSerializer(serializers.ModelSerializer):
             'full_name',
             'department',
             'designation',
+            'role',
             'current_status',
             'date_of_joining',
+            # Needed so the frontend can filter "my team" by matching this
+            # against the logged-in manager's own employee id. Without it,
+            # every manager's team always shows up empty.
+            'reporting_manager',
         ]
 
     def get_full_name(self, obj):

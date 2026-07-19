@@ -6,7 +6,6 @@ const menuItems = {
     { label: "Dashboard", icon: "🏠", path: "/dashboard" },
     { label: "Employees", icon: "👥", path: "/employees" },
     { label: "IT Assets", icon: "💻", path: "/assets" },
-    { label: "Leave Management", icon: "📅", path: "/leaves" },
     { label: "Documents", icon: "📄", path: "/documents" },
     { label: "Reports", icon: "📊", path: "/reports" },
     { label: "Onboarding", icon: "🚀", path: "/onboarding" },
@@ -16,7 +15,6 @@ const menuItems = {
   hr: [
     { label: "Dashboard", icon: "🏠", path: "/dashboard" },
     { label: "Employees", icon: "👥", path: "/employees" },
-    { label: "Leave Management", icon: "📅", path: "/leaves" },
     { label: "Documents", icon: "📄", path: "/documents" },
     { label: "Reports", icon: "📊", path: "/reports" },
     { label: "Onboarding", icon: "🚀", path: "/onboarding" },
@@ -37,7 +35,6 @@ const menuItems = {
   employee: [
     { label: "Dashboard", icon: "🏠", path: "/dashboard" },
     { label: "My Assets", icon: "💻", path: "/my-assets" },
-    { label: "My Leaves", icon: "📅", path: "/my-leaves" },
     { label: "My Documents", icon: "📄", path: "/my-documents" },
     { label: "My Profile", icon: "👤", path: "/my-profile" },
   ],

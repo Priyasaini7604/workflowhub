@@ -8,6 +8,22 @@ const statusColors = {
   on_leave: { bg: "#451a03", text: "#f59e0b" },
 };
 
+const roleColors = {
+  superadmin: { bg: "#1e1b4b", text: "#818cf8" },
+  hr: { bg: "#064e3b", text: "#10b981" },
+  manager: { bg: "#451a03", text: "#f59e0b" },
+  it: { bg: "#1e3a5f", text: "#3b82f6" },
+  employee: { bg: "#1e293b", text: "#94a3b8" },
+};
+
+const roleLabels = {
+  superadmin: "Super Admin",
+  hr: "HR",
+  manager: "Manager",
+  it: "IT Admin",
+  employee: "Employee",
+};
+
 const EmployeesPage = () => {
   const navigate = useNavigate();
   const [employees, setEmployees] = useState([]);
@@ -79,65 +95,74 @@ const EmployeesPage = () => {
         </div>
       ) : (
         <div style={{ background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "12px", overflow: "hidden" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <thead>
-              <tr style={{ borderBottom: "0.5px solid #1e293b" }}>
-                <th style={{ padding: "14px 16px", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>NAME</th>
-                <th style={{ padding: "14px 16px", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>EMPLOYEE ID</th>
-                <th style={{ padding: "14px 16px", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>DEPARTMENT</th>
-                <th style={{ padding: "14px 16px", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>DESIGNATION</th>
-                <th style={{ padding: "14px 16px", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>STATUS</th>
-                <th style={{ padding: "14px 16px", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>ACTIONS</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredEmployees.length === 0 ? (
-                <tr>
-                  <td colSpan="6" style={{ padding: "40px", textAlign: "center", fontSize: "13px", color: "#475569" }}>
-                    No employees found
-                  </td>
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "800px" }}>
+              <thead>
+                <tr style={{ borderBottom: "0.5px solid #1e293b" }}>
+                  <th style={{ padding: "14px 16px", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>NAME</th>
+                  <th style={{ padding: "14px 16px", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>EMPLOYEE ID</th>
+                  <th style={{ padding: "14px 16px", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>DEPARTMENT</th>
+                  <th style={{ padding: "14px 16px", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>DESIGNATION</th>
+                  <th style={{ padding: "14px 16px", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>ROLE</th>
+                  <th style={{ padding: "14px 16px", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>STATUS</th>
+                  <th style={{ padding: "14px 16px", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>ACTIONS</th>
                 </tr>
-              ) : (
-                filteredEmployees.map((emp) => {
-                  const statusStyle = statusColors[emp.current_status] || statusColors.active;
-                  return (
-                    <tr key={emp.id} style={{ borderBottom: "0.5px solid #1e293b" }}>
-                      <td style={{ padding: "14px 16px" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                          <div style={{ width: "32px", height: "32px", background: "#1e3a5f", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                            <span style={{ fontSize: "12px", color: "#3b82f6", fontWeight: 500 }}>
-                              {emp.full_name?.charAt(0).toUpperCase()}
-                            </span>
+              </thead>
+              <tbody>
+                {filteredEmployees.length === 0 ? (
+                  <tr>
+                    <td colSpan="7" style={{ padding: "40px", textAlign: "center", fontSize: "13px", color: "#475569" }}>
+                      No employees found
+                    </td>
+                  </tr>
+                ) : (
+                  filteredEmployees.map((emp) => {
+                    const statusStyle = statusColors[emp.current_status] || statusColors.active;
+                    const roleStyle = roleColors[emp.role] || roleColors.employee;
+                    return (
+                      <tr key={emp.id} style={{ borderBottom: "0.5px solid #1e293b" }}>
+                        <td style={{ padding: "14px 16px" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                            <div style={{ width: "32px", height: "32px", background: "#1e3a5f", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                              <span style={{ fontSize: "12px", color: "#3b82f6", fontWeight: 500 }}>
+                                {emp.full_name?.charAt(0).toUpperCase()}
+                              </span>
+                            </div>
+                            <p style={{ fontSize: "13px", color: "#f1f5f9", margin: 0, whiteSpace: "nowrap" }}>
+                              {emp.full_name}
+                            </p>
                           </div>
-                          <p style={{ fontSize: "13px", color: "#f1f5f9", margin: 0, whiteSpace: "nowrap" }}>
-                            {emp.full_name}
-                          </p>
-                        </div>
-                      </td>
-                      <td style={{ padding: "14px 16px", fontSize: "12px", color: "#64748b" }}>{emp.employee_id}</td>
-                      <td style={{ padding: "14px 16px", fontSize: "12px", color: "#64748b" }}>{emp.department}</td>
-                      <td style={{ padding: "14px 16px", fontSize: "12px", color: "#64748b" }}>{emp.designation}</td>
-                      <td style={{ padding: "14px 16px" }}>
-                        <span style={{ background: statusStyle.bg, color: statusStyle.text, borderRadius: "20px", padding: "3px 10px", fontSize: "11px" }}>
-                          {emp.current_status}
-                        </span>
-                      </td>
-                      <td style={{ padding: "14px 16px" }}>
-                        <div style={{ display: "flex", gap: "6px" }}>
-                          <button
-                            onClick={() => navigate(`/employees/${emp.id}`)}
-                            style={{ background: "#1e3a5f", color: "#3b82f6", border: "none", borderRadius: "6px", padding: "5px 10px", fontSize: "11px", cursor: "pointer" }}>View</button>
-                          <button
-                            onClick={() => navigate(`/employees/${emp.id}/edit`)}
-                            style={{ background: "#064e3b", color: "#10b981", border: "none", borderRadius: "6px", padding: "5px 10px", fontSize: "11px", cursor: "pointer" }}>Edit</button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
+                        </td>
+                        <td style={{ padding: "14px 16px", fontSize: "12px", color: "#64748b" }}>{emp.employee_id}</td>
+                        <td style={{ padding: "14px 16px", fontSize: "12px", color: "#64748b" }}>{emp.department}</td>
+                        <td style={{ padding: "14px 16px", fontSize: "12px", color: "#64748b" }}>{emp.designation}</td>
+                        <td style={{ padding: "14px 16px" }}>
+                          <span style={{ background: roleStyle.bg, color: roleStyle.text, borderRadius: "20px", padding: "3px 10px", fontSize: "11px" }}>
+                            {roleLabels[emp.role] || emp.role || "—"}
+                          </span>
+                        </td>
+                        <td style={{ padding: "14px 16px" }}>
+                          <span style={{ background: statusStyle.bg, color: statusStyle.text, borderRadius: "20px", padding: "3px 10px", fontSize: "11px" }}>
+                            {emp.current_status}
+                          </span>
+                        </td>
+                        <td style={{ padding: "14px 16px" }}>
+                          <div style={{ display: "flex", gap: "6px" }}>
+                            <button
+                              onClick={() => navigate(`/employees/${emp.id}`)}
+                              style={{ background: "#1e3a5f", color: "#3b82f6", border: "none", borderRadius: "6px", padding: "5px 10px", fontSize: "11px", cursor: "pointer" }}>View</button>
+                            <button
+                              onClick={() => navigate(`/employees/${emp.id}/edit`)}
+                              style={{ background: "#064e3b", color: "#10b981", border: "none", borderRadius: "6px", padding: "5px 10px", fontSize: "11px", cursor: "pointer" }}>Edit</button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>

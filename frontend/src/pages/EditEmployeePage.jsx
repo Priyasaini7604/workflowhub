@@ -375,8 +375,8 @@ const EditEmployeePage = () => {
                 <option value="">Select Manager</option>
                 {managers.filter(m => m.id !== parseInt(id)).map((m) => (
                   <option key={m.id} value={m.id}>
-                    {m.first_name} {m.last_name} — {m.designation}
-                  </option>
+                  {m.full_name} — {m.designation}
+                </option>
                 ))}
               </select>
             </div>

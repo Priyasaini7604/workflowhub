@@ -119,12 +119,6 @@ const ReportsPage = () => {
                 {employeeReport.filter(e => e.current_status === "active").length}
               </p>
             </div>
-            <div style={{ background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "12px", padding: "16px" }}>
-              <p style={{ fontSize: "11px", color: "#64748b", margin: "0 0 6px", letterSpacing: "0.8px" }}>ON LEAVE</p>
-              <p style={{ fontSize: "24px", fontWeight: 500, color: "#f59e0b", margin: 0 }}>
-                {employeeReport.filter(e => e.current_status === "on_leave").length}
-              </p>
-            </div>
           </>
         )}
         <div style={{ background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "12px", padding: "16px" }}>
