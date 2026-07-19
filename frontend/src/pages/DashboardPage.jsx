@@ -248,15 +248,29 @@ const ITManagerDashboard = ({ navigate }) => {
 };
 
 // ============ MANAGER DASHBOARD ============
+const getManagerId = (emp) => {
+  if (!emp.reporting_manager) return null;
+  return typeof emp.reporting_manager === "object" ? emp.reporting_manager.id : emp.reporting_manager;
+};
+
 const ManagerDashboard = ({ navigate }) => {
-  const [stats, setStats] = useState({ team: "--" });
+  const [stats, setStats] = useState({ team: "--", active: "--", inactive: "--" });
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const response = await axiosInstance.get("/employees/");
-        const employees = response.data.results || response.data;
-        setStats({ team: employees.length });
+        const meRes = await axiosInstance.get("/employees/me/");
+        const myId = meRes.data.id;
+
+        const allRes = await axiosInstance.get("/employees/");
+        const allEmployees = allRes.data.results || allRes.data;
+        const team = allEmployees.filter((emp) => getManagerId(emp) === myId);
+
+        setStats({
+          team: team.length,
+          active: team.filter((e) => e.current_status === "active").length,
+          inactive: team.filter((e) => e.current_status === "inactive").length,
+        });
       } catch (err) {
         console.error("Failed to fetch stats");
       }
@@ -273,19 +287,24 @@ const ManagerDashboard = ({ navigate }) => {
       </div>
 
       <div className="dashboard-grid">
-        <div className="dashboard-card" onClick={() => navigate("/employees")}
-          style={{ background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "12px", padding: "20px", cursor: "pointer" }}>
-          <p style={{ fontSize: "11px", color: "#64748b", margin: "0 0 8px", letterSpacing: "0.8px" }}>TEAM MEMBERS</p>
-          <p className="dashboard-card-value" style={{ fontSize: "28px", fontWeight: 500, color: "#3b82f6", margin: 0 }}>{stats.team}</p>
-        </div>
+        {[
+          { label: "TEAM MEMBERS", value: stats.team, color: "#3b82f6" },
+          { label: "ACTIVE", value: stats.active, color: "#10b981" },
+          { label: "INACTIVE", value: stats.inactive, color: "#94a3b8" },
+        ].map((item) => (
+          <div key={item.label} className="dashboard-card" onClick={() => navigate("/my-team")}
+            style={{ background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "12px", padding: "20px", cursor: "pointer" }}>
+            <p style={{ fontSize: "11px", color: "#64748b", margin: "0 0 8px", letterSpacing: "0.8px" }}>{item.label}</p>
+            <p className="dashboard-card-value" style={{ fontSize: "28px", fontWeight: 500, color: item.color, margin: 0 }}>{item.value}</p>
+          </div>
+        ))}
       </div>
 
       <div style={{ background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "12px", padding: "24px" }}>
         <h3 style={{ fontSize: "14px", fontWeight: 500, color: "#f1f5f9", margin: "0 0 16px" }}>Quick Actions</h3>
         <div className="dashboard-actions-grid">
           {[
-            { label: "View Team", bg: "#1e3a5f", color: "#3b82f6", path: "/employees" },
-            { label: "View Reports", bg: "#1e1b4b", color: "#818cf8", path: "/reports" },
+            { label: "View My Team", bg: "#1e3a5f", color: "#3b82f6", path: "/my-team" },
           ].map((item) => (
             <button key={item.label} onClick={() => navigate(item.path)}
               style={{ background: item.bg, color: item.color, border: `0.5px solid ${item.color}33`, borderRadius: "8px", padding: "12px 16px", fontSize: "12px", fontWeight: 500, cursor: "pointer", textAlign: "left" }}>

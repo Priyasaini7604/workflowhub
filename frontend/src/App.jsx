@@ -21,6 +21,8 @@ import MyAssetsPage from "./pages/MyAssetsPage";
 import MyDocumentsPage from "./pages/MyDocumentsPage";
 import ITEmployeeAssetsPage from "./pages/ITEmployeeAssetsPage";
 import StockOverviewPage from "./pages/StockOverviewPage";
+import MyTeamPage from "./pages/MyTeamPage";
+import ManagerOffboardingPage from "./pages/ManagerOffboardingPage";
 
 const App = () => {
   return (
@@ -200,6 +202,26 @@ const App = () => {
     <ProtectedRoute>
       <Layout>
         <ITEmployeeAssetsPage />
+      </Layout>
+    </ProtectedRoute>
+  }
+/>
+<Route
+  path="/my-team"
+  element={
+    <ProtectedRoute>
+      <Layout>
+        <MyTeamPage />
+      </Layout>
+    </ProtectedRoute>
+  }
+/>
+<Route
+  path="/my-team/offboarding"
+  element={
+    <ProtectedRoute>
+      <Layout>
+        <ManagerOffboardingPage />
       </Layout>
     </ProtectedRoute>
   }

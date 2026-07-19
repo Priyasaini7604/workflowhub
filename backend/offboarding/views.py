@@ -1,6 +1,9 @@
 from rest_framework import generics, permissions
+from rest_framework.exceptions import PermissionDenied
 from django.utils import timezone
+from django.shortcuts import get_object_or_404
 from audit.utils import create_audit_log
+from employees.models import Employee
 from .models import OffboardingTask, OffboardingChecklist
 from .serializers import (
     OffboardingTaskSerializer,
@@ -32,6 +35,15 @@ def sync_employee_lifecycle_from_checklist(checklist):
 
     if changed:
         employee.save()
+
+
+def _is_managers_team_member(user, employee_id):
+    """A Manager may only touch offboarding data for employees who actually
+    report to them — this is checked against reporting_manager, not just role."""
+    return Employee.objects.filter(
+        id=employee_id,
+        reporting_manager__user=user
+    ).exists()
 
 
 DEFAULT_OFFBOARDING_TASKS = [
@@ -67,8 +79,10 @@ class OffboardingTaskListView(generics.ListAPIView):
                 is_archived=False
             )
 
-        # Manager
+        # Manager → Sirf apni team ke employees ke manager-tasks
         elif user.role == 'manager':
+            if not _is_managers_team_member(user, employee_id):
+                return OffboardingTask.objects.none()
             return OffboardingTask.objects.filter(
                 employee=employee_id,
                 assigned_to_role='manager',
@@ -111,7 +125,18 @@ class OffboardingTaskUpdateView(generics.UpdateAPIView):
     permission_classes = [IsHROrManagerOrSuperAdmin]
 
     def get_queryset(self):
-        return OffboardingTask.objects.filter(is_archived=False)
+        user = self.request.user
+        base = OffboardingTask.objects.filter(is_archived=False)
+
+        if user.role == 'manager':
+            # Manager can only update tasks assigned to the manager role,
+            # and only for employees who report to them.
+            return base.filter(
+                assigned_to_role='manager',
+                employee__reporting_manager__user=user
+            )
+
+        return base
 
     def perform_update(self, serializer):
         task = serializer.save()
@@ -181,7 +206,15 @@ class OffboardingChecklistView(generics.RetrieveAPIView):
     permission_classes = [IsHROrManagerOrSuperAdmin]
 
     def get_object(self):
+        user = self.request.user
         employee_id = self.kwargs.get('employee_id')
+
+        # Manager can only view checklists for their own team members.
+        if user.role == 'manager' and not _is_managers_team_member(user, employee_id):
+            raise PermissionDenied(
+                "You can only view offboarding data for your own team members."
+            )
+
         checklist, created = OffboardingChecklist.objects.get_or_create(
             employee_id=employee_id
         )

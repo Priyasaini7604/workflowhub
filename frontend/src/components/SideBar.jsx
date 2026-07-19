@@ -29,6 +29,11 @@ const menuItems = {
     { label: "Employee Assets", icon: "👥", path: "/it/employee-assets" },
     { label: "Reports", icon: "📊", path: "/reports" },
   ],
+  manager: [
+    { label: "Dashboard", icon: "🏠", path: "/dashboard" },
+    { label: "My Team", icon: "👥", path: "/my-team" },
+    { label: "Team Offboarding", icon: "📋", path: "/my-team/offboarding" },
+  ],
   employee: [
     { label: "Dashboard", icon: "🏠", path: "/dashboard" },
     { label: "My Assets", icon: "💻", path: "/my-assets" },
