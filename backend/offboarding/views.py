@@ -1,7 +1,6 @@
 from rest_framework import generics, permissions
 from rest_framework.exceptions import PermissionDenied
 from django.utils import timezone
-from django.shortcuts import get_object_or_404
 from audit.utils import create_audit_log
 from notifications.utils import notify, notify_many
 from users.models import User

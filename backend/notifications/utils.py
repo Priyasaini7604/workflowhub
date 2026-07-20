@@ -19,4 +19,3 @@ def notify_many(recipients, title, message, notification_type='general'):
     every user with role='hr' or role='it'."""
     for recipient in recipients:
         notify(recipient, title, message, notification_type)
-        
