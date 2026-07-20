@@ -2,6 +2,7 @@ from rest_framework import generics, permissions
 from django.utils import timezone
 from .models import Asset, AssetAllocationHistory
 from audit.utils import create_audit_log
+from notifications.utils import notify
 from .serializers import (
     AssetSerializer,
     AssetCreateSerializer,
@@ -125,6 +126,16 @@ class AssetUpdateView(generics.UpdateAPIView):
                     open_history.returned_date = asset.asset_return_date or today
                     open_history.save()
 
+                # Let the previous holder know their asset was taken back.
+                notify(
+                    recipient=getattr(old_assigned_to, 'user', None),
+                    title='Asset returned',
+                    message=f'{
+                        asset.asset_type} ({
+                        asset.asset_id}) has been unassigned from you.',
+                    notification_type='asset',
+                )
+
                 # If this employee no longer holds ANY assets, and they have
                 # an offboarding checklist in progress, auto-tick Asset
                 # Recovery.
@@ -138,6 +149,17 @@ class AssetUpdateView(generics.UpdateAPIView):
                     employee=new_assigned_to,
                     assigned_date=asset.asset_issue_date or today,
                     assigned_by=self.request.user
+                )
+
+                # Let the new holder know they've been assigned this asset.
+                notify(
+                    recipient=getattr(new_assigned_to, 'user', None),
+                    title='New asset assigned',
+                    message=f'{
+                        asset.brand} {
+                        asset.model_name} ({
+                        asset.asset_id}) has been assigned to you.',
+                    notification_type='asset',
                 )
 
         create_audit_log(

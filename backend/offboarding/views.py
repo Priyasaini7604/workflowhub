@@ -1,7 +1,10 @@
 from rest_framework import generics, permissions
 from rest_framework.exceptions import PermissionDenied
 from django.utils import timezone
+from django.shortcuts import get_object_or_404
 from audit.utils import create_audit_log
+from notifications.utils import notify, notify_many
+from users.models import User
 from employees.models import Employee
 from .models import OffboardingTask, OffboardingChecklist
 from .serializers import (
@@ -134,6 +137,7 @@ class OffboardingTaskUpdateView(generics.UpdateAPIView):
                 assigned_to_role='manager',
                 employee__reporting_manager__user=user
             )
+
         return base
 
     def perform_update(self, serializer):
@@ -173,6 +177,17 @@ class OffboardingTaskUpdateView(generics.UpdateAPIView):
 
         checklist.save()
         sync_employee_lifecycle_from_checklist(checklist)
+
+        if task.status == 'completed':
+            notify_many(
+                User.objects.filter(role='hr'),
+                title='Offboarding task completed',
+                message=f'"{
+                    task.task_name}" ({
+                    task.assigned_to_role}) completed for {
+                    task.employee}.',
+                notification_type='offboarding',
+            )
 
 
 # Offboarding Task Archive — Soft Delete
@@ -226,6 +241,44 @@ class OffboardingChecklistView(generics.RetrieveAPIView):
                 )
                 for name, role in DEFAULT_OFFBOARDING_TASKS
             ])
+
+            # Let each role responsible for a default task know offboarding
+            # has started — one notification per distinct role, not per task.
+            employee = checklist.employee
+            roles_notified = set()
+            for _, role in DEFAULT_OFFBOARDING_TASKS:
+                if role in roles_notified:
+                    continue
+                roles_notified.add(role)
+
+                if role == 'it':
+                    notify_many(
+                        User.objects.filter(role='it'),
+                        title='New offboarding task',
+                        message=f'{employee} is offboarding — please complete your IT tasks.',
+                        notification_type='offboarding',
+                    )
+                elif role == 'hr':
+                    notify_many(
+                        User.objects.filter(role='hr'),
+                        title='New offboarding task',
+                        message=f'{employee} is offboarding — please complete your HR tasks.',
+                        notification_type='offboarding',
+                    )
+                elif role == 'manager' and employee.reporting_manager:
+                    notify(
+                        getattr(employee.reporting_manager, 'user', None),
+                        title='New offboarding task',
+                        message=f'{employee} (your team member) is offboarding — please complete your sign-off task.',
+                        notification_type='offboarding',
+                    )
+                elif role == 'employee':
+                    notify(
+                        getattr(employee, 'user', None),
+                        title='Offboarding started',
+                        message='Your offboarding process has started.',
+                        notification_type='offboarding',
+                    )
         return checklist
 
 

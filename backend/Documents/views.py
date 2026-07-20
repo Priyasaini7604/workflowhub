@@ -1,6 +1,7 @@
 from rest_framework import generics, permissions
 from django.utils import timezone
 from audit.utils import create_audit_log
+from notifications.utils import notify
 from onboarding.models import OnboardingChecklist
 from .models import Document
 from .serializers import (
@@ -101,8 +102,15 @@ class DocumentVerifyView(generics.UpdateAPIView):
         return self.partial_update(request, *args, **kwargs)
 
     def perform_update(self, serializer):
+        # Accept 'verified' or 'rejected' from the request body. Defaults to
+        # 'verified' so any existing frontend call that doesn't send a
+        # status keeps behaving exactly as before.
+        new_status = self.request.data.get('verification_status', 'verified')
+        if new_status not in ('verified', 'rejected'):
+            new_status = 'verified'
+
         document = serializer.save(
-            verification_status='verified',
+            verification_status=new_status,
             verified_by=self.request.user,
             verified_at=timezone.now()
         )
@@ -118,7 +126,26 @@ class DocumentVerifyView(generics.UpdateAPIView):
             request=self.request
         )
 
-        # --- Sync with OnboardingChecklist ---
+        # Let the employee know either way.
+        if new_status == 'rejected':
+            notify(
+                recipient=getattr(document.employee, 'user', None),
+                title='Document rejected',
+                message=f'Your "{
+                    document.document_type}" document was rejected. Please re-upload a corrected copy.',
+                notification_type='general',
+            )
+            return  # rejected docs don't count toward onboarding completion
+
+        notify(
+            recipient=getattr(document.employee, 'user', None),
+            title='Document verified',
+            message=f'Your "{
+                document.document_type}" document has been verified.',
+            notification_type='general',
+        )
+
+        # --- Sync with OnboardingChecklist (only relevant when verified) ---
         checklist, _ = OnboardingChecklist.objects.get_or_create(
             employee=document.employee
         )

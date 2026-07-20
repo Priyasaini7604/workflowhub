@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import axiosInstance from "../api/axiosInstance";
-import { getEmployeeDocuments, verifyDocument } from "../api/documents";
+import { getEmployeeDocuments, verifyDocument, rejectDocument } from "../api/documents";
 import { getAuditLogs } from "../api/auditLogs";
 
 const statusColors = {
@@ -43,6 +43,7 @@ const OffboardingPage = () => {
   const [auditLogs, setAuditLogs] = useState([]);
   const [tasksLoading, setTasksLoading] = useState(false);
   const [verifyingDocId, setVerifyingDocId] = useState(null);
+  const [rejectingDocId, setRejectingDocId] = useState(null);
 
   useEffect(() => {
     fetchEmployees();
@@ -118,6 +119,19 @@ const OffboardingPage = () => {
       console.error("Failed to verify document", err);
     } finally {
       setVerifyingDocId(null);
+    }
+  };
+
+  const handleRejectDocument = async (documentId) => {
+    if (!window.confirm("Reject this document? The employee will be notified to re-upload it.")) return;
+    setRejectingDocId(documentId);
+    try {
+      await rejectDocument(documentId);
+      fetchOffboardingData(selectedEmployee.id);
+    } catch (err) {
+      console.error("Failed to reject document", err);
+    } finally {
+      setRejectingDocId(null);
     }
   };
 
@@ -351,7 +365,7 @@ const OffboardingPage = () => {
                         {documents.map((doc) => {
                           const statusStyle = statusColors[doc.verification_status] || statusColors.pending;
                           return (
-                            <div key={doc.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 12px", background: "#0f1a2e", border: "0.5px solid #1e293b", borderRadius: "8px" }}>
+                            <div key={doc.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "8px", padding: "10px 12px", background: "#0f1a2e", border: "0.5px solid #1e293b", borderRadius: "8px" }}>
                               <span style={{ fontSize: "13px", color: "#f1f5f9" }}>
                                 {DOCUMENT_TYPE_LABELS[doc.document_type] || doc.document_type}
                               </span>
@@ -372,13 +386,22 @@ const OffboardingPage = () => {
                                   <span style={{ fontSize: "11px", color: "#475569" }}>No file</span>
                                 )}
                                 {doc.verification_status === "pending" && (
-                                  <button
-                                    onClick={() => handleVerifyDocument(doc.id)}
-                                    disabled={verifyingDocId === doc.id}
-                                    style={{ background: "#1e3a5f", color: "#3b82f6", border: "none", borderRadius: "6px", padding: "5px 10px", fontSize: "11px", cursor: "pointer", opacity: verifyingDocId === doc.id ? 0.6 : 1 }}
-                                  >
-                                    {verifyingDocId === doc.id ? "Verifying..." : "Verify"}
-                                  </button>
+                                  <>
+                                    <button
+                                      onClick={() => handleVerifyDocument(doc.id)}
+                                      disabled={verifyingDocId === doc.id || rejectingDocId === doc.id}
+                                      style={{ background: "#1e3a5f", color: "#3b82f6", border: "none", borderRadius: "6px", padding: "5px 10px", fontSize: "11px", cursor: "pointer", opacity: verifyingDocId === doc.id ? 0.6 : 1 }}
+                                    >
+                                      {verifyingDocId === doc.id ? "Verifying..." : "Verify"}
+                                    </button>
+                                    <button
+                                      onClick={() => handleRejectDocument(doc.id)}
+                                      disabled={verifyingDocId === doc.id || rejectingDocId === doc.id}
+                                      style={{ background: "#450a0a", color: "#fca5a5", border: "none", borderRadius: "6px", padding: "5px 10px", fontSize: "11px", cursor: "pointer", opacity: rejectingDocId === doc.id ? 0.6 : 1 }}
+                                    >
+                                      {rejectingDocId === doc.id ? "Rejecting..." : "Reject"}
+                                    </button>
+                                  </>
                                 )}
                               </div>
                             </div>
@@ -387,7 +410,6 @@ const OffboardingPage = () => {
                       </div>
                     )}
                   </div>
-
                   {/* Tasks */}
                   <div style={{ background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "12px", padding: "20px", marginBottom: "16px" }}>
                     <h3 style={{ fontSize: "14px", fontWeight: 500, color: "#f1f5f9", margin: "0 0 16px", paddingBottom: "12px", borderBottom: "0.5px solid #1e293b" }}>
