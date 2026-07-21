@@ -1,8 +1,8 @@
-from rest_framework import generics
+from rest_framework import generics, permissions
 from .models import Employee
 from django.utils import timezone
 from .serializers import EmployeeSerializer, EmployeeListSerializer, EmployeeArchiveSerializer, EmployeeReportSerializer
-from permissions import IsHROrSuperAdmin, IsHROrManagerOrSuperAdmin
+from permissions import IsHROrSuperAdmin, IsHROrManagerOrSuperAdmin, IsITAdmin
 from audit.utils import create_audit_log
 
 # Employee List
@@ -10,20 +10,34 @@ from audit.utils import create_audit_log
 
 class EmployeeListView(generics.ListAPIView):
     serializer_class = EmployeeListSerializer
-    permission_classes = [IsHROrManagerOrSuperAdmin]
+    permission_classes = [IsHROrManagerOrSuperAdmin | IsITAdmin]
 
     def get_queryset(self):
         return Employee.objects.filter(is_archived=False)
 
 
 # Employee Create
+
 class EmployeeCreateView(generics.CreateAPIView):
     queryset = Employee.objects.all()
     serializer_class = EmployeeSerializer
     permission_classes = [IsHROrSuperAdmin]
 
+    def generate_employee_id(self):
+        existing_ids = Employee.objects.values_list('employee_id', flat=True)
+        num = 1
+        while True:
+            new_id = f"EMP{num:03d}"
+            if new_id not in existing_ids:
+                return new_id
+            num += 1
+
     def perform_create(self, serializer):
-        employee = serializer.save(created_by=self.request.user)
+        employee_id = self.generate_employee_id()
+        employee = serializer.save(
+            employee_id=employee_id,
+            created_by=self.request.user
+        )
         create_audit_log(
             user=self.request.user,
             action='create',
@@ -97,3 +111,11 @@ class EmployeeStatusReportView(generics.ListAPIView):
 
     def get_queryset(self):
         return Employee.objects.filter(is_archived=False)
+
+
+class MyProfileView(generics.RetrieveUpdateAPIView):
+    serializer_class = EmployeeSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_object(self):
+        return Employee.objects.get(user=self.request.user)

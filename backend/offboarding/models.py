@@ -105,5 +105,22 @@ class OffboardingChecklist(models.Model):
     is_archived = models.BooleanField(default=False)
     archived_at = models.DateTimeField(null=True, blank=True)
 
+    offboarding_completion_percentage = models.IntegerField(default=0)
+
+    def save(self, *args, **kwargs):
+        fields_to_check = [
+            self.exit_interview_status == 'completed',
+            self.asset_recovery_status,
+            self.access_revocation_status,
+            self.manager_clearance_status,
+            self.hr_clearance_status,
+            self.final_clearance_status,
+        ]
+        completed_count = sum(1 for f in fields_to_check if f)
+        self.offboarding_completion_percentage = int(
+            (completed_count / len(fields_to_check)) * 100
+        )
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return f"{self.employee} - Offboarding Checklist"

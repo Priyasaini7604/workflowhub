@@ -65,7 +65,10 @@ const EditAssetPage = () => {
         condition: asset.condition || "good",
         status: asset.status || "available",
         warranty_expiry_date: asset.warranty_expiry_date || "",
-        assigned_to: asset.assigned_to || "",
+        // asset.assigned_to comes back as a nested employee object
+        // ({id, full_name, ...}), but the <select> and the update PUT
+        // both need just the plain employee ID (pk). Extract it here.
+        assigned_to: asset.assigned_to?.id ?? "",
         asset_issue_date: asset.asset_issue_date || "",
         asset_return_date: asset.asset_return_date || "",
       });
@@ -73,6 +76,7 @@ const EditAssetPage = () => {
       setError("Failed to load asset data");
     } finally {
       setFetchLoading(false);
+      
     }
   };
 
@@ -104,6 +108,8 @@ const EditAssetPage = () => {
       warranty_expiry_date: formData.warranty_expiry_date || null,
       asset_issue_date: formData.asset_issue_date || null,
       asset_return_date: formData.asset_return_date || null,
+      // formData.assigned_to is always a plain ID (string/number) or ""
+      // now, thanks to the fix in fetchAsset — never send the whole object.
       assigned_to: formData.assigned_to || null,
     };
 

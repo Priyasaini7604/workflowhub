@@ -11,6 +11,15 @@ from .serializers import (
 )
 from permissions import IsHROrSuperAdmin, IsHROrManagerOrSuperAdmin
 
+DEFAULT_ONBOARDING_TASKS = [
+    ('Verify submitted documents', 'hr'),
+    ('Conduct background verification', 'hr'),
+    ('Setup IT assets (laptop, email, ID card)', 'it'),
+    ('Complete policy acceptance form', 'employee'),
+    ('Conduct induction session', 'hr'),
+    ('Introduce to reporting manager and team', 'manager'),
+]
+
 
 # Onboarding Task List of Employees
 class OnboardingTaskListView(generics.ListAPIView):
@@ -63,7 +72,9 @@ class OnboardingTaskCreateView(generics.CreateAPIView):
             action='create',
             model_name='OnboardingTask',
             object_id=task.id,
-            description=f'Onboarding task "{task.task_name}" created for {task.employee}',
+            description=f'Onboarding task "{
+                task.task_name}" created for {
+                task.employee}',
             request=self.request
         )
 
@@ -83,9 +94,26 @@ class OnboardingTaskUpdateView(generics.UpdateAPIView):
             action='update',
             model_name='OnboardingTask',
             object_id=task.id,
-            description=f'Onboarding task "{task.task_name}" updated',
+            description=f'Onboarding task "{
+                task.task_name}" marked as {
+                task.status}',
             request=self.request
         )
+
+        # --- Sync specific tasks to checklist ---
+        checklist, _ = OnboardingChecklist.objects.get_or_create(
+            employee=task.employee
+        )
+
+        if task.task_name == 'Conduct induction session' and task.status == 'completed':
+            checklist.induction_completed = True
+            checklist.save()
+
+        if task.task_name == 'Conduct background verification':
+            # Mirror task status directly onto checklist (pending/in_progress/completed)
+            # 'failed' is handled separately via manual override, not through task status
+            checklist.background_verification_status = task.status
+            checklist.save()
 
 
 # Onboarding Task Archive-Soft Delete
@@ -118,10 +146,23 @@ class OnboardingChecklistView(generics.RetrieveAPIView):
 
     def get_object(self):
         employee_id = self.kwargs.get('employee_id')
-        return OnboardingChecklist.objects.get(employee=employee_id)
-
+        checklist, created = OnboardingChecklist.objects.get_or_create(
+            employee_id=employee_id
+        )
+        if created:
+            OnboardingTask.objects.bulk_create([
+                OnboardingTask(
+                    employee_id=employee_id,
+                    task_name=name,
+                    assigned_to_role=role,
+                )
+                for name, role in DEFAULT_ONBOARDING_TASKS
+            ])
+        return checklist
 
 # Onboarding Checklist Update
+
+
 class OnboardingChecklistUpdateView(generics.UpdateAPIView):
     queryset = OnboardingChecklist.objects.all()
     serializer_class = OnboardingChecklistUpdateSerializer
@@ -134,6 +175,7 @@ class OnboardingChecklistUpdateView(generics.UpdateAPIView):
             action='update',
             model_name='OnboardingChecklist',
             object_id=checklist.id,
-            description=f'Onboarding checklist updated for {checklist.employee}',
+            description=f'Onboarding checklist updated for {
+                checklist.employee}',
             request=self.request
         )

@@ -242,7 +242,11 @@ const AssetDetailPage = () => {
             <tbody>
               {history.map((h) => (
                 <tr key={h.id} style={{ borderBottom: "0.5px solid #1e293b" }}>
-                  <td style={{ padding: "12px 0", fontSize: "12px", color: "#f1f5f9" }}>Employee #{h.employee}</td>
+                  <td style={{ padding: "12px 0", fontSize: "12px", color: "#f1f5f9" }}>
+                    {/* h.employee is a nested object ({id, full_name, employee_id, ...}),
+                        not a plain ID — render its name, not the object itself. */}
+                    {h.employee?.full_name || h.employee?.employee_id || "—"}
+                  </td>
                   <td style={{ padding: "12px 0", fontSize: "12px", color: "#64748b" }}>{h.assigned_date}</td>
                   <td style={{ padding: "12px 0", fontSize: "12px", color: "#64748b" }}>{h.returned_date || "—"}</td>
                   <td style={{ padding: "12px 0", fontSize: "12px", color: "#64748b" }}>{h.remarks || "—"}</td>

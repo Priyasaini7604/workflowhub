@@ -38,10 +38,10 @@ class OffboardingChecklistSerializer(serializers.ModelSerializer):
             'resignation_date', 'exit_reason', 'exit_interview_status',
             'asset_recovery_status', 'access_revocation_status',
             'manager_clearance_status', 'hr_clearance_status',
-            'final_clearance_status',
+            'final_clearance_status', 'offboarding_completion_percentage',
             'created_at', 'updated_at',
         ]
-        read_only_fields = ['id', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'offboarding_completion_percentage', 'created_at', 'updated_at']
 
 
 class OffboardingChecklistUpdateSerializer(serializers.ModelSerializer):
@@ -51,7 +51,7 @@ class OffboardingChecklistUpdateSerializer(serializers.ModelSerializer):
             'resignation_date', 'exit_reason', 'exit_interview_status',
             'asset_recovery_status', 'access_revocation_status',
             'manager_clearance_status', 'hr_clearance_status',
-            'final_clearance_status',
+            'final_clearance_status', 'offboarding_completion_percentage',
         ]
 
 

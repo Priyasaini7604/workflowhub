@@ -50,6 +50,9 @@ class OnboardingTask(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    is_archived = models.BooleanField(default=False)
+    archived_at = models.DateTimeField(null=True, blank=True)
+
     def __str__(self):
         return f"{self.employee} - {self.task_name}"
 
@@ -85,7 +88,22 @@ class OnboardingChecklist(models.Model):
     is_archived = models.BooleanField(default=False)
     archived_at = models.DateTimeField(null=True, blank=True)
 
+    def save(self, *args, **kwargs):
+        fields_to_check = [
+            self.offer_letter_uploaded,
+            self.documents_submitted,
+            self.documents_verified,
+            self.induction_completed,
+            self.background_verification_status == 'completed',
+        ]
+        completed_count = sum(1 for f in fields_to_check if f)
+        self.onboarding_completion_percentage = int(
+            (completed_count / len(fields_to_check)) * 100
+        )
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return f"{self.employee} - Onboarding Checklist"
+
 
 # Create your models here.

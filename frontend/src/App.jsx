@@ -16,6 +16,13 @@ import OffboardingPage from "./pages/OffboardingPage";
 import ReportsPage from "./pages/ReportsPage";
 import DocumentsPage from "./pages/DocumentsPage";
 import AuditLogsPage from "./pages/AuditLogsPage";
+import MyProfilePage from "./pages/MyProfilePage";
+import MyAssetsPage from "./pages/MyAssetsPage";
+import MyDocumentsPage from "./pages/MyDocumentsPage";
+import ITEmployeeAssetsPage from "./pages/ITEmployeeAssetsPage";
+import StockOverviewPage from "./pages/StockOverviewPage";
+import MyTeamPage from "./pages/MyTeamPage";
+import ManagerOffboardingPage from "./pages/ManagerOffboardingPage";
 
 const App = () => {
   return (
@@ -90,6 +97,16 @@ const App = () => {
         <ProtectedRoute><Layout><AssetDetailPage /></Layout></ProtectedRoute>
           } />
           <Route
+      path="/assets/stock-overview"
+      element={
+        <ProtectedRoute>
+          <Layout>
+            <StockOverviewPage />
+          </Layout>
+        </ProtectedRoute>
+      }
+    />
+          <Route
       path="/assets/:id/edit"
       element={
         <ProtectedRoute>
@@ -149,6 +166,66 @@ const App = () => {
     </ProtectedRoute>
   }
   />
+  <Route
+  path="/my-profile"
+  element={
+    <ProtectedRoute>
+      <Layout>
+        <MyProfilePage />
+      </Layout>
+    </ProtectedRoute>
+  }
+/>
+<Route
+  path="/my-assets"
+  element={
+    <ProtectedRoute>
+      <Layout>
+        <MyAssetsPage />
+      </Layout>
+    </ProtectedRoute>
+  }
+/>
+<Route
+  path="/my-documents"
+  element={
+    <ProtectedRoute>
+      <Layout>
+        <MyDocumentsPage />
+      </Layout>
+    </ProtectedRoute>
+  }
+/>
+<Route
+  path="/it/employee-assets"
+  element={
+    <ProtectedRoute>
+      <Layout>
+        <ITEmployeeAssetsPage />
+      </Layout>
+    </ProtectedRoute>
+  }
+/>
+<Route
+  path="/my-team"
+  element={
+    <ProtectedRoute>
+      <Layout>
+        <MyTeamPage />
+      </Layout>
+    </ProtectedRoute>
+  }
+/>
+<Route
+  path="/my-team/offboarding"
+  element={
+    <ProtectedRoute>
+      <Layout>
+        <ManagerOffboardingPage />
+      </Layout>
+    </ProtectedRoute>
+  }
+/>
       </Routes>
     </BrowserRouter>
   );

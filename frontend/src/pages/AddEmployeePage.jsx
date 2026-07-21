@@ -82,7 +82,7 @@ const AddEmployeePage = () => {
       const userResponse = await axiosInstance.post("/users/register/", {
         username: formData.username,
         email: formData.official_email,
-        password: "TempPass@123",  // backend override karega
+        password: "TempPass@123",  
         role: formData.role,
       });
 
@@ -104,7 +104,7 @@ const AddEmployeePage = () => {
         employee_type: formData.employee_type,
         work_mode: formData.work_mode,
         reporting_manager: formData.reporting_manager || null,
-        employee_id: "AUTO",  // backend override karega
+        
       });
 
       navigate("/employees");
@@ -313,8 +313,8 @@ const AddEmployeePage = () => {
                 <option value="">Select Manager</option>
                 {managers.map((m) => (
                   <option key={m.id} value={m.id}>
-                    {m.first_name} {m.last_name} — {m.designation}
-                  </option>
+                  {m.full_name} — {m.designation}
+                </option>
                 ))}
               </select>
             </div>
