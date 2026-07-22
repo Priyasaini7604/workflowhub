@@ -1,8 +1,10 @@
-from rest_framework import generics, permissions
+from rest_framework import generics, permissions,status
 from .models import Employee
 from django.utils import timezone
-from .serializers import EmployeeSerializer, EmployeeListSerializer, EmployeeArchiveSerializer, EmployeeReportSerializer
+from rest_framework.response import Response
+from .serializers import EmployeeSerializer, EmployeeListSerializer,EmployeeStatusUpdateSerializer, EmployeeArchiveSerializer, EmployeeReportSerializer
 from permissions import IsHROrSuperAdmin, IsHROrManagerOrSuperAdmin, IsITAdmin
+from .serializers import EmployeeStatusUpdateSerializer
 from audit.utils import create_audit_log
 
 # Employee List
@@ -119,3 +121,47 @@ class MyProfileView(generics.RetrieveUpdateAPIView):
 
     def get_object(self):
         return Employee.objects.get(user=self.request.user)
+
+class EmployeeStatusUpdateView(generics.GenericAPIView):
+    serializer_class = EmployeeStatusUpdateSerializer
+    permission_classes = [IsHROrSuperAdmin]
+    queryset = Employee.objects.filter(is_archived=False)
+
+    def patch(self, request, *args, **kwargs):
+        employee = self.get_object()
+        serializer = self.get_serializer(
+            data=request.data,
+            context={'employee': employee}
+        )
+        serializer.is_valid(raise_exception=True)
+
+        new_status = serializer.validated_data['new_status']
+        now = timezone.now()
+
+        
+        employee.current_status = new_status
+        employee.status_start_date = now.date()
+
+        if new_status == 'notice_period':
+            employee.notice_period_start_date = now.date()
+        elif new_status == 'offboarding':
+            employee.last_working_date = now.date()
+        elif new_status == 'exited':
+            employee.exit_date = now.date()
+
+        employee.updated_by = request.user
+        employee.save()
+
+        create_audit_log(
+            user=request.user,
+            action='update',
+            model_name='Employee',
+            object_id=employee.id,
+            description=f'Employee {employee.employee_id} status changed to {new_status}',
+            request=request
+        )
+
+        return Response(
+            {'message': f'Status updated to {new_status}', 'current_status': new_status},
+            status=status.HTTP_200_OK
+        )

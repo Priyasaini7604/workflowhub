@@ -3,9 +3,19 @@ import { useNavigate, useParams } from "react-router-dom";
 import axiosInstance from "../api/axiosInstance";
 
 const statusColors = {
+  joining_pending: { bg: "#1e293b", text: "#94a3b8" },
   active: { bg: "#064e3b", text: "#10b981" },
-  inactive: { bg: "#1e293b", text: "#94a3b8" },
-  on_leave: { bg: "#451a03", text: "#f59e0b" },
+  notice_period: { bg: "#451a03", text: "#f59e0b" },
+  offboarding: { bg: "#450a0a", text: "#f87171" },
+  exited: { bg: "#1e293b", text: "#64748b" },
+};
+
+const VALID_NEXT = {
+  joining_pending: ["active"],
+  active: ["notice_period"],
+  notice_period: ["offboarding"],
+  offboarding: ["exited"],
+  exited: [],
 };
 
 const EmployeeDetailPage = () => {
@@ -14,6 +24,8 @@ const EmployeeDetailPage = () => {
   const [employee, setEmployee] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [statusError, setStatusError] = useState("");
+  const [changingStatus, setChangingStatus] = useState(false);
 
   useEffect(() => {
     fetchEmployee();
@@ -38,6 +50,20 @@ const EmployeeDetailPage = () => {
       navigate("/employees");
     } catch (err) {
       setError("Failed to archive employee");
+    }
+  };
+
+  const handleStatusChange = async (newStatus) => {
+    if (!window.confirm(`Change status to "${newStatus}"?`)) return;
+    setChangingStatus(true);
+    setStatusError("");
+    try {
+      await axiosInstance.patch(`/employees/${id}/status/`, { new_status: newStatus });
+      fetchEmployee(); // refresh karke naya status dikhao
+    } catch (err) {
+      setStatusError(err.response?.data?.new_status?.[0] || "Failed to change status");
+    } finally {
+      setChangingStatus(false);
     }
   };
 
@@ -137,6 +163,8 @@ const EmployeeDetailPage = () => {
           <p style={{ fontSize: "13px", color: "#64748b", margin: "0 0 8px" }}>
             {employee?.designation} — {employee?.department}
           </p>
+
+          {/* Status row — badge + id + type + change-status dropdown, all in ONE row */}
           <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
             <span style={{ background: statusStyle.bg, color: statusStyle.text, borderRadius: "20px", padding: "3px 10px", fontSize: "11px" }}>
               {employee?.current_status}
@@ -147,7 +175,25 @@ const EmployeeDetailPage = () => {
             <span style={{ fontSize: "12px", color: "#475569" }}>
               {employee?.employee_type}
             </span>
+
+            {VALID_NEXT[employee?.current_status]?.length > 0 && (
+              <select
+                disabled={changingStatus}
+                onChange={(e) => e.target.value && handleStatusChange(e.target.value)}
+                value=""
+                style={{ background: "#0f1a2e", border: "0.5px solid #1e3a5f", borderRadius: "6px", padding: "4px 8px", fontSize: "11px", color: "#f1f5f9" }}
+              >
+                <option value="">Change Status →</option>
+                {VALID_NEXT[employee?.current_status].map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
+            )}
           </div>
+
+          {statusError && (
+            <p style={{ color: "#fca5a5", fontSize: "12px", marginTop: "6px" }}>{statusError}</p>
+          )}
         </div>
       </div>
 

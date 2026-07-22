@@ -122,3 +122,27 @@ class EmployeeReportSerializer(serializers.ModelSerializer):
         if hasattr(obj, 'onboarding_checklist'):
             return obj.onboarding_checklist.onboarding_completion_percentage
         return 0
+    
+class EmployeeStatusUpdateSerializer(serializers.Serializer):
+    new_status = serializers.ChoiceField(choices=Employee.STATUS_CHOICES)
+
+    # Valid transitions
+    VALID_TRANSITIONS = {
+        'joining_pending': ['active'],
+        'active': ['notice_period'],
+        'notice_period': ['offboarding'],
+        'offboarding': ['exited'],
+        'exited': [], 
+    }
+
+    def validate_new_status(self, value):
+        employee = self.context['employee']
+        current = employee.current_status
+
+        allowed_next = self.VALID_TRANSITIONS.get(current, [])
+        if value not in allowed_next:
+            raise serializers.ValidationError(
+                f"Cannot change status from '{current}' to '{value}'. "
+                f"Allowed next status: {allowed_next or 'none'}"
+            )
+        return value

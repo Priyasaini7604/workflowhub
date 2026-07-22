@@ -31,11 +31,6 @@ const BLOOD_GROUP_CHOICES = [
   { value: "AB-", label: "AB-" },
 ];
 
-const STATUS_CHOICES = [
-  { value: "active", label: "Active" },
-  { value: "inactive", label: "Inactive" },
-  { value: "on_leave", label: "On Leave" },
-];
 
 const EditEmployeePage = () => {
   const { id } = useParams();
@@ -64,13 +59,9 @@ const EditEmployeePage = () => {
     date_of_joining: "",
     employee_type: "permanent",
     work_mode: "office",
-    current_status: "active",
     reporting_manager: "",
     confirmation_date: "",
     probation_end_date: "",
-    notice_period_start_date: "",
-    last_working_date: "",
-    exit_date: "",
   });
 
   useEffect(() => {
@@ -102,13 +93,9 @@ const EditEmployeePage = () => {
         date_of_joining: emp.date_of_joining || "",
         employee_type: emp.employee_type || "permanent",
         work_mode: emp.work_mode || "office",
-        current_status: emp.current_status || "active",
         reporting_manager: emp.reporting_manager || "",
         confirmation_date: emp.confirmation_date || "",
         probation_end_date: emp.probation_end_date || "",
-        notice_period_start_date: emp.notice_period_start_date || "",
-        last_working_date: emp.last_working_date || "",
-        exit_date: emp.exit_date || "",
       });
     } catch (err) {
       setError("Failed to load employee data");
@@ -148,9 +135,6 @@ const EditEmployeePage = () => {
       date_of_birth: formData.date_of_birth || null,
       confirmation_date: formData.confirmation_date || null,
       probation_end_date: formData.probation_end_date || null,
-      notice_period_start_date: formData.notice_period_start_date || null,
-      last_working_date: formData.last_working_date || null,
-      exit_date: formData.exit_date || null,
       reporting_manager: formData.reporting_manager || null,
     };
 
@@ -362,14 +346,6 @@ const EditEmployeePage = () => {
               </select>
             </div>
             <div>
-              <label style={labelStyle}>CURRENT STATUS</label>
-              <select name="current_status" value={formData.current_status} onChange={handleChange} style={inputStyle}>
-                {STATUS_CHOICES.map((s) => (
-                  <option key={s.value} value={s.value}>{s.label}</option>
-                ))}
-              </select>
-            </div>
-            <div>
               <label style={labelStyle}>REPORTING MANAGER</label>
               <select name="reporting_manager" value={formData.reporting_manager} onChange={handleChange} style={inputStyle}>
                 <option value="">Select Manager</option>
@@ -387,28 +363,7 @@ const EditEmployeePage = () => {
           </div>
         </div>
 
-        {/* Section 5 — Lifecycle Info */}
-        <div style={sectionStyle}>
-          <h3 style={sectionTitleStyle}>📋 Lifecycle Information</h3>
-          <div style={gridStyle}>
-            <div>
-              <label style={labelStyle}>PROBATION END DATE</label>
-              <input name="probation_end_date" type="date" value={formData.probation_end_date} onChange={handleChange} style={inputStyle} />
-            </div>
-            <div>
-              <label style={labelStyle}>NOTICE PERIOD START</label>
-              <input name="notice_period_start_date" type="date" value={formData.notice_period_start_date} onChange={handleChange} style={inputStyle} />
-            </div>
-            <div>
-              <label style={labelStyle}>LAST WORKING DATE</label>
-              <input name="last_working_date" type="date" value={formData.last_working_date} onChange={handleChange} style={inputStyle} />
-            </div>
-            <div>
-              <label style={labelStyle}>EXIT DATE</label>
-              <input name="exit_date" type="date" value={formData.exit_date} onChange={handleChange} style={inputStyle} />
-            </div>
-          </div>
-        </div>
+  
 
         {/* Buttons */}
         <div style={{ display: "flex", gap: "12px" }}>
