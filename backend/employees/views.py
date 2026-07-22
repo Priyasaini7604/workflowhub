@@ -1,8 +1,8 @@
-from rest_framework import generics, permissions,status
+from rest_framework import generics, permissions, status
 from .models import Employee
 from django.utils import timezone
 from rest_framework.response import Response
-from .serializers import EmployeeSerializer, EmployeeListSerializer,EmployeeStatusUpdateSerializer, EmployeeArchiveSerializer, EmployeeReportSerializer
+from .serializers import EmployeeSerializer, EmployeeListSerializer, EmployeeStatusUpdateSerializer, EmployeeArchiveSerializer, EmployeeReportSerializer
 from permissions import IsHROrSuperAdmin, IsHROrManagerOrSuperAdmin, IsITAdmin
 from .serializers import EmployeeStatusUpdateSerializer
 from audit.utils import create_audit_log
@@ -122,6 +122,7 @@ class MyProfileView(generics.RetrieveUpdateAPIView):
     def get_object(self):
         return Employee.objects.get(user=self.request.user)
 
+
 class EmployeeStatusUpdateView(generics.GenericAPIView):
     serializer_class = EmployeeStatusUpdateSerializer
     permission_classes = [IsHROrSuperAdmin]
@@ -138,7 +139,6 @@ class EmployeeStatusUpdateView(generics.GenericAPIView):
         new_status = serializer.validated_data['new_status']
         now = timezone.now()
 
-        
         employee.current_status = new_status
         employee.status_start_date = now.date()
 
@@ -157,11 +157,13 @@ class EmployeeStatusUpdateView(generics.GenericAPIView):
             action='update',
             model_name='Employee',
             object_id=employee.id,
-            description=f'Employee {employee.employee_id} status changed to {new_status}',
+            description=f'Employee {
+                employee.employee_id} status changed to {new_status}',
             request=request
         )
 
         return Response(
-            {'message': f'Status updated to {new_status}', 'current_status': new_status},
+            {'message': f'Status updated to {new_status}',
+                'current_status': new_status},
             status=status.HTTP_200_OK
         )

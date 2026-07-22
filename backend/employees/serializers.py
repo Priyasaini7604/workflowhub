@@ -122,7 +122,8 @@ class EmployeeReportSerializer(serializers.ModelSerializer):
         if hasattr(obj, 'onboarding_checklist'):
             return obj.onboarding_checklist.onboarding_completion_percentage
         return 0
-    
+
+
 class EmployeeStatusUpdateSerializer(serializers.Serializer):
     new_status = serializers.ChoiceField(choices=Employee.STATUS_CHOICES)
 
@@ -132,7 +133,7 @@ class EmployeeStatusUpdateSerializer(serializers.Serializer):
         'active': ['notice_period'],
         'notice_period': ['offboarding'],
         'offboarding': ['exited'],
-        'exited': [], 
+        'exited': [],
     }
 
     def validate_new_status(self, value):

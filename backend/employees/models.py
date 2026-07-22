@@ -32,12 +32,12 @@ class Employee(models.Model):
     ]
 
     STATUS_CHOICES = [
-    ('joining_pending', 'Joining Pending'),
-    ('active', 'Active'),
-    ('notice_period', 'Notice Period'),
-    ('offboarding', 'Offboarding'),
-    ('exited', 'Exited'),
-]
+        ('joining_pending', 'Joining Pending'),
+        ('active', 'Active'),
+        ('notice_period', 'Notice Period'),
+        ('offboarding', 'Offboarding'),
+        ('exited', 'Exited'),
+    ]
 
     # --- Validators ---
     phone_validator = RegexValidator(
