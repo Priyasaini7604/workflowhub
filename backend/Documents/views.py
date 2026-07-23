@@ -154,14 +154,16 @@ class DocumentVerifyView(generics.UpdateAPIView):
             checklist.offer_letter_uploaded = True
             checklist.save()
 
-        onboarding_docs = Document.objects.filter(
-            employee=document.employee,
-            document_type__in=REQUIRED_ONBOARDING_DOCUMENT_TYPES,
-            is_archived=False
+        verified_types = set(
+            Document.objects.filter(
+                employee=document.employee,
+                document_type__in=REQUIRED_ONBOARDING_DOCUMENT_TYPES,
+                is_archived=False,
+                verification_status='verified'
+            ).values_list('document_type', flat=True)
         )
-        if onboarding_docs.exists() and all(
-            d.verification_status == 'verified' for d in onboarding_docs
-        ):
+
+        if set(REQUIRED_ONBOARDING_DOCUMENT_TYPES).issubset(verified_types):
             checklist.documents_verified = True
             checklist.save()
 
