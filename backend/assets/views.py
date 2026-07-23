@@ -222,7 +222,8 @@ class AssetArchiveView(generics.UpdateAPIView):
 
 
 # Asset Assign to the employees
-# Step 1: HR/IT Admin initiates assignment — asset goes to pending_acknowledgment, NOT assigned
+# Step 1: HR/IT Admin initiates assignment — asset goes to
+# pending_acknowledgment, NOT assigned
 class AssetAssignView(generics.UpdateAPIView):
     serializer_class = AssetCreateSerializer
     permission_classes = [IsITAdminOrSuperAdmin]
@@ -249,7 +250,10 @@ class AssetAssignView(generics.UpdateAPIView):
             Notification.objects.create(
                 recipient=asset.assigned_to.user,
                 title='New asset assigned',
-                message=f'{asset.brand} {asset.model_name} ({asset.asset_id}) has been assigned to you. Please review and acknowledge.',
+                message=f'{
+                    asset.brand} {
+                    asset.model_name} ({
+                    asset.asset_id}) has been assigned to you. Please review and acknowledge.',
                 notification_type='asset'
             )
 
@@ -258,11 +262,15 @@ class AssetAssignView(generics.UpdateAPIView):
             action='update',
             model_name='Asset',
             object_id=asset.id,
-            description=f'Asset {asset.asset_id} assignment initiated for {asset.assigned_to} — awaiting acknowledgment',
+            description=f'Asset {
+                asset.asset_id} assignment initiated for {
+                asset.assigned_to} — awaiting acknowledgment',
             request=self.request
         )
 
 # Step 2: Employee accepts or rejects — ONLY here status becomes 'assigned'
+
+
 class AssetAcknowledgeView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -274,14 +282,17 @@ class AssetAcknowledgeView(APIView):
 
         # Employee can only acknowledge their own pending asset
         if asset.assigned_to_id != request.user.employee_profile.id:
-            return Response({"error": "This asset is not assigned to you"}, status=403)
+            return Response(
+                {"error": "This asset is not assigned to you"}, status=403)
 
         if asset.status != 'pending_acknowledgment':
-            return Response({"error": "No pending acknowledgment for this asset"}, status=400)
+            return Response(
+                {"error": "No pending acknowledgment for this asset"}, status=400)
 
         action = request.data.get('action')  # 'accept' or 'reject'
         if action not in ['accept', 'reject']:
-            return Response({"error": "action must be 'accept' or 'reject'"}, status=400)
+            return Response(
+                {"error": "action must be 'accept' or 'reject'"}, status=400)
 
         history_entry = asset.allocation_history.filter(
             employee=asset.assigned_to, acknowledgment_status='pending'
@@ -296,7 +307,9 @@ class AssetAcknowledgeView(APIView):
             history_entry.acknowledged_at = timezone.now()
             history_entry.save()
 
-            audit_desc = f'Asset {asset.asset_id} acknowledged (accepted) by {asset.assigned_to}'
+            audit_desc = f'Asset {
+                asset.asset_id} acknowledged (accepted) by {
+                asset.assigned_to}'
         else:
             asset.status = 'available'
             rejected_employee = asset.assigned_to
@@ -308,7 +321,8 @@ class AssetAcknowledgeView(APIView):
             history_entry.acknowledged_at = timezone.now()
             history_entry.save()
 
-            audit_desc = f'Asset {asset.asset_id} rejected by {rejected_employee}, reverted to available'
+            audit_desc = f'Asset {
+                asset.asset_id} rejected by {rejected_employee}, reverted to available'
 
         create_audit_log(
             user=request.user,
@@ -320,6 +334,7 @@ class AssetAcknowledgeView(APIView):
         )
 
         return Response(AssetSerializer(asset).data)
+
 
 class AssetStatusReportView(generics.ListAPIView):
     serializer_class = AssetReportSerializer

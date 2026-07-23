@@ -66,7 +66,7 @@ class Asset(models.Model):
     )
 
     # Track the acknowledgment window
-   
+
     acknowledgment_requested_at = models.DateTimeField(null=True, blank=True)
     acknowledged_at = models.DateTimeField(null=True, blank=True)
 
@@ -98,7 +98,8 @@ class AssetAllocationHistory(models.Model):
     )
     acknowledgment_status = models.CharField(
         max_length=20,
-        choices=[('pending', 'Pending'), ('acknowledged', 'Acknowledged'), ('rejected', 'Rejected')],
+        choices=[('pending', 'Pending'), ('acknowledged',
+                                          'Acknowledged'), ('rejected', 'Rejected')],
         default='pending'
     )
     acknowledged_at = models.DateTimeField(null=True, blank=True)
