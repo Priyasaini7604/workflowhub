@@ -46,6 +46,7 @@ class AssetCreateSerializer(serializers.ModelSerializer):
             'assigned_to', 'asset_issue_date', 'asset_return_date', 'status',
             'condition', 'warranty_expiry_date',
         ]
+        read_only_fields = ['status']
 
     def validate_asset_id(self, value):
         qs = Asset.objects.filter(asset_id=value)

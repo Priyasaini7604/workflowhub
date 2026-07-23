@@ -6,6 +6,7 @@ import { getEffectiveAssetStatus } from "../utils/assetStatus";
 
 const statusColors = {
   available: { bg: "#064e3b", text: "#10b981" },
+  pending_acknowledgment: { bg: "#78350f", text: "#fbbf24" },
   assigned: { bg: "#1e3a5f", text: "#3b82f6" },
   under_repair: { bg: "#451a03", text: "#f59e0b" },
   retired: { bg: "#1e293b", text: "#94a3b8" },
@@ -40,13 +41,16 @@ const AssetsPage = () => {
   };
 
   const filteredAssets = assets
-    .filter((asset) => (isITOnlyAssigned ? getEffectiveAssetStatus(asset) === "assigned" : true))
-    .filter((asset) =>
-      asset.asset_id?.toLowerCase().includes(search.toLowerCase()) ||
-      asset.asset_type?.toLowerCase().includes(search.toLowerCase()) ||
-      asset.brand?.toLowerCase().includes(search.toLowerCase())
-    );
-
+  .filter((asset) => {
+    if (!isITOnlyAssigned) return true;
+    const status = getEffectiveAssetStatus(asset);
+    return status === "assigned" || status === "pending_acknowledgment";
+  })
+  .filter((asset) =>
+    asset.asset_id?.toLowerCase().includes(search.toLowerCase()) ||
+    asset.asset_type?.toLowerCase().includes(search.toLowerCase()) ||
+    asset.brand?.toLowerCase().includes(search.toLowerCase())
+  );
   return (
     <div>
       {/* Header */}

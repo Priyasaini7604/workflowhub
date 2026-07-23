@@ -5,6 +5,7 @@ import { getEffectiveAssetStatus } from "../utils/assetStatus";
 
 const statusColors = {
   available: { bg: "#064e3b", text: "#10b981" },
+  pending_acknowledgment: { bg: "#78350f", text: "#fbbf24" },
   assigned: { bg: "#1e3a5f", text: "#3b82f6" },
   under_repair: { bg: "#451a03", text: "#f59e0b" },
   retired: { bg: "#1e293b", text: "#94a3b8" },
@@ -25,6 +26,14 @@ const StockOverviewPage = () => {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
 
+  // Assign modal state
+  const [assignAsset, setAssignAsset] = useState(null); // asset object being assigned
+  const [employees, setEmployees] = useState([]);
+  const [selectedEmployee, setSelectedEmployee] = useState("");
+  const [issueDate, setIssueDate] = useState("");
+  const [assignError, setAssignError] = useState("");
+  const [assigning, setAssigning] = useState(false);
+
   useEffect(() => {
     fetchAssets();
   }, []);
@@ -41,9 +50,50 @@ const StockOverviewPage = () => {
     }
   };
 
-  // Stock Overview only tracks unassigned stock — assigned assets are shown
-  // on the IT Assets / Employee Assets pages instead.
-  const stockAssets = assets.filter((a) => getEffectiveAssetStatus(a) !== "assigned");
+  const openAssignModal = async (asset) => {
+    setAssignAsset(asset);
+    setSelectedEmployee("");
+    setIssueDate("");
+    setAssignError("");
+    try {
+      const res = await axiosInstance.get("/employees/");
+      setEmployees(res.data.results || res.data);
+    } catch (err) {
+      setAssignError("Failed to load employees");
+    }
+  };
+
+  const closeAssignModal = () => {
+    setAssignAsset(null);
+  };
+
+  const handleAssign = async () => {
+    if (!selectedEmployee) {
+      setAssignError("Please select an employee");
+      return;
+    }
+    setAssigning(true);
+    setAssignError("");
+    try {
+      await axiosInstance.patch(`/assets/${assignAsset.id}/assign/`, {
+        assigned_to: selectedEmployee,
+        asset_issue_date: issueDate || undefined,
+      });
+      closeAssignModal();
+      await fetchAssets();
+    } catch (err) {
+      setAssignError(err.response?.data?.error || "Failed to assign asset");
+    } finally {
+      setAssigning(false);
+    }
+  };
+
+  // Stock Overview only tracks unassigned, un-pending stock — assigned and
+  // pending-acknowledgment assets are shown on the IT Assets / Employee Assets pages instead.
+  const stockAssets = assets.filter((a) => {
+    const s = getEffectiveAssetStatus(a);
+    return s !== "assigned" && s !== "pending_acknowledgment";
+  });
 
   const counts = {
     all: stockAssets.length,
@@ -138,7 +188,7 @@ const StockOverviewPage = () => {
                   <th style={{ padding: "14px 16px", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>TYPE</th>
                   <th style={{ padding: "14px 16px", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>BRAND / MODEL</th>
                   <th style={{ padding: "14px 16px", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>STATUS</th>
-                  <th style={{ padding: "14px 16px", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>VIEW</th>
+                  <th style={{ padding: "14px 16px", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>ACTIONS</th>
                 </tr>
               </thead>
               <tbody>
@@ -169,11 +219,20 @@ const StockOverviewPage = () => {
                           </span>
                         </td>
                         <td style={{ padding: "14px 16px" }}>
-                          <button
-                            onClick={() => navigate(`/assets/${asset.id}`)}
-                            style={{ background: "#1e3a5f", color: "#3b82f6", border: "none", borderRadius: "6px", padding: "5px 10px", fontSize: "11px", cursor: "pointer" }}>
-                            View
-                          </button>
+                          <div style={{ display: "flex", gap: "6px" }}>
+                            <button
+                              onClick={() => navigate(`/assets/${asset.id}`)}
+                              style={{ background: "#1e3a5f", color: "#3b82f6", border: "none", borderRadius: "6px", padding: "5px 10px", fontSize: "11px", cursor: "pointer" }}>
+                              View
+                            </button>
+                            {effectiveStatus === "available" && (
+                              <button
+                                onClick={() => openAssignModal(asset)}
+                                style={{ background: "#064e3b", color: "#10b981", border: "none", borderRadius: "6px", padding: "5px 10px", fontSize: "11px", cursor: "pointer" }}>
+                                Assign
+                              </button>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     );
@@ -181,6 +240,61 @@ const StockOverviewPage = () => {
                 )}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* Assign Modal */}
+      {assignAsset && (
+        <div
+          style={{
+            position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+            background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100,
+          }}
+          onClick={closeAssignModal}
+        >
+          <div
+            style={{ background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "12px", padding: "24px", width: "360px" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 style={{ fontSize: "16px", color: "#f1f5f9", margin: "0 0 4px" }}>Assign Asset</h3>
+            <p style={{ fontSize: "12px", color: "#64748b", margin: "0 0 16px" }}>{assignAsset.asset_id} — {assignAsset.brand} {assignAsset.model_name}</p>
+
+            <label style={{ fontSize: "11px", color: "#64748b", letterSpacing: "0.8px" }}>ASSIGN TO EMPLOYEE</label>
+            <select
+              value={selectedEmployee}
+              onChange={(e) => setSelectedEmployee(e.target.value)}
+              style={{ width: "100%", background: "#060b14", border: "0.5px solid #1e293b", borderRadius: "8px", padding: "10px", color: "#f1f5f9", fontSize: "13px", margin: "6px 0 14px" }}
+            >
+              <option value="">Select employee</option>
+              {employees.map((emp) => (
+                <option key={emp.id} value={emp.id}>{emp.full_name || emp.first_name + " " + emp.last_name}</option>
+              ))}
+            </select>
+
+            <label style={{ fontSize: "11px", color: "#64748b", letterSpacing: "0.8px" }}>ISSUE DATE</label>
+            <input
+              type="date"
+              value={issueDate}
+              onChange={(e) => setIssueDate(e.target.value)}
+              style={{ width: "100%", background: "#060b14", border: "0.5px solid #1e293b", borderRadius: "8px", padding: "10px", color: "#f1f5f9", fontSize: "13px", margin: "6px 0 14px" }}
+            />
+
+            {assignError && <p style={{ fontSize: "12px", color: "#fca5a5", margin: "0 0 10px" }}>{assignError}</p>}
+
+            <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
+              <button
+                onClick={closeAssignModal}
+                style={{ background: "transparent", color: "#94a3b8", border: "0.5px solid #1e293b", borderRadius: "8px", padding: "8px 16px", fontSize: "12px", cursor: "pointer" }}>
+                Cancel
+              </button>
+              <button
+                onClick={handleAssign}
+                disabled={assigning}
+                style={{ background: "#2563eb", color: "#eff6ff", border: "none", borderRadius: "8px", padding: "8px 16px", fontSize: "12px", cursor: "pointer", opacity: assigning ? 0.6 : 1 }}>
+                {assigning ? "Assigning..." : "Confirm Assign"}
+              </button>
+            </div>
           </div>
         </div>
       )}

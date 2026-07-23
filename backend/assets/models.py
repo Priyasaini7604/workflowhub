@@ -17,6 +17,7 @@ class Asset(models.Model):
 
     ASSET_STATUS_CHOICES = [
         ('available', 'Available'),
+        ('pending_acknowledgment', 'Pending Acknowledgment'),
         ('assigned', 'Assigned'),
         ('under_repair', 'Under Repair'),
         ('retired', 'Retired'),
@@ -59,10 +60,15 @@ class Asset(models.Model):
     asset_return_date = models.DateField(blank=True, null=True)
 
     status = models.CharField(
-        max_length=20,
+        max_length=25,
         choices=ASSET_STATUS_CHOICES,
         default='available'
     )
+
+    # Track the acknowledgment window
+   
+    acknowledgment_requested_at = models.DateTimeField(null=True, blank=True)
+    acknowledged_at = models.DateTimeField(null=True, blank=True)
 
     # --- Audit Information ---
     created_at = models.DateTimeField(auto_now_add=True)
@@ -90,6 +96,12 @@ class AssetAllocationHistory(models.Model):
         blank=True,
         related_name='asset_allocation_history'
     )
+    acknowledgment_status = models.CharField(
+        max_length=20,
+        choices=[('pending', 'Pending'), ('acknowledged', 'Acknowledged'), ('rejected', 'Rejected')],
+        default='pending'
+    )
+    acknowledged_at = models.DateTimeField(null=True, blank=True)
     assigned_date = models.DateField()
     returned_date = models.DateField(blank=True, null=True)
     assigned_by = models.ForeignKey(
