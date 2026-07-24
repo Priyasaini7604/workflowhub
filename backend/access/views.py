@@ -35,8 +35,13 @@ class SoftwareAccessListCreateView(generics.ListCreateAPIView):
         create_audit_log(
             user=self.request.user,
             action='ACCESS_GRANTED',
-            target=f"{instance.software_name} → {instance.employee}",
-            details=f"Access level: {instance.access_level}"
+            model_name='SoftwareAccess',
+            object_id=instance.id,
+            description=f"{
+                instance.software_name} access granted to {
+                instance.employee} (level: {
+                instance.access_level})",
+            request=self.request
         )
 
 
@@ -60,8 +65,12 @@ class SoftwareAccessRevokeView(generics.UpdateAPIView):
         create_audit_log(
             user=self.request.user,
             action='ACCESS_REVOKED',
-            target=f"{instance.software_name} → {instance.employee}",
-            details=f"Revoked by {self.request.user}"
+            model_name='SoftwareAccess',
+            object_id=instance.id,
+            description=f"{
+                instance.software_name} access revoked for {
+                instance.employee}",
+            request=self.request
         )
 
 

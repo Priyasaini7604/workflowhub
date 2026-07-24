@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axiosInstance from "../api/axiosInstance";
+import SoftwareAccessSection from '../pages/SoftwareAccessSection';
 
 const statusColors = {
   joining_pending: { bg: "#1e293b", text: "#94a3b8" },
@@ -300,7 +301,8 @@ const EmployeeDetailPage = () => {
           </div>
         </div>
       </div>
-
+      {/* Software Access */}
+      <SoftwareAccessSection employeeId={id} />
     </div>
   );
 };

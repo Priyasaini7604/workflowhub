@@ -44,6 +44,8 @@ const OffboardingPage = () => {
   const [tasksLoading, setTasksLoading] = useState(false);
   const [verifyingDocId, setVerifyingDocId] = useState(null);
   const [rejectingDocId, setRejectingDocId] = useState(null);
+  const [pendingAccess, setPendingAccess] = useState([]);
+  const [revokingAccessId, setRevokingAccessId] = useState(null);
 
   useEffect(() => {
     fetchEmployees();
@@ -72,12 +74,14 @@ const OffboardingPage = () => {
       setExitReasonInput(checklistResponse.data.exit_reason || "");
       setResignationDateInput(checklistResponse.data.resignation_date || "");
 
-      const [tasksResponse, documentsResponse, auditLogsResponse] = await Promise.all([
+      const [tasksResponse, documentsResponse, auditLogsResponse, pendingAccessResponse] = await Promise.all([
         axiosInstance.get(`/offboarding/${employeeId}/tasks/`),
         getEmployeeDocuments(employeeId),
         getAuditLogs(),
+        axiosInstance.get(`/access/employee/${employeeId}/pending/`),
       ]);
       setTasks(tasksResponse.data.results || tasksResponse.data);
+      setPendingAccess(pendingAccessResponse.data);
 
       const allDocs = documentsResponse.data.results || documentsResponse.data;
       const offboardingDocs = allDocs.filter((doc) =>
@@ -132,6 +136,19 @@ const OffboardingPage = () => {
       console.error("Failed to reject document", err);
     } finally {
       setRejectingDocId(null);
+    }
+  };
+
+  const handleRevokeAccess = async (accessId) => {
+    if (!window.confirm("Revoke this software access?")) return;
+    setRevokingAccessId(accessId);
+    try {
+      await axiosInstance.patch(`/access/${accessId}/revoke/`, { status: "revoked" });
+      fetchOffboardingData(selectedEmployee.id);
+    } catch (err) {
+      console.error("Failed to revoke access", err);
+    } finally {
+      setRevokingAccessId(null);
     }
   };
 
@@ -251,7 +268,7 @@ const OffboardingPage = () => {
           )}
         </div>
 
-        {/* Right — Checklist + Documents + Tasks + Timeline */}
+        {/* Right — Checklist + Documents + Software Access + Tasks + Timeline */}
         <div>
           {!selectedEmployee ? (
             <div style={{ background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "12px", padding: "60px", textAlign: "center" }}>
@@ -410,6 +427,45 @@ const OffboardingPage = () => {
                       </div>
                     )}
                   </div>
+
+                  {/* Software Access — pending access to revoke before offboarding completes */}
+                  <div style={{ background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "12px", padding: "20px", marginBottom: "16px" }}>
+                    <h3 style={{ fontSize: "14px", fontWeight: 500, color: "#f1f5f9", margin: "0 0 16px", paddingBottom: "12px", borderBottom: "0.5px solid #1e293b" }}>
+                      🔑 Software Access to Revoke
+                    </h3>
+                    {pendingAccess.length === 0 ? (
+                      <p style={{ fontSize: "13px", color: "#475569", margin: 0 }}>No active software access remaining — all revoked</p>
+                    ) : (
+                      <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                        {pendingAccess.map((item) => (
+                          <div
+                            key={item.id}
+                            style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 12px", background: "#0f1a2e", border: "0.5px solid #1e293b", borderRadius: "8px" }}
+                          >
+                            <div>
+                              <p style={{ fontSize: "13px", color: "#f1f5f9", margin: "0 0 2px", fontWeight: 500 }}>{item.software_name}</p>
+                              {item.access_level && (
+                                <p style={{ fontSize: "11px", color: "#64748b", margin: 0 }}>{item.access_level}</p>
+                              )}
+                            </div>
+                            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                              <span style={{ background: "#064e3b", color: "#10b981", borderRadius: "20px", padding: "3px 10px", fontSize: "11px" }}>
+                                active
+                              </span>
+                              <button
+                                onClick={() => handleRevokeAccess(item.id)}
+                                disabled={revokingAccessId === item.id}
+                                style={{ background: "#450a0a", color: "#fca5a5", border: "none", borderRadius: "6px", padding: "5px 10px", fontSize: "11px", cursor: "pointer", opacity: revokingAccessId === item.id ? 0.6 : 1 }}
+                              >
+                                {revokingAccessId === item.id ? "Revoking..." : "Revoke"}
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
                   {/* Tasks */}
                   <div style={{ background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "12px", padding: "20px", marginBottom: "16px" }}>
                     <h3 style={{ fontSize: "14px", fontWeight: 500, color: "#f1f5f9", margin: "0 0 16px", paddingBottom: "12px", borderBottom: "0.5px solid #1e293b" }}>
