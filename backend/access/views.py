@@ -1,6 +1,5 @@
 from django.utils import timezone
-from rest_framework import generics, permissions
-from rest_framework.response import Response
+from rest_framework import generics
 from .models import SoftwareAccess
 from .serializers import (
     SoftwareAccessSerializer,
