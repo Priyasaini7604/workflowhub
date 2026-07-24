@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     'notifications',
     'Documents',
     'audit',
+    'access',
 ]
 
 MIDDLEWARE = [
