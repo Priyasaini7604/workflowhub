@@ -135,7 +135,7 @@ class AssetUpdateView(generics.UpdateAPIView):
                     recipient=getattr(old_assigned_to, 'user', None),
                     title='Asset returned',
                     message=f'{
-                        asset.asset_type} ({
+                        asset.category} ({
                         asset.asset_id}) has been unassigned from you.',
                     notification_type='asset',
                 )

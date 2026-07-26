@@ -1,5 +1,6 @@
 from django.db import models
 from employees.models import Employee
+from master_data.models import AssetCategory
 
 
 class Asset(models.Model):
@@ -40,9 +41,11 @@ class Asset(models.Model):
 
     # --- Asset Information ---
     asset_id = models.CharField(max_length=20, unique=True)
-    asset_type = models.CharField(
-        max_length=20,
-        choices=ASSET_TYPE_CHOICES
+    
+    category = models.ForeignKey(
+        AssetCategory,
+        on_delete=models.PROTECT,
+        related_name='assets'
     )
     brand = models.CharField(max_length=100, blank=True)
     model_name = models.CharField(max_length=100, blank=True)
@@ -79,7 +82,7 @@ class Asset(models.Model):
     archived_at = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
-        return f"{self.asset_type} - {self.asset_id}"
+        return f"{self.category} - {self.asset_id}"
 
 
 class AssetAllocationHistory(models.Model):

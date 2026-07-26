@@ -6,6 +6,7 @@ const menuItems = {
     { label: "Dashboard", icon: "🏠", path: "/dashboard" },
     { label: "Employees", icon: "👥", path: "/employees" },
     { label: "IT Assets", icon: "💻", path: "/assets" },
+    { label: "Asset Categories", icon: "⚙️", path: "/assets/categories" },
     { label: "Documents", icon: "📄", path: "/documents" },
     { label: "Reports", icon: "📊", path: "/reports" },
     { label: "Onboarding", icon: "🚀", path: "/onboarding" },
@@ -23,9 +24,12 @@ const menuItems = {
   it: [
     { label: "Dashboard", icon: "🏠", path: "/dashboard" },
     { label: "IT Assets", icon: "💻", path: "/assets" },
+    { label: "Asset Categories", icon: "⚙️", path: "/assets/categories" },
     { label: "Stock Overview", icon: "📦", path: "/assets/stock-overview" },
     { label: "Employee Assets", icon: "👥", path: "/it/employee-assets" },
     { label: "Reports", icon: "📊", path: "/reports" },
+    
+    
   ],
   manager: [
     { label: "Dashboard", icon: "🏠", path: "/dashboard" },

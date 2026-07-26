@@ -1,15 +1,17 @@
 from rest_framework import serializers
 from .models import Asset, AssetAllocationHistory
 from employees.serializers import EmployeeListSerializer
+from master_data.serializers import AssetCategorySerializer
 
 
 class AssetSerializer(serializers.ModelSerializer):
     assigned_to = EmployeeListSerializer(read_only=True)
+    category_detail = AssetCategorySerializer(source='category', read_only=True)
 
     class Meta:
         model = Asset
         fields = [
-            'id', 'asset_id', 'asset_type', 'brand', 'model_name', 'serial_number',
+            'id', 'asset_id', 'category', 'category_detail', 'brand', 'model_name', 'serial_number',
             'assigned_to', 'asset_issue_date', 'asset_return_date',
             'status', 'condition', 'warranty_expiry_date',
             'created_at', 'updated_at',
@@ -42,7 +44,7 @@ class AssetCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Asset
         fields = [
-            'asset_id', 'asset_type', 'brand', 'model_name', 'serial_number',
+            'asset_id', 'category', 'brand', 'model_name', 'serial_number',
             'assigned_to', 'asset_issue_date', 'asset_return_date', 'status',
             'condition', 'warranty_expiry_date',
         ]
@@ -77,11 +79,12 @@ class AssetArchiveSerializer(serializers.ModelSerializer):
 class AssetReportSerializer(serializers.ModelSerializer):
     assigned_to_name = serializers.SerializerMethodField()
     department = serializers.SerializerMethodField()
+    category_name = serializers.CharField(source='category.name', read_only=True)
 
     class Meta:
         model = Asset
         fields = [
-            'asset_id', 'asset_type', 'model_name', 'serial_number',
+            'asset_id', 'category_name', 'model_name', 'serial_number',
             'assigned_to_name', 'department', 'status',
             'condition', 'warranty_expiry_date',
         ]
@@ -100,13 +103,12 @@ class AssetReportSerializer(serializers.ModelSerializer):
 class AssetAllocationHistorySerializer(serializers.ModelSerializer):
     employee = EmployeeListSerializer(read_only=True)
     asset_id = serializers.CharField(source='asset.asset_id', read_only=True)
-    asset_type = serializers.CharField(
-        source='asset.asset_type', read_only=True)
+    asset_category = serializers.CharField(source='asset.category.name', read_only=True)
 
     class Meta:
         model = AssetAllocationHistory
         fields = [
-            'id', 'asset', 'asset_id', 'asset_type', 'employee',
+            'id', 'asset', 'asset_id', 'asset_category', 'employee',
             'assigned_date', 'returned_date', 'assigned_by', 'remarks',
             'created_at',
         ]

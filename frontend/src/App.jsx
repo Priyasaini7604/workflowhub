@@ -23,6 +23,7 @@ import ITEmployeeAssetsPage from "./pages/ITEmployeeAssetsPage";
 import StockOverviewPage from "./pages/StockOverviewPage";
 import MyTeamPage from "./pages/MyTeamPage";
 import ManagerOffboardingPage from "./pages/ManagerOffboardingPage";
+import AssetCategoriesPage from "./pages/AssetCategoriesPage";
 
 const App = () => {
   return (
@@ -226,6 +227,16 @@ const App = () => {
     </ProtectedRoute>
   }
 />
+<Route
+      path="/assets/categories"
+      element={
+        <ProtectedRoute>
+          <Layout>
+            <AssetCategoriesPage />
+          </Layout>
+        </ProtectedRoute>
+      }
+    />
       </Routes>
     </BrowserRouter>
   );

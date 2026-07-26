@@ -53,6 +53,8 @@ INSTALLED_APPS = [
     'Documents',
     'audit',
     'access',
+    'master_data',
+    'approvals',
 ]
 
 MIDDLEWARE = [
