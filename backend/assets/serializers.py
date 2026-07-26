@@ -6,7 +6,8 @@ from master_data.serializers import AssetCategorySerializer
 
 class AssetSerializer(serializers.ModelSerializer):
     assigned_to = EmployeeListSerializer(read_only=True)
-    category_detail = AssetCategorySerializer(source='category', read_only=True)
+    category_detail = AssetCategorySerializer(
+        source='category', read_only=True)
 
     class Meta:
         model = Asset
@@ -79,7 +80,8 @@ class AssetArchiveSerializer(serializers.ModelSerializer):
 class AssetReportSerializer(serializers.ModelSerializer):
     assigned_to_name = serializers.SerializerMethodField()
     department = serializers.SerializerMethodField()
-    category_name = serializers.CharField(source='category.name', read_only=True)
+    category_name = serializers.CharField(
+        source='category.name', read_only=True)
 
     class Meta:
         model = Asset
@@ -103,7 +105,8 @@ class AssetReportSerializer(serializers.ModelSerializer):
 class AssetAllocationHistorySerializer(serializers.ModelSerializer):
     employee = EmployeeListSerializer(read_only=True)
     asset_id = serializers.CharField(source='asset.asset_id', read_only=True)
-    asset_category = serializers.CharField(source='asset.category.name', read_only=True)
+    asset_category = serializers.CharField(
+        source='asset.category.name', read_only=True)
 
     class Meta:
         model = AssetAllocationHistory

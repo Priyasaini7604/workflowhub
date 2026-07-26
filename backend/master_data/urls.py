@@ -6,7 +6,14 @@ from .views import (
 )
 
 urlpatterns = [
-    path('categories/', AssetCategoryListCreateView.as_view(), name='asset-category-list-create'),
-    path('categories/<int:pk>/update/', AssetCategoryUpdateView.as_view(), name='asset-category-update'),
-    path('categories/<int:pk>/archive/', AssetCategoryArchiveView.as_view(), name='asset-category-archive'),
+    path(
+        'categories/',
+        AssetCategoryListCreateView.as_view(),
+        name='asset-category-list-create'),
+    path('categories/<int:pk>/update/',
+         AssetCategoryUpdateView.as_view(),
+         name='asset-category-update'),
+    path('categories/<int:pk>/archive/',
+         AssetCategoryArchiveView.as_view(),
+         name='asset-category-archive'),
 ]

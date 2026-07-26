@@ -41,7 +41,7 @@ class Asset(models.Model):
 
     # --- Asset Information ---
     asset_id = models.CharField(max_length=20, unique=True)
-    
+
     category = models.ForeignKey(
         AssetCategory,
         on_delete=models.PROTECT,

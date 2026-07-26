@@ -44,7 +44,8 @@ class ApprovalsCenterView(APIView):
                 status__in=['pending', 'in_progress'], is_archived=False
             ).select_related('employee')
             if task_filter_role:
-                onboarding_qs = onboarding_qs.filter(assigned_to_role=task_filter_role)
+                onboarding_qs = onboarding_qs.filter(
+                    assigned_to_role=task_filter_role)
 
             for task in onboarding_qs:
                 items.append({
@@ -65,7 +66,8 @@ class ApprovalsCenterView(APIView):
                 status__in=['pending', 'in_progress'], is_archived=False
             ).select_related('employee')
             if task_filter_role:
-                offboarding_qs = offboarding_qs.filter(assigned_to_role=task_filter_role)
+                offboarding_qs = offboarding_qs.filter(
+                    assigned_to_role=task_filter_role)
 
             for task in offboarding_qs:
                 items.append({
