@@ -11,6 +11,7 @@ const menuItems = {
     { label: "Reports", icon: "📊", path: "/reports" },
     { label: "Onboarding", icon: "🚀", path: "/onboarding" },
     { label: "Offboarding", icon: "🚀", path: "/offboarding" },
+    { label: "Approvals", icon: "✅", path: "/approvals" },
     { label: "Audit Logs", icon: "📋", path: "/audit-logs" },
   ],
   hr: [
@@ -20,6 +21,7 @@ const menuItems = {
     { label: "Reports", icon: "📊", path: "/reports" },
     { label: "Onboarding", icon: "🚀", path: "/onboarding" },
     { label: "Offboarding", icon: "🚀", path: "/offboarding" },
+    { label: "Approvals", icon: "✅", path: "/approvals" },
   ],
   it: [
     { label: "Dashboard", icon: "🏠", path: "/dashboard" },
@@ -28,6 +30,7 @@ const menuItems = {
     { label: "Stock Overview", icon: "📦", path: "/assets/stock-overview" },
     { label: "Employee Assets", icon: "👥", path: "/it/employee-assets" },
     { label: "Reports", icon: "📊", path: "/reports" },
+    { label: "Approvals", icon: "✅", path: "/approvals" },
     
     
   ],
@@ -35,6 +38,7 @@ const menuItems = {
     { label: "Dashboard", icon: "🏠", path: "/dashboard" },
     { label: "My Team", icon: "👥", path: "/my-team" },
     { label: "Team Offboarding", icon: "📋", path: "/my-team/offboarding" },
+    { label: "Approvals", icon: "✅", path: "/approvals" },
   ],
   employee: [
     { label: "Dashboard", icon: "🏠", path: "/dashboard" },

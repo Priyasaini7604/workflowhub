@@ -24,6 +24,8 @@ import StockOverviewPage from "./pages/StockOverviewPage";
 import MyTeamPage from "./pages/MyTeamPage";
 import ManagerOffboardingPage from "./pages/ManagerOffboardingPage";
 import AssetCategoriesPage from "./pages/AssetCategoriesPage";
+import ApprovalsCenterPage from "./pages/ApprovalsCenterPage";
+
 
 const App = () => {
   return (
@@ -237,6 +239,16 @@ const App = () => {
         </ProtectedRoute>
       }
     />
+<Route
+  path="/approvals"
+  element={
+    <ProtectedRoute>
+      <Layout>
+        <ApprovalsCenterPage />
+      </Layout>
+    </ProtectedRoute>
+  }
+/>
       </Routes>
     </BrowserRouter>
   );

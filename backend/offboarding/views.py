@@ -13,6 +13,8 @@ from .serializers import (
     OffboardingChecklistSerializer,
     OffboardingChecklistUpdateSerializer,
 )
+from rest_framework.exceptions import ValidationError
+from django.shortcuts import get_object_or_404
 from permissions import IsHROrSuperAdmin, IsHROrManagerOrSuperAdmin
 
 
@@ -213,6 +215,9 @@ class OffboardingTaskArchiveView(generics.UpdateAPIView):
 
 
 # Offboarding Checklist
+OFFBOARDING_ELIGIBLE_STATUSES = ['notice_period', 'offboarding', 'exited']
+
+
 class OffboardingChecklistView(generics.RetrieveAPIView):
     serializer_class = OffboardingChecklistSerializer
     permission_classes = [IsHROrManagerOrSuperAdmin]
@@ -221,12 +226,28 @@ class OffboardingChecklistView(generics.RetrieveAPIView):
         user = self.request.user
         employee_id = self.kwargs.get('employee_id')
 
-        # Manager can only view checklists for their own team members.
         if user.role == 'manager' and not _is_managers_team_member(
                 user, employee_id):
             raise PermissionDenied(
                 "You can only view offboarding data for your own team members."
             )
+
+        # Only enforce the status check when a checklist doesn't exist yet —
+        # once offboarding has started, the employee's status may keep
+        # changing (notice_period -> offboarding -> exited/inactive), and
+        # the existing checklist should still be viewable regardless.
+        checklist_exists = OffboardingChecklist.objects.filter(
+            employee_id=employee_id
+        ).exists()
+
+        if not checklist_exists:
+            employee = get_object_or_404(Employee, pk=employee_id)
+            if employee.current_status not in OFFBOARDING_ELIGIBLE_STATUSES:
+                raise ValidationError(
+                    f"{employee} is currently '{employee.current_status}' — "
+                    "offboarding can only be started once an employee is in "
+                    "notice period."
+                )
 
         checklist, created = OffboardingChecklist.objects.get_or_create(
             employee_id=employee_id

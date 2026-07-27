@@ -6,6 +6,8 @@ from offboarding.models import OffboardingTask
 from assets.models import Asset
 from permissions import IsAuthenticatedAndActive
 
+OFFBOARDING_ELIGIBLE_STATUSES = ['notice_period', 'offboarding', 'exited']
+
 
 class ApprovalsCenterView(APIView):
     """
@@ -59,11 +61,16 @@ class ApprovalsCenterView(APIView):
                     'action_path': f"/onboarding?employee={task.employee.id}",
                 })
 
-        # --- Offboarding Tasks — only tasks assigned to this role ---
+        # --- Offboarding Tasks — only tasks assigned to this role, AND only
+        # for employees who are actually in an offboarding-eligible status.
+        # This guards against stale tasks left over from a bug where
+        # offboarding could previously be started for an 'active' employee.
         if role in ['hr', 'it', 'manager', 'superadmin']:
             task_filter_role = None if role == 'superadmin' else role
             offboarding_qs = OffboardingTask.objects.filter(
-                status__in=['pending', 'in_progress'], is_archived=False
+                status__in=['pending', 'in_progress'],
+                is_archived=False,
+                employee__current_status__in=OFFBOARDING_ELIGIBLE_STATUSES,
             ).select_related('employee')
             if task_filter_role:
                 offboarding_qs = offboarding_qs.filter(
