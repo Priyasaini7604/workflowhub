@@ -13,6 +13,8 @@ const menuItems = {
     { label: "Offboarding", icon: "🚀", path: "/offboarding" },
     { label: "Approvals", icon: "✅", path: "/approvals" },
     { label: "Audit Logs", icon: "📋", path: "/audit-logs" },
+    { label: "User Management", icon: "👤", path: "/users" },
+    { label: "Access Matrix", icon: "🔐", path: "/access-matrix" },
   ],
   hr: [
     { label: "Dashboard", icon: "🏠", path: "/dashboard" },

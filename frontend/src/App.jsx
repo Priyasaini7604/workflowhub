@@ -25,6 +25,9 @@ import MyTeamPage from "./pages/MyTeamPage";
 import ManagerOffboardingPage from "./pages/ManagerOffboardingPage";
 import AssetCategoriesPage from "./pages/AssetCategoriesPage";
 import ApprovalsCenterPage from "./pages/ApprovalsCenterPage";
+import UserManagementPage from "./pages/UserManagementPage";
+import AccessMatrixPage from "./pages/AccessMatrixPage";
+
 
 
 const App = () => {
@@ -245,6 +248,25 @@ const App = () => {
     <ProtectedRoute>
       <Layout>
         <ApprovalsCenterPage />
+      </Layout>
+    </ProtectedRoute>
+  }
+/><Route
+  path="/users"
+  element={
+    <ProtectedRoute>
+      <Layout>
+        <UserManagementPage />
+      </Layout>
+    </ProtectedRoute>
+  }
+/>
+<Route
+  path="/access-matrix"
+  element={
+    <ProtectedRoute>
+      <Layout>
+        <AccessMatrixPage />
       </Layout>
     </ProtectedRoute>
   }

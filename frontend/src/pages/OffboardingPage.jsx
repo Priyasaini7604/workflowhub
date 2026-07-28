@@ -63,12 +63,12 @@ const OffboardingPage = () => {
     }
   };
 
+  const [offboardingError, setOffboardingError] = useState("");
+
   const fetchOffboardingData = async (employeeId) => {
     setTasksLoading(true);
+    setOffboardingError("");
     try {
-      // Checklist first — its get_or_create() on the backend bulk-creates the
-      // default offboarding tasks the very first time. Awaiting it separately
-      // avoids a race where tasks/ resolves before those default rows exist.
       const checklistResponse = await axiosInstance.get(`/offboarding/${employeeId}/checklist/`);
       setChecklist(checklistResponse.data);
       setExitReasonInput(checklistResponse.data.exit_reason || "");
@@ -89,15 +89,25 @@ const OffboardingPage = () => {
       );
       setDocuments(offboardingDocs);
 
-      // Audit log endpoint returns ALL logs system-wide; filtered client-side below
       setAuditLogs(auditLogsResponse.data.results || auditLogsResponse.data);
     } catch (err) {
-      console.error("Failed to load offboarding data", err);
+      // Backend now blocks starting offboarding for employees who aren't
+      // actually in an offboarding-eligible status (still 'active', etc.)
+      const backendMessage = err.response?.data?.[0] || err.response?.data?.detail;
+      if (err.response?.status === 400 && backendMessage) {
+        setOffboardingError(backendMessage);
+        setChecklist(null);
+        setTasks([]);
+        setDocuments([]);
+        setPendingAccess([]);
+      } else {
+        console.error("Failed to load offboarding data", err);
+        setOffboardingError("Failed to load offboarding data. Please try again.");
+      }
     } finally {
       setTasksLoading(false);
     }
   };
-
   const handleEmployeeClick = (emp) => {
     setSelectedEmployee(emp);
     fetchOffboardingData(emp.id);
@@ -292,6 +302,12 @@ const OffboardingPage = () => {
               {tasksLoading ? (
                 <div style={{ textAlign: "center", padding: "40px" }}>
                   <p style={{ color: "#64748b", fontSize: "13px" }}>Loading offboarding data...</p>
+                </div>
+              ) : offboardingError ? (
+                <div style={{ background: "#0a1628", border: "0.5px solid #451a03", borderRadius: "12px", padding: "40px", textAlign: "center" }}>
+                  <p style={{ fontSize: "28px", margin: "0 0 12px" }}>⚠️</p>
+                  <p style={{ fontSize: "14px", color: "#f59e0b", margin: "0 0 6px", fontWeight: 500 }}>Cannot start offboarding</p>
+                  <p style={{ fontSize: "13px", color: "#64748b", margin: 0 }}>{offboardingError}</p>
                 </div>
               ) : (
                 <>
