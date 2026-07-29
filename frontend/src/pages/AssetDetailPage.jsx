@@ -53,7 +53,7 @@ const AssetDetailPage = () => {
   const handleArchive = async () => {
     if (!window.confirm("Are you sure you want to archive this asset?")) return;
     try {
-      await axiosInstance.post(`/assets/${id}/archive/`);
+      await axiosInstance.patch(`/assets/${id}/archive/`);
       navigate("/assets");
     } catch (err) {
       setError("Failed to archive asset");

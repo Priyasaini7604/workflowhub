@@ -47,7 +47,7 @@ const EmployeeDetailPage = () => {
   const handleArchive = async () => {
     if (!window.confirm("Are you sure you want to archive this employee?")) return;
     try {
-      await axiosInstance.post(`/employees/${id}/archive/`);
+      await axiosInstance.patch(`/employees/${id}/archive/`);
       navigate("/employees");
     } catch (err) {
       setError("Failed to archive employee");
