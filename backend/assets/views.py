@@ -12,6 +12,7 @@ from .serializers import (
     AssetReportSerializer,
     AssetArchiveSerializer,
     AssetAllocationHistorySerializer,
+    AssetInitiateReturnSerializer
 )
 from permissions import IsITAdminOrSuperAdmin
 from notifications.models import Notification
@@ -108,8 +109,6 @@ class AssetUpdateView(generics.UpdateAPIView):
 
     def perform_update(self, serializer):
         # Capture assignment state BEFORE save overwrites it in the DB.
-        # self.get_object() re-queries the DB — since serializer.save()
-        # hasn't run yet, this still reflects the pre-update row.
         old_asset = self.get_object()
         old_assigned_to = old_asset.assigned_to
 
@@ -117,9 +116,44 @@ class AssetUpdateView(generics.UpdateAPIView):
         new_assigned_to = asset.assigned_to
         today = timezone.now().date()
 
+        # 👇 CASE 1 (NAYA): Fresh assignment via edit form
+        # (available → assigned). Force pending_acknowledgment,
+        # bypass mat hone do direct 'assigned'.
+        if old_assigned_to is None and new_assigned_to is not None:
+            asset.status = 'pending_acknowledgment'
+            asset.acknowledgment_requested_at = timezone.now()
+            asset.save()
+
+            AssetAllocationHistory.objects.create(
+                asset=asset,
+                employee=new_assigned_to,
+                assigned_date=asset.asset_issue_date or today,
+                assigned_by=self.request.user,
+                acknowledgment_status='pending'
+            )
+
+            notify(
+                recipient=getattr(new_assigned_to, 'user', None),
+                title='New asset assigned',
+                message=f'{
+                    asset.brand} {
+                    asset.model_name} ({
+                    asset.asset_id}) has been assigned to you. Please review and acknowledge.',
+                notification_type='asset',
+            )
+
+            create_audit_log(
+                user=self.request.user,
+                action='update',
+                model_name='Asset',
+                object_id=asset.id,
+                description=f'Asset {
+                    asset.asset_id} assignment initiated for {new_assigned_to} (via edit) — awaiting acknowledgment',
+                request=self.request
+            )
+            return
+        # --- CASE 2: Purana logic — unassign / reassign ---
         if old_assigned_to != new_assigned_to:
-            # Was assigned to someone before, and that's changed (returned,
-            # or reassigned to someone else) — close their open history row.
             if old_assigned_to is not None:
                 open_history = AssetAllocationHistory.objects.filter(
                     asset=asset,
@@ -130,7 +164,6 @@ class AssetUpdateView(generics.UpdateAPIView):
                     open_history.returned_date = asset.asset_return_date or today
                     open_history.save()
 
-                # Let the previous holder know their asset was taken back.
                 notify(
                     recipient=getattr(old_assigned_to, 'user', None),
                     title='Asset returned',
@@ -140,13 +173,8 @@ class AssetUpdateView(generics.UpdateAPIView):
                     notification_type='asset',
                 )
 
-                # If this employee no longer holds ANY assets, and they have
-                # an offboarding checklist in progress, auto-tick Asset
-                # Recovery.
                 self._maybe_mark_asset_recovery_complete(old_assigned_to)
 
-            # Now assigned to someone new (fresh assignment or reassignment)
-            # — open a new history row for them.
             if new_assigned_to is not None:
                 AssetAllocationHistory.objects.create(
                     asset=asset,
@@ -155,7 +183,6 @@ class AssetUpdateView(generics.UpdateAPIView):
                     assigned_by=self.request.user
                 )
 
-                # Let the new holder know they've been assigned this asset.
                 notify(
                     recipient=getattr(new_assigned_to, 'user', None),
                     title='New asset assigned',
@@ -176,8 +203,6 @@ class AssetUpdateView(generics.UpdateAPIView):
         )
 
     def _maybe_mark_asset_recovery_complete(self, employee):
-        # Local import avoids a circular import between the assets and
-        # offboarding apps at module load time.
         from offboarding.models import OffboardingChecklist
 
         still_holding_assets = Asset.objects.filter(
@@ -191,9 +216,6 @@ class AssetUpdateView(generics.UpdateAPIView):
                 asset_recovery_status=False
             ).first()
             if checklist:
-                # Use .save() (not queryset .update()) so the model's
-                # overridden save() recalculates
-                # offboarding_completion_percentage correctly.
                 checklist.asset_recovery_status = True
                 checklist.save()
 
@@ -355,3 +377,124 @@ class AssetAllocationHistoryView(generics.ListAPIView):
         return AssetAllocationHistory.objects.filter(
             asset=asset_id
         ).order_by('-assigned_date')
+
+# Admin/IT initiates return — asset goes to pending_return, NOT available yet
+
+
+class AssetInitiateReturnView(generics.UpdateAPIView):
+    serializer_class = AssetInitiateReturnSerializer
+    permission_classes = [IsITAdminOrSuperAdmin]
+
+    def get_queryset(self):
+        return Asset.objects.filter(is_archived=False, status='assigned')
+
+    def perform_update(self, serializer):
+        asset = self.get_object()
+
+        if asset.assigned_to is None:
+            raise serializers.ValidationError(
+                {"detail": "This asset is not currently assigned to anyone."}
+            )
+
+        asset.status = 'pending_return'
+        asset.save(update_fields=['status'])
+
+        # Latest open history row pe note kar do ki return initiate ho gaya
+        open_history = AssetAllocationHistory.objects.filter(
+            asset=asset,
+            employee=asset.assigned_to,
+            returned_date__isnull=True
+        ).order_by('-assigned_date').first()
+
+        notify(
+            recipient=getattr(asset.assigned_to, 'user', None),
+            title='Asset return requested',
+            message=f'Please return {
+                asset.brand} {
+                asset.model_name} ({
+                asset.asset_id}) and confirm once done.',
+            notification_type='asset',
+        )
+
+        create_audit_log(
+            user=self.request.user,
+            action='update',
+            model_name='Asset',
+            object_id=asset.id,
+            description=f'Return initiated for asset {
+                asset.asset_id} from {
+                asset.assigned_to}',
+            request=self.request
+        )
+
+
+class AssetConfirmReturnView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk):
+        try:
+            asset = Asset.objects.get(pk=pk, is_archived=False)
+        except Asset.DoesNotExist:
+            return Response({"error": "Asset not found"}, status=404)
+
+        # Employee sirf apna khud ka asset confirm kar sakta hai
+        if asset.assigned_to_id != request.user.employee_profile.id:
+            return Response(
+                {"error": "This asset is not assigned to you"}, status=403)
+
+        if asset.status != 'pending_return':
+            return Response(
+                {"error": "No return is pending for this asset"}, status=400)
+
+        returned_employee = asset.assigned_to
+        today = timezone.now().date()
+
+        # History close karo
+        open_history = AssetAllocationHistory.objects.filter(
+            asset=asset,
+            employee=returned_employee,
+            returned_date__isnull=True
+        ).order_by('-assigned_date').first()
+        if open_history:
+            open_history.returned_date = today
+            open_history.save()
+
+        # Asset free karo
+        asset.status = 'available'
+        asset.assigned_to = None
+        asset.acknowledgment_requested_at = None
+        asset.acknowledged_at = None
+        asset.save()
+
+        # Agar offboarding chal rahi thi, aur ab koi asset nahi bacha, toh tick
+        # karo
+        self._maybe_mark_asset_recovery_complete(returned_employee)
+
+        create_audit_log(
+            user=request.user,
+            action='update',
+            model_name='Asset',
+            object_id=asset.id,
+            description=f'Asset {
+                asset.asset_id} return confirmed by {returned_employee}',
+            request=request
+        )
+
+        return Response(AssetSerializer(asset).data)
+
+    def _maybe_mark_asset_recovery_complete(self, employee):
+        from offboarding.models import OffboardingChecklist
+
+        still_holding_assets = Asset.objects.filter(
+            assigned_to=employee,
+            is_archived=False
+        ).exists()
+
+        if not still_holding_assets:
+            checklist = OffboardingChecklist.objects.filter(
+                employee=employee,
+                asset_recovery_status=False
+            ).first()
+            if checklist:
+                checklist.asset_recovery_status = True
+                checklist.save()

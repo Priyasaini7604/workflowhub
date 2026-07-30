@@ -9,6 +9,8 @@ from .views import (
     AssetAcknowledgeView,
     AssetStatusReportView,
     AssetAllocationHistoryView,
+    AssetConfirmReturnView,
+    AssetInitiateReturnView
 )
 
 urlpatterns = [
@@ -31,4 +33,10 @@ urlpatterns = [
         name='asset-acknowledge'),
     path('<int:asset_id>/history/', AssetAllocationHistoryView.as_view(),
          name='asset-allocation-history'),
+    path('<int:pk>/initiate-return/',
+         AssetInitiateReturnView.as_view(),
+         name='asset-initiate-return'),
+    path('<int:pk>/confirm-return/',
+         AssetConfirmReturnView.as_view(),
+         name='asset-confirm-return'),
 ]

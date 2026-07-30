@@ -20,6 +20,7 @@ class Asset(models.Model):
         ('available', 'Available'),
         ('pending_acknowledgment', 'Pending Acknowledgment'),
         ('assigned', 'Assigned'),
+        ('pending_return', 'Pending Return'),
         ('under_repair', 'Under Repair'),
         ('retired', 'Retired'),
     ]

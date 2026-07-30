@@ -49,7 +49,7 @@ class AssetCreateSerializer(serializers.ModelSerializer):
             'assigned_to', 'asset_issue_date', 'asset_return_date', 'status',
             'condition', 'warranty_expiry_date',
         ]
-        read_only_fields = ['status']
+        # 👈 read_only_fields se 'status' hataya hua hi rahega (pichla fix)
 
     def validate_asset_id(self, value):
         qs = Asset.objects.filter(asset_id=value)
@@ -69,6 +69,117 @@ class AssetCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 "This Serial Number already exists!")
         return value
+
+    def validate(self, data):
+        if self.instance is None:
+            # Naya asset create ho raha hai — assignment-related
+            # checks lagu nahi hote
+            return data
+
+        new_assigned_to = data.get('assigned_to', self.instance.assigned_to)
+        old_assigned_to = self.instance.assigned_to
+        new_status = data.get('status', self.instance.status)
+
+        # --- NAYA: Agar return already pending hai, edit form se
+        # is asset ko chhedo mat ---
+        if self.instance.status == 'pending_return':
+            raise serializers.ValidationError({
+                'detail': "A return is already pending confirmation from the employee for this asset."
+            })
+
+        # --- Retired/Under Repair asset assign nahi ho sakta ---
+        if new_assigned_to is not None and new_status in [
+                'retired', 'under_repair']:
+            raise serializers.ValidationError({
+                'assigned_to': f"Cannot assign an asset that is currently '{dict(Asset.ASSET_STATUS_CHOICES).get(new_status)}'."
+            })
+
+        # --- Already assigned asset direct edit se doosre employee ko nahi ---
+        if (
+            old_assigned_to is not None
+            and new_assigned_to is not None
+            and new_assigned_to != old_assigned_to
+        ):
+            raise serializers.ValidationError({
+                'assigned_to': (
+                    f"This asset is already assigned to {old_assigned_to}. "
+                    "Please unassign it first before assigning to someone else."
+                )
+            })
+
+        # --- Assigned asset ko seedhe retired/under_repair mein nahi
+        # (bina unassign kiye) ---
+        if (
+            self.instance.status == 'assigned'
+            and new_status in ['retired', 'under_repair']
+            and new_assigned_to is not None
+        ):
+            raise serializers.ValidationError({
+                'status': (
+                    f"This asset is currently assigned to {old_assigned_to}. "
+                    "Please unassign it first before marking it as "
+                    f"'{dict(Asset.ASSET_STATUS_CHOICES).get(new_status)}'."
+                )
+            })
+
+        return data
+
+
+class AssetInitiateReturnSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Asset
+        fields = []
+
+    def validate_asset_id(self, value):
+        qs = Asset.objects.filter(asset_id=value)
+        if self.instance:
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists():
+            raise serializers.ValidationError("This Asset ID already exists!")
+        return value
+
+    def validate_serial_number(self, value):
+        if not value:
+            return value
+        qs = Asset.objects.filter(serial_number=value)
+        if self.instance:
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists():
+            raise serializers.ValidationError(
+                "This Serial Number already exists!")
+        return value
+
+    def validate(self, data):
+        if self.instance is None:
+            # Naya asset create ho raha hai — abhi assignment-related
+            # checks lagu nahi hote
+            return data
+
+        new_assigned_to = data.get('assigned_to', self.instance.assigned_to)
+        old_assigned_to = self.instance.assigned_to
+
+        # --- Issue 2 fix: Retired/Under Repair asset assign nahi ho sakta ---
+        if new_assigned_to is not None and self.instance.status in [
+                'retired', 'under_repair']:
+            raise serializers.ValidationError({
+                'assigned_to': f"Cannot assign an asset that is currently '{self.instance.get_status_display()}'."
+            })
+
+        # --- Issue 1 fix: Already assigned asset ko direct edit se
+        # doosre employee ko reassign nahi kar sakte ---
+        if (
+            old_assigned_to is not None
+            and new_assigned_to is not None
+            and new_assigned_to != old_assigned_to
+        ):
+            raise serializers.ValidationError({
+                'assigned_to': (
+                    f"This asset is already assigned to {old_assigned_to}. "
+                    "Please unassign it first before assigning to someone else."
+                )
+            })
+
+        return data
 
 
 class AssetArchiveSerializer(serializers.ModelSerializer):
