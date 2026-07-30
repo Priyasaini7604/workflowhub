@@ -8,6 +8,7 @@ from .serializers import (EmployeeSerializer,
                           EmployeeReportSerializer)
 from permissions import IsHROrSuperAdmin, IsHROrManagerOrSuperAdmin, IsITAdmin
 from .serializers import EmployeeStatusUpdateSerializer
+from rest_framework.exceptions import NotFound
 from audit.utils import create_audit_log
 
 # Employee List
@@ -18,7 +19,9 @@ class EmployeeListView(generics.ListAPIView):
     permission_classes = [IsHROrManagerOrSuperAdmin | IsITAdmin]
 
     def get_queryset(self):
-        return Employee.objects.filter(is_archived=False)
+        archived_param = self.request.query_params.get('archived', 'false')
+        is_archived = archived_param.lower() == 'true'
+        return Employee.objects.filter(is_archived=is_archived)
 
 
 # Employee Create
@@ -59,7 +62,7 @@ class EmployeeDetailView(generics.RetrieveAPIView):
     permission_classes = [IsHROrManagerOrSuperAdmin]
 
     def get_queryset(self):
-        return Employee.objects.filter(is_archived=False)
+        return Employee.objects.all()
 
 
 # Employee Update
@@ -110,6 +113,37 @@ class EmployeeArchiveView(generics.UpdateAPIView):
         )
 
 
+class EmployeeReactivateView(generics.UpdateAPIView):
+    serializer_class = EmployeeArchiveSerializer
+    permission_classes = [IsHROrSuperAdmin]
+
+    def get_queryset(self):
+        # Sirf archived employees hi is view se dikhenge/reactivate honge
+        return Employee.objects.filter(is_archived=True)
+
+    def perform_update(self, serializer):
+        employee = serializer.save(
+            is_archived=False,
+            archived_at=None,
+            archived_by=None,
+            current_status='active',
+            status_start_date=timezone.now().date(),
+        )
+
+        # Linked user account ko wapas activate karo taaki wo login kar sake
+        employee.user.is_active = True
+        employee.user.save(update_fields=['is_active'])
+
+        create_audit_log(
+            user=self.request.user,
+            action='update',
+            model_name='Employee',
+            object_id=employee.id,
+            description=f'Employee {employee.employee_id} reactivated',
+            request=self.request
+        )
+
+
 class EmployeeStatusReportView(generics.ListAPIView):
     serializer_class = EmployeeReportSerializer
     permission_classes = [IsHROrSuperAdmin]
@@ -123,7 +157,11 @@ class MyProfileView(generics.RetrieveUpdateAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_object(self):
-        return Employee.objects.get(user=self.request.user)
+        try:
+            return Employee.objects.get(user=self.request.user)
+        except Employee.DoesNotExist:
+            raise NotFound(
+                detail="No employee profile linked to this account.")
 
 
 class EmployeeStatusUpdateView(generics.GenericAPIView):

@@ -33,6 +33,7 @@ const menuItems = {
     { label: "Employee Assets", icon: "👥", path: "/it/employee-assets" },
     { label: "Reports", icon: "📊", path: "/reports" },
     { label: "Approvals", icon: "✅", path: "/approvals" },
+    { label: "My Profile", icon: "👤", path: "/my-profile" },
     
     
   ],

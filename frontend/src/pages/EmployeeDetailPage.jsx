@@ -54,6 +54,16 @@ const EmployeeDetailPage = () => {
     }
   };
 
+  const handleReactivate = async () => {
+    if (!window.confirm("Are you sure you want to reactivate this employee?")) return;
+    try {
+      await axiosInstance.patch(`/employees/${id}/reactivate/`);
+      fetchEmployee();
+    } catch (err) {
+      setError("Failed to reactivate employee");
+    }
+  };
+
   const handleStatusChange = async (newStatus) => {
     if (!window.confirm(`Change status to "${newStatus}"?`)) return;
     setChangingStatus(true);
@@ -134,6 +144,7 @@ const EmployeeDetailPage = () => {
             <p style={{ fontSize: "13px", color: "#64748b", margin: 0 }}>View employee information</p>
           </div>
         </div>
+
         <div style={{ display: "flex", gap: "10px" }}>
           <button
             onClick={() => navigate(`/employees/${id}/edit`)}
@@ -141,12 +152,30 @@ const EmployeeDetailPage = () => {
           >
             ✏️ Edit
           </button>
-          <button
-            onClick={handleArchive}
-            style={{ background: "#451a03", color: "#f59e0b", border: "none", borderRadius: "8px", padding: "10px 18px", fontSize: "13px", fontWeight: 500, cursor: "pointer" }}
-          >
-            🗄️ Archive
-          </button>
+
+          {employee?.is_archived ? (
+            <button
+              onClick={handleReactivate}
+              style={{ background: "#064e3b", color: "#10b981", border: "none", borderRadius: "8px", padding: "10px 18px", fontSize: "13px", fontWeight: 500, cursor: "pointer" }}
+            >
+              ♻️ Reactivate
+            </button>
+          ) : employee?.current_status === "exited" ? (
+            <button
+              onClick={handleArchive}
+              style={{ background: "#451a03", color: "#f59e0b", border: "none", borderRadius: "8px", padding: "10px 18px", fontSize: "13px", fontWeight: 500, cursor: "pointer" }}
+            >
+              🗄️ Archive
+            </button>
+          ) : (
+            <button
+              disabled
+              title="Employee must be marked as 'Exited' before archiving"
+              style={{ background: "#1e293b", color: "#475569", border: "none", borderRadius: "8px", padding: "10px 18px", fontSize: "13px", fontWeight: 500, cursor: "not-allowed" }}
+            >
+              🗄️ Archive
+            </button>
+          )}
         </div>
       </div>
 

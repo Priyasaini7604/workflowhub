@@ -30,15 +30,17 @@ const EmployeesPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
+  const [showArchived, setShowArchived] = useState(false);
 
   useEffect(() => {
     fetchEmployees();
-  }, []);
+  }, [showArchived]);
 
   const fetchEmployees = async () => {
     setLoading(true);
+    setError("");
     try {
-      const response = await axiosInstance.get("/employees/");
+      const response = await axiosInstance.get(`/employees/?archived=${showArchived}`);
       setEmployees(response.data.results || response.data);
     } catch (err) {
       setError("Failed to load employees");
@@ -60,11 +62,27 @@ const EmployeesPage = () => {
           <h2 style={{ fontSize: "22px", fontWeight: 500, color: "#f1f5f9", margin: "0 0 4px" }}>Employee Management</h2>
           <p style={{ fontSize: "13px", color: "#64748b", margin: 0 }}>Manage all employees</p>
         </div>
-        <button
-          onClick={() => navigate("/employees/add")}
-          style={{ background: "#2563eb", color: "#eff6ff", border: "none", borderRadius: "8px", padding: "10px 18px", fontSize: "13px", fontWeight: 500, cursor: "pointer" }}>
-          + Add Employee
-        </button>
+        <div style={{ display: "flex", gap: "10px" }}>
+          <button
+            onClick={() => setShowArchived(!showArchived)}
+            style={{
+              background: showArchived ? "#451a03" : "#0a1628",
+              color: showArchived ? "#f59e0b" : "#94a3b8",
+              border: "0.5px solid #1e293b",
+              borderRadius: "8px",
+              padding: "10px 14px",
+              fontSize: "13px",
+              cursor: "pointer",
+            }}
+          >
+            {showArchived ? "🗄️ Showing Archived" : "👥 Showing Active"}
+          </button>
+          <button
+            onClick={() => navigate("/employees/add")}
+            style={{ background: "#2563eb", color: "#eff6ff", border: "none", borderRadius: "8px", padding: "10px 18px", fontSize: "13px", fontWeight: 500, cursor: "pointer" }}>
+            + Add Employee
+          </button>
+        </div>
       </div>
 
       {/* Search */}
@@ -112,7 +130,7 @@ const EmployeesPage = () => {
                 {filteredEmployees.length === 0 ? (
                   <tr>
                     <td colSpan="7" style={{ padding: "40px", textAlign: "center", fontSize: "13px", color: "#475569" }}>
-                      No employees found
+                      {showArchived ? "No archived employees found" : "No employees found"}
                     </td>
                   </tr>
                 ) : (
