@@ -1,4 +1,4 @@
-from rest_framework import generics, permissions, serializers
+from rest_framework import generics, permissions
 from django.utils import timezone
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -23,6 +23,7 @@ from reportlab.lib.pagesizes import landscape, A4
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.units import mm
+from rest_framework.exceptions import ValidationError
 
 # Asset List
 
@@ -419,11 +420,11 @@ class AssetInitiateReturnView(generics.UpdateAPIView):
     def get_queryset(self):
         return Asset.objects.filter(is_archived=False, status='assigned')
 
-    def perform_update(self, serializers):
+    def perform_update(self, serializer):
         asset = self.get_object()
 
         if asset.assigned_to is None:
-            raise serializers.ValidationError(
+            raise ValidationError(
                 {"detail": "This asset is not currently assigned to anyone."}
             )
 
