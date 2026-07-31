@@ -1,6 +1,6 @@
 from rest_framework import generics, permissions
 from .models import AuditLog
-from .serializers import AuditLogSerializer, AuditLogCreateSerializer
+from .serializers import AuditLogSerializer
 from permissions import IsSuperAdmin
 
 # Audit Log List
@@ -15,13 +15,6 @@ class AuditLogListView(generics.ListAPIView):
 
 
 # Audit Log Create
-class AuditLogCreateView(generics.CreateAPIView):
-    queryset = AuditLog.objects.all()
-    serializer_class = AuditLogCreateSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
 
 
 # Audit Log Detail

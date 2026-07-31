@@ -70,6 +70,27 @@ const ReportsPage = () => {
       setLoading(false);
     }
   };
+  const handleExport = async (type, format) => {
+  try {
+    const url = type === "employees"
+      ? `/employees/report/export/${format}/`
+      : `/assets/report/export/${format}/`;
+
+    const response = await axiosInstance.get(url, { responseType: "blob" });
+
+    const blob = new Blob([response.data]);
+    const downloadUrl = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = downloadUrl;
+    link.setAttribute("download", `${type}_report.${format}`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(downloadUrl);
+  } catch (err) {
+    setError(`Failed to export ${type} report as ${format.toUpperCase()}`);
+  }
+};
 
   // Maps asset_id (e.g. "AST001") -> assigned employee's employee_id (e.g. "EMP001")
   const buildEmployeeIdMap = (fullAssets) => {
@@ -155,18 +176,36 @@ const ReportsPage = () => {
         )}
       </div>
 
-      {/* Tabs — only show Employee Report tab if not asset-only */}
-      {!isAssetOnly && (
-        <div style={{ display: "flex", gap: "8px", marginBottom: "16px" }}>
-          <button style={tabStyle("employees")} onClick={() => setActiveTab("employees")}>
-            👥 Employee Report
-          </button>
-          <button style={tabStyle("assets")} onClick={() => setActiveTab("assets")}>
-            💻 Asset Report
-          </button>
-        </div>
-      )}
+      {/* Tabs + Export buttons */}
+<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", flexWrap: "wrap", gap: "10px" }}>
+  {!isAssetOnly ? (
+    <div style={{ display: "flex", gap: "8px" }}>
+      <button style={tabStyle("employees")} onClick={() => setActiveTab("employees")}>
+        👥 Employee Report
+      </button>
+      <button style={tabStyle("assets")} onClick={() => setActiveTab("assets")}>
+        💻 Asset Report
+      </button>
+    </div>
+  ) : (
+    <div />
+  )}
 
+  <div style={{ display: "flex", gap: "8px" }}>
+    <button
+      onClick={() => handleExport(activeTab, "csv")}
+      style={{ background: "#064e3b", color: "#10b981", border: "none", borderRadius: "8px", padding: "8px 14px", fontSize: "12px", fontWeight: 500, cursor: "pointer" }}
+    >
+      ⬇️ Export CSV
+    </button>
+    <button
+      onClick={() => handleExport(activeTab, "pdf")}
+      style={{ background: "#451a03", color: "#f59e0b", border: "none", borderRadius: "8px", padding: "8px 14px", fontSize: "12px", fontWeight: 500, cursor: "pointer" }}
+    >
+      ⬇️ Export PDF
+    </button>
+  </div>
+</div>
       {/* Error */}
       {error && (
         <div style={{ background: "#1a0a0a", border: "0.5px solid #7f1d1d", borderRadius: "8px", padding: "12px", marginBottom: "16px" }}>

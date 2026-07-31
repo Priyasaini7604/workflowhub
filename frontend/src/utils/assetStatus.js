@@ -8,7 +8,8 @@
 export const getEffectiveAssetStatus = (asset) => {
   if (asset.status === "retired") return "retired";
   if (asset.status === "under_repair") return "under_repair";
-  if (asset.status === "pending_acknowledgment") return "pending_acknowledgment";  // 👈 add karo, assigned_to check se PEHLE
+  if (asset.status === "pending_acknowledgment") return "pending_acknowledgment"; 
+  if (asset.status === "pending_return") return "pending_return"; 
   if (asset.assigned_to) return "assigned";
   return "available";
 };

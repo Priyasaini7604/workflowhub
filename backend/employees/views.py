@@ -10,6 +10,13 @@ from permissions import IsHROrSuperAdmin, IsHROrManagerOrSuperAdmin, IsITAdmin
 from .serializers import EmployeeStatusUpdateSerializer
 from rest_framework.exceptions import NotFound
 from audit.utils import create_audit_log
+import csv
+from django.http import HttpResponse
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import landscape, A4
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.units import mm
 
 # Employee List
 
@@ -208,3 +215,147 @@ class EmployeeStatusUpdateView(generics.GenericAPIView):
                 'current_status': new_status},
             status=status.HTTP_200_OK
         )
+
+
+class EmployeeReportExportCSVView(generics.GenericAPIView):
+    permission_classes = [IsHROrSuperAdmin]
+
+    def get_queryset(self):
+        return Employee.objects.filter(is_archived=False)
+
+    def get(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="employee_report.csv"'
+
+        writer = csv.writer(response)
+
+        # Header row
+        writer.writerow([
+            'Employee ID', 'Full Name', 'Department', 'Designation',
+            'Current Status', 'Status Start Date', 'Onboarding %',
+            'Asset Count', 'Manager', 'Employee Type', 'Date of Joining',
+        ])
+
+        # Data rows — same logic jo serializer mein hai
+        for emp in queryset:
+            full_name = (
+                f"{emp.first_name} {emp.middle_name} {emp.last_name}"
+                if emp.middle_name
+                else f"{emp.first_name} {emp.last_name}"
+            )
+
+            manager_name = (
+                f"{emp.reporting_manager.first_name} {emp.reporting_manager.last_name}"
+                if emp.reporting_manager
+                else ""
+            )
+
+            asset_count = emp.assigned_assets.filter(is_archived=False).count()
+
+            onboarding_percentage = (
+                emp.onboarding_checklist.onboarding_completion_percentage
+                if hasattr(emp, 'onboarding_checklist')
+                else 0
+            )
+
+            writer.writerow([
+                emp.employee_id,
+                full_name,
+                emp.department,
+                emp.designation,
+                emp.current_status,
+                emp.status_start_date or "",
+                onboarding_percentage,
+                asset_count,
+                manager_name,
+                emp.employee_type,
+                emp.date_of_joining or "",
+            ])
+
+        return response
+
+
+class EmployeeReportExportPDFView(generics.GenericAPIView):
+    permission_classes = [IsHROrSuperAdmin]
+
+    def get_queryset(self):
+        return Employee.objects.filter(is_archived=False)
+
+    def get(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+
+        response = HttpResponse(content_type='application/pdf')
+        response['Content-Disposition'] = 'attachment; filename="employee_report.pdf"'
+
+        doc = SimpleDocTemplate(
+            response,
+            pagesize=landscape(A4),
+            topMargin=15 * mm,
+            bottomMargin=15 * mm,
+        )
+
+        styles = getSampleStyleSheet()
+        elements = []
+
+        elements.append(Paragraph("Employee Status Report", styles['Title']))
+        elements.append(Spacer(1, 10))
+
+        # Header row
+        data = [[
+            'Employee ID', 'Full Name', 'Department', 'Designation',
+            'Status', 'Onboarding %', 'Assets', 'Manager', 'Type', 'Joining Date',
+        ]]
+
+        for emp in queryset:
+            full_name = (
+                f"{emp.first_name} {emp.middle_name} {emp.last_name}"
+                if emp.middle_name
+                else f"{emp.first_name} {emp.last_name}"
+            )
+
+            manager_name = (
+                f"{emp.reporting_manager.first_name} {emp.reporting_manager.last_name}"
+                if emp.reporting_manager
+                else "-"
+            )
+
+            asset_count = emp.assigned_assets.filter(is_archived=False).count()
+
+            onboarding_percentage = (
+                emp.onboarding_checklist.onboarding_completion_percentage
+                if hasattr(emp, 'onboarding_checklist')
+                else 0
+            )
+
+            data.append([
+                emp.employee_id,
+                full_name,
+                emp.department,
+                emp.designation,
+                emp.current_status,
+                str(onboarding_percentage),
+                str(asset_count),
+                manager_name,
+                emp.employee_type,
+                str(emp.date_of_joining) if emp.date_of_joining else "-",
+            ])
+
+        table = Table(data, repeatRows=1)
+        table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1e3a5f')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+            ('FONTSIZE', (0, 0), (-1, -1), 7),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1),
+             [colors.white, colors.HexColor('#f1f5f9')]),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('TOPPADDING', (0, 0), (-1, -1), 4),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+        ]))
+
+        elements.append(table)
+        doc.build(elements)
+
+        return response

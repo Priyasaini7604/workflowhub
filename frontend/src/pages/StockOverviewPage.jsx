@@ -6,6 +6,7 @@ import { getEffectiveAssetStatus } from "../utils/assetStatus";
 const statusColors = {
   available: { bg: "#064e3b", text: "#10b981" },
   pending_acknowledgment: { bg: "#78350f", text: "#fbbf24" },
+   pending_return: { bg: "#78350f", text: "#fb923c" },
   assigned: { bg: "#1e3a5f", text: "#3b82f6" },
   under_repair: { bg: "#451a03", text: "#f59e0b" },
   retired: { bg: "#1e293b", text: "#94a3b8" },
@@ -92,7 +93,7 @@ const StockOverviewPage = () => {
   // pending-acknowledgment assets are shown on the IT Assets / Employee Assets pages instead.
   const stockAssets = assets.filter((a) => {
     const s = getEffectiveAssetStatus(a);
-    return s !== "assigned" && s !== "pending_acknowledgment";
+    return s !== "assigned" && s !== "pending_acknowledgment"  && s !== "pending_return";
   });
 
   const counts = {

@@ -10,7 +10,9 @@ from .views import (
     AssetStatusReportView,
     AssetAllocationHistoryView,
     AssetConfirmReturnView,
-    AssetInitiateReturnView
+    AssetInitiateReturnView,
+    AssetReportExportCSVView,
+    AssetReportExportPDFView
 )
 
 urlpatterns = [
@@ -39,4 +41,12 @@ urlpatterns = [
     path('<int:pk>/confirm-return/',
          AssetConfirmReturnView.as_view(),
          name='asset-confirm-return'),
+    path(
+        'report/export/csv/',
+        AssetReportExportCSVView.as_view(),
+        name='asset-report-export-csv'),
+    path(
+        'report/export/pdf/',
+        AssetReportExportPDFView.as_view(),
+        name='asset-report-export-pdf'),
 ]

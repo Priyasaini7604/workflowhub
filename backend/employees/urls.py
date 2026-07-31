@@ -8,7 +8,9 @@ from .views import (
     EmployeeStatusReportView,
     EmployeeStatusUpdateView,
     MyProfileView,
-    EmployeeReactivateView
+    EmployeeReactivateView,
+    EmployeeReportExportCSVView,
+    EmployeeReportExportPDFView
 )
 
 urlpatterns = [
@@ -30,4 +32,12 @@ urlpatterns = [
         '<int:pk>/reactivate/',
         EmployeeReactivateView.as_view(),
         name='employee-reactivate'),
+    path(
+        'report/export/csv/',
+        EmployeeReportExportCSVView.as_view(),
+        name='employee-report-export-csv'),
+    path(
+        'report/export/pdf/',
+        EmployeeReportExportPDFView.as_view(),
+        name='employee-report-export-pdf'),
 ]

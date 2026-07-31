@@ -16,6 +16,13 @@ from .serializers import (
 )
 from permissions import IsITAdminOrSuperAdmin
 from notifications.models import Notification
+import csv
+from django.http import HttpResponse
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import landscape, A4
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.units import mm
 
 # Asset List
 
@@ -108,7 +115,6 @@ class AssetUpdateView(generics.UpdateAPIView):
         return Asset.objects.filter(is_archived=False)
 
     def perform_update(self, serializer):
-        # Capture assignment state BEFORE save overwrites it in the DB.
         old_asset = self.get_object()
         old_assigned_to = old_asset.assigned_to
 
@@ -116,9 +122,7 @@ class AssetUpdateView(generics.UpdateAPIView):
         new_assigned_to = asset.assigned_to
         today = timezone.now().date()
 
-        # 👇 CASE 1 (NAYA): Fresh assignment via edit form
-        # (available → assigned). Force pending_acknowledgment,
-        # bypass mat hone do direct 'assigned'.
+        # CASE 1: Fresh assignment via edit form (available → assigned)
         if old_assigned_to is None and new_assigned_to is not None:
             asset.status = 'pending_acknowledgment'
             asset.acknowledgment_requested_at = timezone.now()
@@ -152,7 +156,42 @@ class AssetUpdateView(generics.UpdateAPIView):
                 request=self.request
             )
             return
-        # --- CASE 2: Purana logic — unassign / reassign ---
+
+        # 👇 CASE 2 (NAYA): Unassign via edit form (assigned → None)
+        # Directly free mat karo — return ko pending banao, employee ko
+        # confirm karne do.
+        if old_assigned_to is not None and new_assigned_to is None:
+            # Serializer ne already assigned_to ko null kar diya hai save() mein —
+            # usko wapas old employee pe restore karo aur status ko
+            # pending_return set karo
+            asset.assigned_to = old_assigned_to
+            asset.status = 'pending_return'
+            asset.save()
+
+            notify(
+                recipient=getattr(old_assigned_to, 'user', None),
+                title='Asset return requested',
+                message=f'Please return {
+                    asset.brand} {
+                    asset.model_name} ({
+                    asset.asset_id}) and confirm once done.',
+                notification_type='asset',
+            )
+
+            create_audit_log(
+                user=self.request.user,
+                action='update',
+                model_name='Asset',
+                object_id=asset.id,
+                description=f'Return initiated for asset {
+                    asset.asset_id} from {old_assigned_to} (via edit) — awaiting confirmation',
+                request=self.request
+            )
+            return
+
+        # CASE 3: Purana logic — direct reassign (old != new, dono not None)
+        # Ye already blocked hai validate() mein, isliye yahan tak nahi aayega
+        # normally.
         if old_assigned_to != new_assigned_to:
             if old_assigned_to is not None:
                 open_history = AssetAllocationHistory.objects.filter(
@@ -498,3 +537,118 @@ class AssetConfirmReturnView(APIView):
             if checklist:
                 checklist.asset_recovery_status = True
                 checklist.save()
+
+
+class AssetReportExportCSVView(generics.GenericAPIView):
+    permission_classes = [IsITAdminOrSuperAdmin]
+
+    def get_queryset(self):
+        return Asset.objects.filter(is_archived=False)
+
+    def get(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="asset_report.csv"'
+
+        writer = csv.writer(response)
+
+        # Header row
+        writer.writerow([
+            'Asset ID', 'Category', 'Model Name', 'Serial Number',
+            'Assigned To', 'Department', 'Status',
+            'Condition', 'Warranty Expiry Date',
+        ])
+
+        # Data rows — same logic jo serializer mein hai
+        for asset in queryset:
+            assigned_to_name = (
+                f"{asset.assigned_to.first_name} {asset.assigned_to.last_name}"
+                if asset.assigned_to
+                else ""
+            )
+
+            department = asset.assigned_to.department if asset.assigned_to else ""
+
+            writer.writerow([
+                asset.asset_id,
+                asset.category.name if asset.category else "",
+                asset.model_name,
+                asset.serial_number,
+                assigned_to_name,
+                department,
+                asset.status,
+                asset.condition,
+                asset.warranty_expiry_date or "",
+            ])
+
+        return response
+
+
+class AssetReportExportPDFView(generics.GenericAPIView):
+    permission_classes = [IsITAdminOrSuperAdmin]
+
+    def get_queryset(self):
+        return Asset.objects.filter(is_archived=False)
+
+    def get(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+
+        response = HttpResponse(content_type='application/pdf')
+        response['Content-Disposition'] = 'attachment; filename="asset_report.pdf"'
+
+        doc = SimpleDocTemplate(
+            response,
+            pagesize=landscape(A4),
+            topMargin=15 * mm,
+            bottomMargin=15 * mm,
+        )
+
+        styles = getSampleStyleSheet()
+        elements = []
+
+        elements.append(Paragraph("Asset Status Report", styles['Title']))
+        elements.append(Spacer(1, 10))
+
+        data = [[
+            'Asset ID', 'Category', 'Model Name', 'Serial Number',
+            'Assigned To', 'Department', 'Status', 'Condition', 'Warranty Expiry',
+        ]]
+
+        for asset in queryset:
+            assigned_to_name = (
+                f"{asset.assigned_to.first_name} {asset.assigned_to.last_name}"
+                if asset.assigned_to
+                else "-"
+            )
+            department = asset.assigned_to.department if asset.assigned_to else "-"
+
+            data.append([
+                asset.asset_id,
+                asset.category.name if asset.category else "-",
+                asset.model_name or "-",
+                asset.serial_number or "-",
+                assigned_to_name,
+                department,
+                asset.status,
+                asset.condition,
+                str(asset.warranty_expiry_date) if asset.warranty_expiry_date else "-",
+            ])
+
+        table = Table(data, repeatRows=1)
+        table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1e3a5f')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+            ('FONTSIZE', (0, 0), (-1, -1), 7),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1),
+             [colors.white, colors.HexColor('#f1f5f9')]),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('TOPPADDING', (0, 0), (-1, -1), 4),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+        ]))
+
+        elements.append(table)
+        doc.build(elements)
+
+        return response

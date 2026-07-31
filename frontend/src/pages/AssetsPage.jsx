@@ -8,6 +8,7 @@ const statusColors = {
   available: { bg: "#064e3b", text: "#10b981" },
   pending_acknowledgment: { bg: "#78350f", text: "#fbbf24" },
   assigned: { bg: "#1e3a5f", text: "#3b82f6" },
+  pending_return: { bg: "#78350f", text: "#fb923c" }, 
   under_repair: { bg: "#451a03", text: "#f59e0b" },
   retired: { bg: "#1e293b", text: "#94a3b8" },
 };
@@ -44,7 +45,7 @@ const AssetsPage = () => {
   .filter((asset) => {
     if (!isITOnlyAssigned) return true;
     const status = getEffectiveAssetStatus(asset);
-    return status === "assigned" || status === "pending_acknowledgment";
+    return status === "assigned" || status === "pending_acknowledgment" ||status === "pending_return";;
   })
   .filter((asset) =>
     asset.asset_id?.toLowerCase().includes(search.toLowerCase()) ||
