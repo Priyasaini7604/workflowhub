@@ -49,7 +49,6 @@ class AssetCreateSerializer(serializers.ModelSerializer):
             'assigned_to', 'asset_issue_date', 'asset_return_date', 'status',
             'condition', 'warranty_expiry_date',
         ]
-        # 👈 read_only_fields se 'status' hataya hua hi rahega (pichla fix)
 
     def validate_asset_id(self, value):
         qs = Asset.objects.filter(asset_id=value)
@@ -91,7 +90,10 @@ class AssetCreateSerializer(serializers.ModelSerializer):
         if new_assigned_to is not None and new_status in [
                 'retired', 'under_repair']:
             raise serializers.ValidationError({
-                'assigned_to': f"Cannot assign an asset that is currently '{dict(Asset.ASSET_STATUS_CHOICES).get(new_status)}'."
+                'assigned_to': (
+                    f"Cannot assign an asset that is currently "
+                    f"'{self.instance.get_status_display()}'."
+                )
             })
 
         # --- Already assigned asset direct edit se doosre employee ko nahi ---

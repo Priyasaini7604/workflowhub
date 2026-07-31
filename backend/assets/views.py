@@ -1,4 +1,4 @@
-from rest_framework import generics, permissions
+from rest_framework import generics, permissions, serializers
 from django.utils import timezone
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -157,13 +157,8 @@ class AssetUpdateView(generics.UpdateAPIView):
             )
             return
 
-        # 👇 CASE 2 (NAYA): Unassign via edit form (assigned → None)
-        # Directly free mat karo — return ko pending banao, employee ko
-        # confirm karne do.
         if old_assigned_to is not None and new_assigned_to is None:
-            # Serializer ne already assigned_to ko null kar diya hai save() mein —
-            # usko wapas old employee pe restore karo aur status ko
-            # pending_return set karo
+
             asset.assigned_to = old_assigned_to
             asset.status = 'pending_return'
             asset.save()
@@ -189,9 +184,6 @@ class AssetUpdateView(generics.UpdateAPIView):
             )
             return
 
-        # CASE 3: Purana logic — direct reassign (old != new, dono not None)
-        # Ye already blocked hai validate() mein, isliye yahan tak nahi aayega
-        # normally.
         if old_assigned_to != new_assigned_to:
             if old_assigned_to is not None:
                 open_history = AssetAllocationHistory.objects.filter(
@@ -427,7 +419,7 @@ class AssetInitiateReturnView(generics.UpdateAPIView):
     def get_queryset(self):
         return Asset.objects.filter(is_archived=False, status='assigned')
 
-    def perform_update(self, serializer):
+    def perform_update(self, serializers):
         asset = self.get_object()
 
         if asset.assigned_to is None:
@@ -437,13 +429,6 @@ class AssetInitiateReturnView(generics.UpdateAPIView):
 
         asset.status = 'pending_return'
         asset.save(update_fields=['status'])
-
-        # Latest open history row pe note kar do ki return initiate ho gaya
-        open_history = AssetAllocationHistory.objects.filter(
-            asset=asset,
-            employee=asset.assigned_to,
-            returned_date__isnull=True
-        ).order_by('-assigned_date').first()
 
         notify(
             recipient=getattr(asset.assigned_to, 'user', None),
