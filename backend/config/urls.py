@@ -27,7 +27,7 @@ urlpatterns = [
     path('api/onboarding/', include('onboarding.urls')),
     path('api/offboarding/', include('offboarding.urls')),
     path('api/notifications/', include('notifications.urls')),
-    path('api/documents/', include('Documents.urls')),
+    path('api/documents/', include('documents.urls')),
     path('api/audit/', include('audit.urls')),
     path('api/access/', include('access.urls')),
     path('api/master-data/', include('master_data.urls')),

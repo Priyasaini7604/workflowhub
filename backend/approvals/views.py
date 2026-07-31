@@ -1,6 +1,6 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from Documents.models import Document
+from documents.models import Document
 from onboarding.models import OnboardingTask
 from offboarding.models import OffboardingTask
 from assets.models import Asset
