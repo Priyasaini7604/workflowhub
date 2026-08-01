@@ -1,7 +1,7 @@
 from django.db import models
 from employees.models import Employee
 from users.models import User
-from access.models import SoftwareAccess
+from .services import is_access_revoked
 
 
 class OffboardingTask(models.Model):
@@ -109,13 +109,9 @@ class OffboardingChecklist(models.Model):
     offboarding_completion_percentage = models.IntegerField(default=0)
 
     def save(self, *args, **kwargs):
-        # access_revocation_status ko manually set hone ke bajaye actual SoftwareAccess
-        # data se derive karo — agar employee ka koi bhi 'active' access bacha hai,
-        # to ye automatically False hoga, chahe request mein kuch bhi bheja
-        # gaya ho
-        self.access_revocation_status = not SoftwareAccess.objects.filter(
-            employee=self.employee, status='active', is_archived=False
-        ).exists()
+        # access_revocation_status is derived from live SoftwareAccess
+        # data instead of being trusted from input — see services.py
+        self.access_revocation_status = is_access_revoked(self.employee)
 
         fields_to_check = [
             self.exit_interview_status == 'completed',

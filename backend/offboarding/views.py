@@ -1,9 +1,8 @@
 from rest_framework import generics, permissions
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import PermissionDenied, ValidationError
+from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from audit.utils import create_audit_log
-from notifications.utils import notify, notify_many
-from users.models import User
 from employees.models import Employee
 from .models import OffboardingTask, OffboardingChecklist
 from .serializers import (
@@ -13,49 +12,18 @@ from .serializers import (
     OffboardingChecklistSerializer,
     OffboardingChecklistUpdateSerializer,
 )
-from rest_framework.exceptions import ValidationError
-from django.shortcuts import get_object_or_404
+from .services import (
+    sync_employee_lifecycle_from_checklist,
+    is_managers_team_member,
+    sync_checklist_from_task_completion,
+    notify_task_completed,
+    create_default_offboarding_tasks,
+    notify_offboarding_started,
+)
 from permissions import IsHROrSuperAdmin, IsHROrManagerOrSuperAdmin
 
 
-def sync_employee_lifecycle_from_checklist(checklist):
-    """Keep Employee lifecycle fields in sync with the offboarding checklist,
-    so HR doesn't have to manually re-type the same dates in Edit Employee."""
-    employee = checklist.employee
-    today = timezone.now().date()
-    changed = False
-
-    if checklist.resignation_date and not employee.notice_period_start_date:
-        employee.notice_period_start_date = checklist.resignation_date
-        changed = True
-
-    if checklist.final_clearance_status and employee.current_status != 'inactive':
-        employee.last_working_date = today
-        employee.exit_date = today
-        employee.current_status = 'inactive'
-        employee.status_start_date = today
-        changed = True
-
-    if changed:
-        employee.save()
-
-
-def _is_managers_team_member(user, employee_id):
-    """A Manager may only touch offboarding data for employees who actually
-    report to them — this is checked against reporting_manager, not just role."""
-    return Employee.objects.filter(
-        id=employee_id,
-        reporting_manager__user=user
-    ).exists()
-
-
-DEFAULT_OFFBOARDING_TASKS = [
-    ('Recover company laptop and IT assets', 'it'),
-    ('Revoke system and email access', 'it'),
-    ('Conduct exit interview', 'hr'),
-    ('Manager sign-off and handover', 'manager'),
-    ('Complete HR final settlement clearance', 'hr'),
-]
+OFFBOARDING_ELIGIBLE_STATUSES = ['notice_period', 'offboarding', 'exited']
 
 
 # Offboarding Task List — Role based
@@ -74,7 +42,7 @@ class OffboardingTaskListView(generics.ListAPIView):
                 is_archived=False
             )
 
-        # IT Admin → Sirf IT related tasks
+        # IT Admin → only IT-related tasks
         elif user.role == 'it':
             return OffboardingTask.objects.filter(
                 employee=employee_id,
@@ -82,9 +50,9 @@ class OffboardingTaskListView(generics.ListAPIView):
                 is_archived=False
             )
 
-        # Manager → Sirf apni team ke employees ke manager-tasks
+        # Manager → only manager-tasks for their own team's employees
         elif user.role == 'manager':
-            if not _is_managers_team_member(user, employee_id):
+            if not is_managers_team_member(user, employee_id):
                 return OffboardingTask.objects.none()
             return OffboardingTask.objects.filter(
                 employee=employee_id,
@@ -115,9 +83,10 @@ class OffboardingTaskCreateView(generics.CreateAPIView):
             action='create',
             model_name='OffboardingTask',
             object_id=task.id,
-            description=f'Offboarding task "{
-                task.task_name}" created for {
-                task.employee}',
+            description=(
+                f'Offboarding task "{task.task_name}" created '
+                f'for {task.employee}'
+            ),
             request=self.request
         )
 
@@ -148,47 +117,21 @@ class OffboardingTaskUpdateView(generics.UpdateAPIView):
             action='update',
             model_name='OffboardingTask',
             object_id=task.id,
-            description=f'Offboarding task "{
-                task.task_name}" marked as {
-                task.status}',
+            description=(
+                f'Offboarding task "{task.task_name}" marked '
+                f'as {task.status}'
+            ),
             request=self.request
         )
 
         checklist, _ = OffboardingChecklist.objects.get_or_create(
             employee=task.employee
         )
-
-        if task.status == 'completed':
-            if task.task_name == 'Recover company laptop and IT assets':
-                checklist.asset_recovery_status = True
-            elif task.task_name == 'Revoke system and email access':
-                checklist.access_revocation_status = True
-            elif task.task_name == 'Conduct exit interview':
-                checklist.exit_interview_status = 'completed'
-            elif task.task_name == 'Manager sign-off and handover':
-                checklist.manager_clearance_status = True
-            elif task.task_name == 'Complete HR final settlement clearance':
-                checklist.hr_clearance_status = True
-
-        # Final clearance auto-derives once the four operational clearances are
-        # done
-        if (checklist.asset_recovery_status and checklist.access_revocation_status
-                and checklist.manager_clearance_status and checklist.hr_clearance_status):
-            checklist.final_clearance_status = True
-
-        checklist.save()
+        checklist = sync_checklist_from_task_completion(task, checklist)
         sync_employee_lifecycle_from_checklist(checklist)
 
         if task.status == 'completed':
-            notify_many(
-                User.objects.filter(role='hr'),
-                title='Offboarding task completed',
-                message=f'"{
-                    task.task_name}" ({
-                    task.assigned_to_role}) completed for {
-                    task.employee}.',
-                notification_type='offboarding',
-            )
+            notify_task_completed(task)
 
 
 # Offboarding Task Archive — Soft Delete
@@ -215,9 +158,6 @@ class OffboardingTaskArchiveView(generics.UpdateAPIView):
 
 
 # Offboarding Checklist
-OFFBOARDING_ELIGIBLE_STATUSES = ['notice_period', 'offboarding', 'exited']
-
-
 class OffboardingChecklistView(generics.RetrieveAPIView):
     serializer_class = OffboardingChecklistSerializer
     permission_classes = [IsHROrManagerOrSuperAdmin]
@@ -226,16 +166,17 @@ class OffboardingChecklistView(generics.RetrieveAPIView):
         user = self.request.user
         employee_id = self.kwargs.get('employee_id')
 
-        if user.role == 'manager' and not _is_managers_team_member(
+        if user.role == 'manager' and not is_managers_team_member(
                 user, employee_id):
             raise PermissionDenied(
-                "You can only view offboarding data for your own team members."
+                "You can only view offboarding data for your own "
+                "team members."
             )
 
-        # Only enforce the status check when a checklist doesn't exist yet —
-        # once offboarding has started, the employee's status may keep
-        # changing (notice_period -> offboarding -> exited/inactive), and
-        # the existing checklist should still be viewable regardless.
+        # Only enforce the status check when a checklist doesn't exist
+        # yet — once offboarding has started, the employee's status may
+        # keep changing (notice_period -> offboarding -> exited/inactive),
+        # and the existing checklist should still be viewable regardless.
         checklist_exists = OffboardingChecklist.objects.filter(
             employee_id=employee_id
         ).exists()
@@ -244,61 +185,18 @@ class OffboardingChecklistView(generics.RetrieveAPIView):
             employee = get_object_or_404(Employee, pk=employee_id)
             if employee.current_status not in OFFBOARDING_ELIGIBLE_STATUSES:
                 raise ValidationError(
-                    f"{employee} is currently '{employee.current_status}' — "
-                    "offboarding can only be started once an employee is in "
-                    "notice period."
+                    f"{employee} is currently '{employee.current_status}' "
+                    "— offboarding can only be started once an employee "
+                    "is in notice period."
                 )
 
         checklist, created = OffboardingChecklist.objects.get_or_create(
             employee_id=employee_id
         )
         if created:
-            OffboardingTask.objects.bulk_create([
-                OffboardingTask(
-                    employee_id=employee_id,
-                    task_name=name,
-                    assigned_to_role=role,
-                )
-                for name, role in DEFAULT_OFFBOARDING_TASKS
-            ])
+            create_default_offboarding_tasks(employee_id)
+            notify_offboarding_started(checklist.employee)
 
-            # Let each role responsible for a default task know offboarding
-            # has started — one notification per distinct role, not per task.
-            employee = checklist.employee
-            roles_notified = set()
-            for _, role in DEFAULT_OFFBOARDING_TASKS:
-                if role in roles_notified:
-                    continue
-                roles_notified.add(role)
-
-                if role == 'it':
-                    notify_many(
-                        User.objects.filter(role='it'),
-                        title='New offboarding task',
-                        message=f'{employee} is offboarding — please complete your IT tasks.',
-                        notification_type='offboarding',
-                    )
-                elif role == 'hr':
-                    notify_many(
-                        User.objects.filter(role='hr'),
-                        title='New offboarding task',
-                        message=f'{employee} is offboarding — please complete your HR tasks.',
-                        notification_type='offboarding',
-                    )
-                elif role == 'manager' and employee.reporting_manager:
-                    notify(
-                        getattr(employee.reporting_manager, 'user', None),
-                        title='New offboarding task',
-                        message=f'{employee} (your team member) is offboarding — please complete your sign-off task.',
-                        notification_type='offboarding',
-                    )
-                elif role == 'employee':
-                    notify(
-                        getattr(employee, 'user', None),
-                        title='Offboarding started',
-                        message='Your offboarding process has started.',
-                        notification_type='offboarding',
-                    )
         return checklist
 
 
@@ -315,8 +213,9 @@ class OffboardingChecklistUpdateView(generics.UpdateAPIView):
             action='update',
             model_name='OffboardingChecklist',
             object_id=checklist.id,
-            description=f'Offboarding checklist updated for {
-                checklist.employee}',
+            description=(
+                f'Offboarding checklist updated for {checklist.employee}'
+            ),
             request=self.request
         )
         sync_employee_lifecycle_from_checklist(checklist)

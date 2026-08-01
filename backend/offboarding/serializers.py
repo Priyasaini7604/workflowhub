@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import OffboardingTask, OffboardingChecklist
+from .services import is_access_revoked
 from employees.serializers import EmployeeListSerializer
 from users.serializers import UserSerializer
 
@@ -57,7 +58,8 @@ class OffboardingChecklistUpdateSerializer(serializers.ModelSerializer):
             'manager_clearance_status', 'hr_clearance_status',
             'final_clearance_status', 'offboarding_completion_percentage',
         ]
-        # ye field ab model khud compute karta hai — request se accept mat karo
+        # this field is now computed by the model itself — never
+        # accept it from the request
         read_only_fields = [
             'access_revocation_status',
             'offboarding_completion_percentage']
@@ -69,15 +71,8 @@ class OffboardingChecklistUpdateSerializer(serializers.ModelSerializer):
         )
 
         if final_clearance:
-            # access_revocation_status live check karo — SoftwareAccess table se,
-            # instance ke stale value pe bharosa mat karo
             employee = self.instance.employee if self.instance else None
-            access_clear = True
-            if employee:
-                from access.models import SoftwareAccess
-                access_clear = not SoftwareAccess.objects.filter(
-                    employee=employee, status='active', is_archived=False
-                ).exists()
+            access_clear = is_access_revoked(employee) if employee else True
 
             required_fields = {
                 'Asset Recovery': data.get(
@@ -101,8 +96,8 @@ class OffboardingChecklistUpdateSerializer(serializers.ModelSerializer):
             if incomplete:
                 raise serializers.ValidationError({
                     'final_clearance_status': (
-                        f"Cannot mark final clearance until these are completed: {
-                            ', '.join(incomplete)}"
+                        "Cannot mark final clearance until these are "
+                        f"completed: {', '.join(incomplete)}"
                     )
                 })
 
