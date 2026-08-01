@@ -1,8 +1,6 @@
 from rest_framework import generics, permissions
 from django.utils import timezone
 from audit.utils import create_audit_log
-from notifications.utils import notify
-from onboarding.models import OnboardingChecklist
 from .models import Document
 from .serializers import (
     DocumentSerializer,
@@ -10,13 +8,12 @@ from .serializers import (
     DocumentArchiveSerializer,
     DocumentVerifySerializer,
 )
+from .services import (
+    sync_onboarding_documents_submitted,
+    sync_onboarding_documents_verified,
+    notify_document_verification,
+)
 from permissions import IsHROrSuperAdmin
-
-REQUIRED_ONBOARDING_DOCUMENT_TYPES = [
-    'resume', 'offer_letter', 'nda', 'aadhaar', 'pan',
-    'passport', 'educational_certificate', 'experience_certificate',
-    'policy_acceptance',
-]
 
 
 # Document List
@@ -54,24 +51,10 @@ class DocumentCreateView(generics.CreateAPIView):
             action='create',
             model_name='Document',
             object_id=document.id,
-            description=f'Document "{
-                document.document_type}" uploaded for {
-                document.employee}',
+            description=f'Document "{document.document_type}" uploaded for {document.employee}',
             request=self.request
         )
-
-        # --- Sync with OnboardingChecklist ---
-        checklist, _ = OnboardingChecklist.objects.get_or_create(
-            employee=document.employee
-        )
-        submitted_types = Document.objects.filter(
-            employee=document.employee,
-            is_archived=False
-        ).values_list('document_type', flat=True)
-
-        if all(t in submitted_types for t in REQUIRED_ONBOARDING_DOCUMENT_TYPES):
-            checklist.documents_submitted = True
-            checklist.save()
+        sync_onboarding_documents_submitted(document.employee)
 
 
 class DocumentDetailView(generics.RetrieveAPIView):
@@ -102,9 +85,6 @@ class DocumentVerifyView(generics.UpdateAPIView):
         return self.partial_update(request, *args, **kwargs)
 
     def perform_update(self, serializer):
-        # Accept 'verified' or 'rejected' from the request body. Defaults to
-        # 'verified' so any existing frontend call that doesn't send a
-        # status keeps behaving exactly as before.
         new_status = self.request.data.get('verification_status', 'verified')
         if new_status not in ('verified', 'rejected'):
             new_status = 'verified'
@@ -126,46 +106,12 @@ class DocumentVerifyView(generics.UpdateAPIView):
             request=self.request
         )
 
-        # Let the employee know either way.
+        notify_document_verification(document, new_status)
+
         if new_status == 'rejected':
-            notify(
-                recipient=getattr(document.employee, 'user', None),
-                title='Document rejected',
-                message=f'Your "{
-                    document.document_type}" document was rejected. Please re-upload a corrected copy.',
-                notification_type='general',
-            )
             return  # rejected docs don't count toward onboarding completion
 
-        notify(
-            recipient=getattr(document.employee, 'user', None),
-            title='Document verified',
-            message=f'Your "{
-                document.document_type}" document has been verified.',
-            notification_type='general',
-        )
-
-        # --- Sync with OnboardingChecklist (only relevant when verified) ---
-        checklist, _ = OnboardingChecklist.objects.get_or_create(
-            employee=document.employee
-        )
-
-        if document.document_type == 'offer_letter':
-            checklist.offer_letter_uploaded = True
-            checklist.save()
-
-        verified_types = set(
-            Document.objects.filter(
-                employee=document.employee,
-                document_type__in=REQUIRED_ONBOARDING_DOCUMENT_TYPES,
-                is_archived=False,
-                verification_status='verified'
-            ).values_list('document_type', flat=True)
-        )
-
-        if set(REQUIRED_ONBOARDING_DOCUMENT_TYPES).issubset(verified_types):
-            checklist.documents_verified = True
-            checklist.save()
+        sync_onboarding_documents_verified(document)
 
 
 # Document Archive
