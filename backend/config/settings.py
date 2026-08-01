@@ -50,7 +50,7 @@ INSTALLED_APPS = [
     'onboarding',
     'offboarding',
     'notifications',
-    'Documents',
+    'documents',
     'audit',
     'access',
     'master_data',
