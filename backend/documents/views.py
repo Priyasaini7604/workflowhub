@@ -51,7 +51,10 @@ class DocumentCreateView(generics.CreateAPIView):
             action='create',
             model_name='Document',
             object_id=document.id,
-            description=f'Document "{document.document_type}" uploaded for {document.employee}',
+            description=(
+                f'Document "{document.document_type}" uploaded '
+                f'for {document.employee}'
+            ),
             request=self.request
         )
         sync_onboarding_documents_submitted(document.employee)
@@ -109,7 +112,7 @@ class DocumentVerifyView(generics.UpdateAPIView):
         notify_document_verification(document, new_status)
 
         if new_status == 'rejected':
-            return  # rejected docs don't count toward onboarding completion
+            return  # rejected docs don't count toward onboarding
 
         sync_onboarding_documents_verified(document)
 
