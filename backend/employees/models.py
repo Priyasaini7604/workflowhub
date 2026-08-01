@@ -162,5 +162,14 @@ class Employee(models.Model):
         related_name='archived_employees'
     )
 
+    class Meta:
+        indexes = [
+            models.Index(
+                fields=[
+                    'is_archived',
+                    'current_status'],
+                name='employee_archived_status_idx'),
+        ]
+
     def __str__(self):
         return f"{self.first_name} {self.last_name} - {self.designation}"
