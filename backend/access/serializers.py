@@ -14,10 +14,20 @@ class SoftwareAccessSerializer(serializers.ModelSerializer):
     class Meta:
         model = SoftwareAccess
         fields = [
-            'id', 'employee', 'employee_detail', 'software_name', 'access_level',
-            'granted_on', 'granted_by', 'granted_by_name',
-            'status', 'revoked_on', 'revoked_by', 'revoked_by_name',
-            'is_archived', 'archived_at',
+            'id',
+            'employee',
+            'employee_detail',
+            'software_name',
+            'access_level',
+            'granted_on',
+            'granted_by',
+            'granted_by_name',
+            'status',
+            'revoked_on',
+            'revoked_by',
+            'revoked_by_name',
+            'is_archived',
+            'archived_at',
         ]
         read_only_fields = [
             'granted_on', 'revoked_on', 'granted_by', 'revoked_by',

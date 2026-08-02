@@ -32,7 +32,7 @@ const ManagerOffboardingPage = () => {
       const meRes = await axiosInstance.get("/employees/me/");
       const myId = meRes.data.id;
 
-      const allRes = await axiosInstance.get("/employees/");
+      const allRes = await axiosInstance.get("/employees/?all=true");
       const allEmployees = allRes.data.results || allRes.data;
 
       setTeam(allEmployees.filter((emp) => getManagerId(emp) === myId));

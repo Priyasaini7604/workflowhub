@@ -14,30 +14,34 @@ const AuditLogsPage = () => {
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [filterAction, setFilterAction] = useState("");
+  const [totalCount, setTotalCount] = useState(0);
 
   useEffect(() => {
-    fetchLogs();
-  }, []);
+    const delayDebounce = setTimeout(() => {
+      fetchLogs();
+    }, 400); // typing rukne ke 400ms baad hi call jaaye
+
+    return () => clearTimeout(delayDebounce);
+  }, [search, filterAction]);
 
   const fetchLogs = async () => {
     setLoading(true);
+    setError("");
     try {
-      const response = await axiosInstance.get("/audit/");
-      setLogs(response.data.results || response.data);
+      const params = new URLSearchParams();
+      if (search) params.append("search", search);
+      if (filterAction) params.append("action", filterAction);
+
+      const response = await axiosInstance.get(`/audit/?${params.toString()}`);
+      const results = response.data.results || response.data;
+      setLogs(results);
+      setTotalCount(response.data.count ?? results.length);
     } catch (err) {
       setError("Failed to load audit logs");
     } finally {
       setLoading(false);
     }
   };
-
-  const filteredLogs = logs.filter((log) => {
-    const matchSearch =
-      log.model_name?.toLowerCase().includes(search.toLowerCase()) ||
-      log.description?.toLowerCase().includes(search.toLowerCase());
-    const matchAction = filterAction ? log.action === filterAction : true;
-    return matchSearch && matchAction;
-  });
 
   return (
     <div>
@@ -89,7 +93,7 @@ const AuditLogsPage = () => {
       ) : (
         <div style={{ background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "12px", overflow: "hidden" }}>
           <div style={{ padding: "16px", borderBottom: "0.5px solid #1e293b", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <p style={{ fontSize: "13px", fontWeight: 500, color: "#f1f5f9", margin: 0 }}>Total: {filteredLogs.length} logs</p>
+            <p style={{ fontSize: "13px", fontWeight: 500, color: "#f1f5f9", margin: 0 }}>Total: {totalCount} logs</p>
           </div>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
@@ -103,14 +107,14 @@ const AuditLogsPage = () => {
               </tr>
             </thead>
             <tbody>
-              {filteredLogs.length === 0 ? (
+              {logs.length === 0 ? (
                 <tr>
                   <td colSpan="6" style={{ padding: "40px", textAlign: "center", fontSize: "13px", color: "#475569" }}>
                     No logs found
                   </td>
                 </tr>
               ) : (
-                filteredLogs.map((log) => {
+                logs.map((log) => {
                   const actionStyle = actionColors[log.action] || actionColors.view;
                   return (
                     <tr key={log.id} style={{ borderBottom: "0.5px solid #1e293b" }}>
@@ -122,8 +126,8 @@ const AuditLogsPage = () => {
                       <td style={{ padding: "14px 16px", fontSize: "12px", color: "#f1f5f9" }}>{log.model_name}</td>
                       <td style={{ padding: "14px 16px", fontSize: "12px", color: "#64748b", maxWidth: "300px" }}>{log.description}</td>
                       <td style={{ padding: "14px 16px", fontSize: "12px", color: "#64748b" }}>
-  {log.user ? (log.user.username || log.user.email || "Unknown") : "System"}
-</td>
+                        {log.user ? (log.user.username || log.user.email || "Unknown") : "System"}
+                      </td>
                       <td style={{ padding: "14px 16px", fontSize: "12px", color: "#64748b" }}>{log.ip_address || "—"}</td>
                       <td style={{ padding: "14px 16px", fontSize: "12px", color: "#64748b" }}>
                         {new Date(log.created_at).toLocaleString()}

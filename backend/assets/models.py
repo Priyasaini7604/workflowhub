@@ -88,6 +88,8 @@ class Asset(models.Model):
                          name='asset_archived_status_idx'),
         ]
 
+        ordering = ['id']
+
     def __str__(self):
         return f"{self.category} - {self.asset_id}"
 
@@ -114,10 +116,14 @@ class AssetAllocationHistory(models.Model):
     )
     acknowledgment_status = models.CharField(
         max_length=20,
-        choices=[('pending', 'Pending'), ('acknowledged',
-                                          'Acknowledged'), ('rejected', 'Rejected')],
-        default='pending'
-    )
+        choices=[
+            ('pending',
+             'Pending'),
+            ('acknowledged',
+             'Acknowledged'),
+            ('rejected',
+             'Rejected')],
+        default='pending')
     acknowledged_at = models.DateTimeField(null=True, blank=True)
     assigned_date = models.DateField()
     returned_date = models.DateField(blank=True, null=True)

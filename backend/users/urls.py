@@ -1,6 +1,12 @@
 from django.urls import path
-from .views import (RegisterView, LoginView, MeView, UserDeactivateView, LogoutView,
-                    UserListView, UserActivateView)
+from .views import (
+    RegisterView,
+    LoginView,
+    MeView,
+    UserDeactivateView,
+    LogoutView,
+    UserListView,
+    UserActivateView)
 from rest_framework_simplejwt.views import TokenRefreshView
 
 urlpatterns = [

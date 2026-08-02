@@ -119,7 +119,9 @@ class EmployeeReportSerializer(serializers.ModelSerializer):
 
     def get_manager_name(self, obj):
         if obj.reporting_manager:
-            return f"{obj.reporting_manager.first_name} {obj.reporting_manager.last_name}"
+            return f"{
+                obj.reporting_manager.first_name} {
+                obj.reporting_manager.last_name}"
         return None
 
     def get_asset_count(self, obj):

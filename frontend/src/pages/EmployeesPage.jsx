@@ -33,26 +33,28 @@ const EmployeesPage = () => {
   const [showArchived, setShowArchived] = useState(false);
 
   useEffect(() => {
+  const delayDebounce = setTimeout(() => {
     fetchEmployees();
-  }, [showArchived]);
+  }, 400); // typing rukne ke 400ms baad hi call jaaye
 
-  const fetchEmployees = async () => {
-    setLoading(true);
-    setError("");
-    try {
-      const response = await axiosInstance.get(`/employees/?archived=${showArchived}`);
-      setEmployees(response.data.results || response.data);
-    } catch (err) {
-      setError("Failed to load employees");
-    } finally {
-      setLoading(false);
-    }
-  };
+  return () => clearTimeout(delayDebounce);
+}, [showArchived, search]);
 
-  const filteredEmployees = employees.filter((emp) =>
-    emp.full_name?.toLowerCase().includes(search.toLowerCase()) ||
-    emp.employee_id?.toLowerCase().includes(search.toLowerCase())
-  );
+const fetchEmployees = async () => {
+  setLoading(true);
+  setError("");
+  try {
+    const response = await axiosInstance.get(
+      `/employees/?archived=${showArchived}&search=${encodeURIComponent(search)}`
+    );
+    setEmployees(response.data.results || response.data);
+  } catch (err) {
+    setError("Failed to load employees");
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   return (
     <div>
@@ -127,14 +129,14 @@ const EmployeesPage = () => {
                 </tr>
               </thead>
               <tbody>
-                {filteredEmployees.length === 0 ? (
+                {employees.length === 0 ? (
                   <tr>
                     <td colSpan="7" style={{ padding: "40px", textAlign: "center", fontSize: "13px", color: "#475569" }}>
                       {showArchived ? "No archived employees found" : "No employees found"}
                     </td>
                   </tr>
                 ) : (
-                  filteredEmployees.map((emp) => {
+                  employees.map((emp) => {
                     const statusStyle = statusColors[emp.current_status] || statusColors.active;
                     const roleStyle = roleColors[emp.role] || roleColors.employee;
                     return (

@@ -36,7 +36,7 @@ const SoftwareAccessSection = ({ employeeId }) => {
     setLoading(true);
     try {
       const res = await axiosInstance.get(`/access/?employee=${employeeId}`);
-      setAccessList(res.data);
+      setAccessList(res.data.results ||res.data);
     } catch (err) {
       setError("Failed to load software access");
     } finally {

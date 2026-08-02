@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import axiosInstance from "../api/axiosInstance";
-import { getEmployeeDocuments, verifyDocument, getAllAssets } from "../api/documents";
-import { getAuditLogs } from "../api/auditLogs";
+import { getEmployeeDocuments, verifyDocument, getEmployeeAssets } from "../api/documents";
+import { getAuditLogsFor } from "../api/auditLogs";
 
 const statusColors = {
   pending: { bg: "#451a03", text: "#f59e0b" },
@@ -57,7 +57,8 @@ const OnboardingPage = () => {
   const fetchEmployees = async () => {
     setLoading(true);
     try {
-      const response = await axiosInstance.get("/employees/");
+      // ?all=true — sidebar needs the FULL employee list to pick from, not one paginated page
+      const response = await axiosInstance.get("/employees/?all=true");
       setEmployees(response.data.results || response.data);
     } catch (err) {
       setError("Failed to load employees");
@@ -76,13 +77,14 @@ const OnboardingPage = () => {
       const checklistResponse = await axiosInstance.get(`/onboarding/${employeeId}/checklist/`);
       setChecklist(checklistResponse.data);
 
-      const [tasksResponse, documentsResponse, assetsResponse, auditLogsResponse] = await Promise.all([
+      const [tasksResponse, documentsResponse, assetsResponse] = await Promise.all([
         axiosInstance.get(`/onboarding/${employeeId}/tasks/`),
         getEmployeeDocuments(employeeId),
-        getAllAssets(),
-        getAuditLogs(),
+        getEmployeeAssets(employeeId), // backend-filtered by employee now, not client-side
       ]);
-      setTasks(tasksResponse.data.results || tasksResponse.data);
+
+      const tasksData = tasksResponse.data.results || tasksResponse.data;
+      setTasks(tasksData);
 
       const allDocs = documentsResponse.data.results || documentsResponse.data;
       const onboardingDocs = allDocs.filter((doc) =>
@@ -90,15 +92,30 @@ const OnboardingPage = () => {
       );
       setDocuments(onboardingDocs);
 
-      // Assets endpoint returns all assets visible to this role; filter to this employee client-side
-      const allAssets = assetsResponse.data.results || assetsResponse.data;
-      const employeeAssets = allAssets.filter(
-        (asset) => asset.assigned_to?.id === employeeId
-      );
-      setAssets(employeeAssets);
+      setAssets(assetsResponse.data.results || assetsResponse.data);
 
-      // Audit log endpoint returns ALL logs system-wide; we filter client-side below (see timelineEvents)
-      setAuditLogs(auditLogsResponse.data.results || auditLogsResponse.data);
+      // Audit logs — fetched scoped to this employee's actual record IDs
+      // (task IDs, checklist ID, document IDs) instead of pulling the entire
+      // system-wide log table and filtering client-side. That approach broke
+      // once /audit/ became paginated — only the most recent 20 logs came
+      // back, so older employees' timelines could go silently blank.
+      const taskIds = tasksData.map((t) => t.id);
+      const docIds = onboardingDocs.map((d) => d.id);
+      const checklistId = checklistResponse.data?.id;
+
+      const [taskLogsRes, checklistLogsRes, docLogsRes] = await Promise.all([
+        getAuditLogsFor("OnboardingTask", taskIds),
+        getAuditLogsFor("OnboardingChecklist", checklistId ? [checklistId] : []),
+        getAuditLogsFor("Document", docIds),
+      ]);
+
+      const mergedLogs = [
+        ...(taskLogsRes.data.results || taskLogsRes.data),
+        ...(checklistLogsRes.data.results || checklistLogsRes.data),
+        ...(docLogsRes.data.results || docLogsRes.data),
+      ].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+
+      setAuditLogs(mergedLogs);
     } catch (err) {
       console.error("Failed to load onboarding data", err);
     } finally {
@@ -149,7 +166,8 @@ const OnboardingPage = () => {
     }
   };
 
-  // Filter employee list by name or employee_id as HR types in the search box
+  // Filter employee list by name or employee_id as HR types in the search box.
+  // Safe to keep client-side since fetchEmployees now pulls the full (?all=true) list.
   const filteredEmployees = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
     if (!term) return employees;
@@ -160,23 +178,10 @@ const OnboardingPage = () => {
     );
   }, [employees, searchTerm]);
 
-  // Derive this employee's timeline by matching audit logs (model_name + object_id)
-  // against the specific record IDs we already fetched for the selected employee.
-  const timelineEvents = useMemo(() => {
-    if (!auditLogs.length) return [];
-    const taskIds = tasks.map((t) => t.id);
-    const documentIds = documents.map((d) => d.id);
-    const checklistId = checklist?.id;
-
-    return auditLogs
-      .filter((log) => {
-        if (log.model_name === "OnboardingTask") return taskIds.includes(log.object_id);
-        if (log.model_name === "OnboardingChecklist") return log.object_id === checklistId;
-        if (log.model_name === "Document") return documentIds.includes(log.object_id);
-        return false;
-      })
-      .sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
-  }, [auditLogs, tasks, documents, checklist]);
+  // auditLogs is now already scoped + merged from the three backend calls above,
+  // just needs re-sorting isn't required again here but timelineEvents name is
+  // kept so the render code below doesn't need to change.
+  const timelineEvents = auditLogs;
 
   return (
     <div>
@@ -378,7 +383,7 @@ const OnboardingPage = () => {
                     )}
                   </div>
 
-                  {/* IT Assets — wired to real backend, filtered client-side to this employee */}
+                  {/* IT Assets — now fetched backend-scoped to this employee via getEmployeeAssets() */}
                   <div style={{ background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "12px", padding: "20px", marginBottom: "16px" }}>
                     <h3 style={{ fontSize: "14px", fontWeight: 500, color: "#f1f5f9", margin: "0 0 16px", paddingBottom: "12px", borderBottom: "0.5px solid #1e293b" }}>
                       💻 IT Assets
@@ -395,7 +400,7 @@ const OnboardingPage = () => {
                                 <p style={{ fontSize: "13px", color: "#f1f5f9", margin: "0 0 2px" }}>
                                   {asset.brand} {asset.model_name} <span style={{ color: "#475569" }}>({asset.asset_id})</span>
                                 </p>
-                                <p style={{ fontSize: "11px", color: "#64748b", margin: 0, textTransform: "capitalize" }}>{asset.asset_type}</p>
+                                <p style={{ fontSize: "11px", color: "#64748b", margin: 0, textTransform: "capitalize" }}>{asset.category_detail?.name}</p>
                               </div>
                               <span style={{ background: statusStyle.bg, color: statusStyle.text, borderRadius: "20px", padding: "3px 10px", fontSize: "11px", textTransform: "capitalize" }}>
                                 {asset.status}
@@ -448,7 +453,7 @@ const OnboardingPage = () => {
                     )}
                   </div>
 
-                  {/* Timeline — derived from Audit Logs, filtered client-side to this employee's records */}
+                  {/* Timeline — derived from Audit Logs, now fetched already scoped to this employee's records */}
                   <div style={{ background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "12px", padding: "20px" }}>
                     <h3 style={{ fontSize: "14px", fontWeight: 500, color: "#f1f5f9", margin: "0 0 16px", paddingBottom: "12px", borderBottom: "0.5px solid #1e293b" }}>
                       🕒 Timeline

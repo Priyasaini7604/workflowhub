@@ -17,7 +17,8 @@ from reportlab.lib.pagesizes import landscape, A4
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.units import mm
-
+from rest_framework.pagination import PageNumberPagination
+from django.db.models import Q
 # Employee List
 
 
@@ -28,7 +29,22 @@ class EmployeeListView(generics.ListAPIView):
     def get_queryset(self):
         archived_param = self.request.query_params.get('archived', 'false')
         is_archived = archived_param.lower() == 'true'
-        return Employee.objects.filter(is_archived=is_archived)
+        queryset = Employee.objects.filter(is_archived=is_archived)
+
+        search = self.request.query_params.get('search')
+        if search:
+            queryset = queryset.filter(
+                Q(first_name__icontains=search) |
+                Q(last_name__icontains=search) |
+                Q(employee_id__icontains=search)
+            )
+        return queryset
+
+    @property
+    def pagination_class(self):
+        if self.request.query_params.get('all') == 'true':
+            return None
+        return PageNumberPagination
 
 
 # Employee Create
@@ -303,10 +319,17 @@ class EmployeeReportExportPDFView(generics.GenericAPIView):
         elements.append(Spacer(1, 10))
 
         # Header row
-        data = [[
-            'Employee ID', 'Full Name', 'Department', 'Designation',
-            'Status', 'Onboarding %', 'Assets', 'Manager', 'Type', 'Joining Date',
-        ]]
+        data = [['Employee ID',
+                 'Full Name',
+                 'Department',
+                 'Designation',
+                 'Status',
+                 'Onboarding %',
+                 'Assets',
+                 'Manager',
+                 'Type',
+                 'Joining Date',
+                 ]]
 
         for emp in queryset:
             full_name = (

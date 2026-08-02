@@ -98,7 +98,19 @@ class UserListView(generics.ListAPIView):
     permission_classes = [IsHROrSuperAdmin]
 
     def get_queryset(self):
-        return User.objects.all().order_by('username')
+        queryset = User.objects.all().order_by('username')
+
+        search = self.request.query_params.get('search')
+        if search:
+            queryset = queryset.filter(
+                Q(username__icontains=search) | Q(email__icontains=search)
+            )
+
+        role = self.request.query_params.get('role')
+        if role:
+            queryset = queryset.filter(role=role)
+
+        return queryset
 
 
 # Reactivate a previously deactivated user

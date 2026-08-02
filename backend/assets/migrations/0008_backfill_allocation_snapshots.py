@@ -2,12 +2,17 @@
 
 from django.db import migrations
 
+
 def backfill_snapshots(apps, schema_editor):
     AssetAllocationHistory = apps.get_model('assets', 'AssetAllocationHistory')
-    for record in AssetAllocationHistory.objects.select_related('asset').filter(asset__isnull=False):
+    for record in AssetAllocationHistory.objects.select_related(
+            'asset').filter(asset__isnull=False):
         record.asset_id_snapshot = record.asset.asset_id
-        record.asset_name_snapshot = f"{record.asset.brand} {record.asset.model_name}".strip()
+        record.asset_name_snapshot = f"{
+            record.asset.brand} {
+            record.asset.model_name}".strip()
         record.save(update_fields=['asset_id_snapshot', 'asset_name_snapshot'])
+
 
 def reverse_noop(apps, schema_editor):
     pass

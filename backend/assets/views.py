@@ -24,6 +24,7 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, 
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.units import mm
 from rest_framework.exceptions import ValidationError
+from django.db.models import Q
 
 # Asset List
 
@@ -36,19 +37,34 @@ class AssetListView(generics.ListAPIView):
         user = self.request.user
 
         if user.role in ['it', 'superadmin']:
-            return Asset.objects.filter(is_archived=False)
-
+            queryset = Asset.objects.filter(is_archived=False)
         elif user.role == 'manager':
-            return Asset.objects.filter(
+            queryset = Asset.objects.filter(
                 assigned_to__reporting_manager__user=user,
                 is_archived=False
             )
         elif user.role == 'employee':
-            return Asset.objects.filter(
+            queryset = Asset.objects.filter(
                 assigned_to__user=user,
                 is_archived=False
             )
-        return Asset.objects.none()
+        else:
+            return Asset.objects.none()
+
+        # naya: optional employee filter (used by OnboardingPage)
+        employee_id = self.request.query_params.get('employee')
+        if employee_id:
+            queryset = queryset.filter(assigned_to_id=employee_id)
+
+        search = self.request.query_params.get('search')
+        if search:
+            queryset = queryset.filter(
+                Q(asset_id__icontains=search) |
+                Q(brand__icontains=search) |
+                Q(model_name__icontains=search) |
+                Q(serial_number__icontains=search)
+            )
+        return queryset
 
 
 # Asset Create
@@ -138,7 +154,10 @@ class AssetUpdateView(generics.UpdateAPIView):
             )
 
             notify(
-                recipient=getattr(new_assigned_to, 'user', None),
+                recipient=getattr(
+                    new_assigned_to,
+                    'user',
+                    None),
                 title='New asset assigned',
                 message=f'{
                     asset.brand} {
@@ -154,8 +173,7 @@ class AssetUpdateView(generics.UpdateAPIView):
                 object_id=asset.id,
                 description=f'Asset {
                     asset.asset_id} assignment initiated for {new_assigned_to} (via edit) — awaiting acknowledgment',
-                request=self.request
-            )
+                request=self.request)
             return
 
         if old_assigned_to is not None and new_assigned_to is None:
@@ -181,8 +199,7 @@ class AssetUpdateView(generics.UpdateAPIView):
                 object_id=asset.id,
                 description=f'Return initiated for asset {
                     asset.asset_id} from {old_assigned_to} (via edit) — awaiting confirmation',
-                request=self.request
-            )
+                request=self.request)
             return
 
         if old_assigned_to != new_assigned_to:
@@ -308,8 +325,7 @@ class AssetAssignView(generics.UpdateAPIView):
                     asset.brand} {
                     asset.model_name} ({
                     asset.asset_id}) has been assigned to you. Please review and acknowledge.',
-                notification_type='asset'
-            )
+                notification_type='asset')
 
         create_audit_log(
             user=self.request.user,
@@ -596,10 +612,16 @@ class AssetReportExportPDFView(generics.GenericAPIView):
         elements.append(Paragraph("Asset Status Report", styles['Title']))
         elements.append(Spacer(1, 10))
 
-        data = [[
-            'Asset ID', 'Category', 'Model Name', 'Serial Number',
-            'Assigned To', 'Department', 'Status', 'Condition', 'Warranty Expiry',
-        ]]
+        data = [['Asset ID',
+                 'Category',
+                 'Model Name',
+                 'Serial Number',
+                 'Assigned To',
+                 'Department',
+                 'Status',
+                 'Condition',
+                 'Warranty Expiry',
+                 ]]
 
         for asset in queryset:
             assigned_to_name = (

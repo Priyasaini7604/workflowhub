@@ -47,5 +47,7 @@ class AuditLog(models.Model):
                 name='auditlog_created_at_idx'),
         ]
 
+        ordering = ['-created_at']
+
     def __str__(self):
         return f"{self.user} - {self.action} - {self.model_name}"

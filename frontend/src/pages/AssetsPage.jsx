@@ -8,7 +8,7 @@ const statusColors = {
   available: { bg: "#064e3b", text: "#10b981" },
   pending_acknowledgment: { bg: "#78350f", text: "#fbbf24" },
   assigned: { bg: "#1e3a5f", text: "#3b82f6" },
-  pending_return: { bg: "#78350f", text: "#fb923c" }, 
+  pending_return: { bg: "#78350f", text: "#fb923c" },
   under_repair: { bg: "#451a03", text: "#f59e0b" },
   retired: { bg: "#1e293b", text: "#94a3b8" },
 };
@@ -26,13 +26,20 @@ const AssetsPage = () => {
   const [search, setSearch] = useState("");
 
   useEffect(() => {
-    fetchAssets();
-  }, []);
+    const delayDebounce = setTimeout(() => {
+      fetchAssets();
+    }, 400); // typing rukne ke 400ms baad hi call jaaye
+
+    return () => clearTimeout(delayDebounce);
+  }, [search]);
 
   const fetchAssets = async () => {
     setLoading(true);
+    setError("");
     try {
-      const response = await axiosInstance.get("/assets/");
+      const response = await axiosInstance.get(
+        `/assets/?search=${encodeURIComponent(search)}`
+      );
       setAssets(response.data.results || response.data);
     } catch (err) {
       setError("Failed to load assets");
@@ -41,17 +48,18 @@ const AssetsPage = () => {
     }
   };
 
-  const filteredAssets = assets
-  .filter((asset) => {
+  // Text search ab backend pe hota hai (query param se).
+  // Yahan sirf IT-role ka client-side visibility filter reh gaya hai.
+  const filteredAssets = assets.filter((asset) => {
     if (!isITOnlyAssigned) return true;
     const status = getEffectiveAssetStatus(asset);
-    return status === "assigned" || status === "pending_acknowledgment" ||status === "pending_return";;
-  })
-  .filter((asset) =>
-    asset.asset_id?.toLowerCase().includes(search.toLowerCase()) ||
-    asset.asset_type?.toLowerCase().includes(search.toLowerCase()) ||
-    asset.brand?.toLowerCase().includes(search.toLowerCase())
-  );
+    return (
+      status === "assigned" ||
+      status === "pending_acknowledgment" ||
+      status === "pending_return"
+    );
+  });
+
   return (
     <div>
       {/* Header */}
@@ -78,7 +86,7 @@ const AssetsPage = () => {
         </svg>
         <input
           type="text"
-          placeholder="Search by ID, type, brand..."
+          placeholder="Search by ID, brand, model..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           style={{ flex: 1, background: "transparent", border: "none", outline: "none", fontSize: "13px", color: "#f1f5f9" }}
@@ -137,7 +145,7 @@ const AssetsPage = () => {
                             </div>
                           </div>
                         </td>
-                        <td style={{ padding: "14px 16px", fontSize: "12px", color: "#64748b" }}>{asset.asset_type}</td>
+                        <td style={{ padding: "14px 16px", fontSize: "12px", color: "#64748b" }}>{asset.category_detail?.name || "—"}</td>
                         <td style={{ padding: "14px 16px" }}>
                           <p style={{ fontSize: "12px", color: "#f1f5f9", margin: 0 }}>{asset.brand || "—"}</p>
                           <p style={{ fontSize: "11px", color: "#475569", margin: 0 }}>{asset.model_name || "—"}</p>

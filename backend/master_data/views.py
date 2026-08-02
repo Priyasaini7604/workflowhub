@@ -9,6 +9,7 @@ from audit.utils import create_audit_log
 class AssetCategoryListCreateView(generics.ListCreateAPIView):
     serializer_class = AssetCategorySerializer
     permission_classes = [IsITAdminOrSuperAdmin]
+    pagination_class = None
 
     def get_queryset(self):
         return AssetCategory.objects.filter(is_archived=False)

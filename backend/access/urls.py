@@ -7,8 +7,14 @@ from .views import (
 )
 
 urlpatterns = [
-    path('', SoftwareAccessListCreateView.as_view(), name='access-list-create'),
-    path('<int:pk>/', SoftwareAccessDetailView.as_view(), name='access-detail'),
+    path(
+        '',
+        SoftwareAccessListCreateView.as_view(),
+        name='access-list-create'),
+    path(
+        '<int:pk>/',
+        SoftwareAccessDetailView.as_view(),
+        name='access-detail'),
     path(
         '<int:pk>/revoke/',
         SoftwareAccessRevokeView.as_view(),

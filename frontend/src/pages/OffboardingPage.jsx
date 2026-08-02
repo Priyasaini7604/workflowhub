@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import axiosInstance from "../api/axiosInstance";
 import { getEmployeeDocuments, verifyDocument, rejectDocument } from "../api/documents";
-import { getAuditLogs } from "../api/auditLogs";
+import { getAuditLogsFor } from "../api/auditLogs";
 
 const statusColors = {
   pending: { bg: "#451a03", text: "#f59e0b" },
@@ -54,7 +54,8 @@ const OffboardingPage = () => {
   const fetchEmployees = async () => {
     setLoading(true);
     try {
-      const response = await axiosInstance.get("/employees/");
+      // ?all=true — sidebar needs the FULL employee list to pick from, not one paginated page
+      const response = await axiosInstance.get("/employees/?all=true");
       setEmployees(response.data.results || response.data);
     } catch (err) {
       console.error("Failed to load employees", err);
@@ -74,14 +75,15 @@ const OffboardingPage = () => {
       setExitReasonInput(checklistResponse.data.exit_reason || "");
       setResignationDateInput(checklistResponse.data.resignation_date || "");
 
-      const [tasksResponse, documentsResponse, auditLogsResponse, pendingAccessResponse] = await Promise.all([
+      const [tasksResponse, documentsResponse, pendingAccessResponse] = await Promise.all([
         axiosInstance.get(`/offboarding/${employeeId}/tasks/`),
         getEmployeeDocuments(employeeId),
-        getAuditLogs(),
         axiosInstance.get(`/access/employee/${employeeId}/pending/`),
       ]);
-      setTasks(tasksResponse.data.results || tasksResponse.data);
-      setPendingAccess(pendingAccessResponse.data);
+
+      const tasksData = tasksResponse.data.results || tasksResponse.data;
+      setTasks(tasksData);
+      setPendingAccess(pendingAccessResponse.data.results || pendingAccessResponse.data);
 
       const allDocs = documentsResponse.data.results || documentsResponse.data;
       const offboardingDocs = allDocs.filter((doc) =>
@@ -89,7 +91,28 @@ const OffboardingPage = () => {
       );
       setDocuments(offboardingDocs);
 
-      setAuditLogs(auditLogsResponse.data.results || auditLogsResponse.data);
+      // Audit logs — fetched scoped to this employee's actual record IDs
+      // (task IDs, checklist ID, document IDs) instead of pulling the entire
+      // system-wide log table and filtering client-side. That approach broke
+      // once /audit/ became paginated — only the most recent 20 logs came
+      // back, so older employees' timelines could go silently blank.
+      const taskIds = tasksData.map((t) => t.id);
+      const docIds = offboardingDocs.map((d) => d.id);
+      const checklistId = checklistResponse.data?.id;
+
+      const [taskLogsRes, checklistLogsRes, docLogsRes] = await Promise.all([
+        getAuditLogsFor("OffboardingTask", taskIds),
+        getAuditLogsFor("OffboardingChecklist", checklistId ? [checklistId] : []),
+        getAuditLogsFor("Document", docIds),
+      ]);
+
+      const mergedLogs = [
+        ...(taskLogsRes.data.results || taskLogsRes.data),
+        ...(checklistLogsRes.data.results || checklistLogsRes.data),
+        ...(docLogsRes.data.results || docLogsRes.data),
+      ].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+
+      setAuditLogs(mergedLogs);
     } catch (err) {
       // Backend now blocks starting offboarding for employees who aren't
       // actually in an offboarding-eligible status (still 'active', etc.)
@@ -178,7 +201,8 @@ const OffboardingPage = () => {
     }
   };
 
-  // Filter employee list by name or employee_id as HR types in the search box
+  // Filter employee list by name or employee_id as HR types in the search box.
+  // Safe to keep client-side since fetchEmployees now pulls the full (?all=true) list.
   const filteredEmployees = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
     if (!term) return employees;
@@ -189,23 +213,9 @@ const OffboardingPage = () => {
     );
   }, [employees, searchTerm]);
 
-  // Derive this employee's timeline by matching audit logs (model_name + object_id)
-  // against the specific record IDs we already fetched for the selected employee.
-  const timelineEvents = useMemo(() => {
-    if (!auditLogs.length) return [];
-    const taskIds = tasks.map((t) => t.id);
-    const documentIds = documents.map((d) => d.id);
-    const checklistId = checklist?.id;
-
-    return auditLogs
-      .filter((log) => {
-        if (log.model_name === "OffboardingTask") return taskIds.includes(log.object_id);
-        if (log.model_name === "OffboardingChecklist") return log.object_id === checklistId;
-        if (log.model_name === "Document") return documentIds.includes(log.object_id);
-        return false;
-      })
-      .sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
-  }, [auditLogs, tasks, documents, checklist]);
+  // auditLogs is already scoped + merged from the three backend calls above —
+  // no client-side filtering needed anymore.
+  const timelineEvents = auditLogs;
 
   return (
     <div>
@@ -523,7 +533,7 @@ const OffboardingPage = () => {
                     )}
                   </div>
 
-                  {/* Timeline — derived from Audit Logs, filtered client-side to this employee's records */}
+                  {/* Timeline — derived from Audit Logs, now fetched already scoped to this employee's records */}
                   <div style={{ background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "12px", padding: "20px" }}>
                     <h3 style={{ fontSize: "14px", fontWeight: 500, color: "#f1f5f9", margin: "0 0 16px", paddingBottom: "12px", borderBottom: "0.5px solid #1e293b" }}>
                       🕒 Timeline

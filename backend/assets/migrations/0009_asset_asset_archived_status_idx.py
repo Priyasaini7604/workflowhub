@@ -15,7 +15,9 @@ class Migration(migrations.Migration):
         migrations.AddIndex(
             model_name="asset",
             index=models.Index(
-                fields=["is_archived", "status"], name="asset_archived_status_idx"
-            ),
+                fields=[
+                    "is_archived",
+                    "status"],
+                name="asset_archived_status_idx"),
         ),
     ]

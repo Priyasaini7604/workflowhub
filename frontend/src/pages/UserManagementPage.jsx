@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect} from "react";
 import axiosInstance from "../api/axiosInstance";
 
 const ROLE_COLORS = {
@@ -31,16 +31,20 @@ const UserManagementPage = () => {
   }, []);
 
   const fetchUsers = async () => {
-    setLoading(true);
-    try {
-      const res = await axiosInstance.get("/users/list/");
-      setUsers(res.data);
-    } catch (err) {
-      setError("Failed to load users");
-    } finally {
-      setLoading(false);
-    }
-  };
+  setLoading(true);
+  try {
+    const params = new URLSearchParams();
+    if (searchTerm) params.append("search", searchTerm);
+    if (roleFilter !== "all") params.append("role", roleFilter);
+
+    const res = await axiosInstance.get(`/users/list/?${params.toString()}`);
+    setUsers(res.data.results || res.data);
+  } catch (err) {
+    setError("Failed to load users");
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleToggleActive = async (user) => {
     const action = user.is_active ? "deactivate" : "activate";
@@ -57,17 +61,14 @@ const UserManagementPage = () => {
     }
   };
 
-  const filteredUsers = useMemo(() => {
-    return users.filter((u) => {
-      const matchesRole = roleFilter === "all" || u.role === roleFilter;
-      const term = searchTerm.trim().toLowerCase();
-      const matchesSearch =
-        !term ||
-        u.username?.toLowerCase().includes(term) ||
-        u.email?.toLowerCase().includes(term);
-      return matchesRole && matchesSearch;
-    });
-  }, [users, roleFilter, searchTerm]);
+
+  useEffect(() => {
+  const delayDebounce = setTimeout(() => {
+    fetchUsers();
+  }, 400); 
+
+  return () => clearTimeout(delayDebounce);
+}, [searchTerm, roleFilter]);
 
   const inputStyle = {
     background: "#0f1a2e",
@@ -131,7 +132,7 @@ const UserManagementPage = () => {
           <div style={{ padding: "24px", textAlign: "center" }}>
             <p style={{ color: "#64748b", fontSize: "13px" }}>Loading...</p>
           </div>
-        ) : filteredUsers.length === 0 ? (
+        ) : users.length === 0 ? (
           <div style={{ padding: "24px", textAlign: "center" }}>
             <p style={{ color: "#475569", fontSize: "13px" }}>No users match your filters</p>
           </div>
@@ -147,7 +148,7 @@ const UserManagementPage = () => {
               </tr>
             </thead>
             <tbody>
-              {filteredUsers.map((u) => {
+              {users.map((u) => {
                 const roleStyle = ROLE_COLORS[u.role] || ROLE_COLORS.employee;
                 return (
                   <tr key={u.id} style={{ borderBottom: "0.5px solid #1e293b" }}>

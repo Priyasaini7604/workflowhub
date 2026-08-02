@@ -6,7 +6,8 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("assets", "0002_asset_archived_at_asset_condition_asset_is_archived_and_more"),
+        ("assets",
+         "0002_asset_archived_at_asset_condition_asset_is_archived_and_more"),
     ]
 
     operations = [

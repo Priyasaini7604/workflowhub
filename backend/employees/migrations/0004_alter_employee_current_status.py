@@ -6,8 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("employees", "0003_employee_archived_at_employee_archived_by_and_more"),
-    ]
+        ("employees", "0003_employee_archived_at_employee_archived_by_and_more"), ]
 
     operations = [
         migrations.AlterField(

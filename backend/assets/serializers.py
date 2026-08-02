@@ -12,10 +12,21 @@ class AssetSerializer(serializers.ModelSerializer):
     class Meta:
         model = Asset
         fields = [
-            'id', 'asset_id', 'category', 'category_detail', 'brand', 'model_name', 'serial_number',
-            'assigned_to', 'asset_issue_date', 'asset_return_date',
-            'status', 'condition', 'warranty_expiry_date',
-            'created_at', 'updated_at',
+            'id',
+            'asset_id',
+            'category',
+            'category_detail',
+            'brand',
+            'model_name',
+            'serial_number',
+            'assigned_to',
+            'asset_issue_date',
+            'asset_return_date',
+            'status',
+            'condition',
+            'warranty_expiry_date',
+            'created_at',
+            'updated_at',
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
 
@@ -163,9 +174,10 @@ class AssetInitiateReturnSerializer(serializers.ModelSerializer):
         # --- Issue 2 fix: Retired/Under Repair asset assign nahi ho sakta ---
         if new_assigned_to is not None and self.instance.status in [
                 'retired', 'under_repair']:
-            raise serializers.ValidationError({
-                'assigned_to': f"Cannot assign an asset that is currently '{self.instance.get_status_display()}'."
-            })
+            raise serializers.ValidationError(
+                {
+                    'assigned_to': f"Cannot assign an asset that is currently '{
+                        self.instance.get_status_display()}'."})
 
         # --- Issue 1 fix: Already assigned asset ko direct edit se
         # doosre employee ko reassign nahi kar sakte ---

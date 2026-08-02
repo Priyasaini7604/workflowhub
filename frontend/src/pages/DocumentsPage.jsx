@@ -25,6 +25,7 @@ const DocumentsPage = () => {
   const [employees, setEmployees] = useState([]);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [documents, setDocuments] = useState([]);
+  const [docsCount, setDocsCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [docsLoading, setDocsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -42,7 +43,7 @@ const DocumentsPage = () => {
   const fetchEmployees = async () => {
     setLoading(true);
     try {
-      const response = await axiosInstance.get("/employees/");
+      const response = await axiosInstance.get("/employees/?all=true");
       setEmployees(response.data.results || response.data);
     } catch (err) {
       setError("Failed to load employees");
@@ -55,7 +56,9 @@ const DocumentsPage = () => {
     setDocsLoading(true);
     try {
       const response = await axiosInstance.get(`/documents/${employeeId}/list/`);
-      setDocuments(response.data.results || response.data);
+      const results = response.data.results || response.data;
+      setDocuments(results);
+      setDocsCount(response.data.count ?? results.length);
     } catch (err) {
       console.error("Failed to load documents");
     } finally {
@@ -254,7 +257,7 @@ const DocumentsPage = () => {
               {/* Documents List */}
               <div style={{ background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "12px", overflow: "hidden" }}>
                 <div style={{ padding: "16px", borderBottom: "0.5px solid #1e293b" }}>
-                  <p style={{ fontSize: "13px", fontWeight: 500, color: "#f1f5f9", margin: 0 }}>Documents ({documents.length})</p>
+                  <p style={{ fontSize: "13px", fontWeight: 500, color: "#f1f5f9", margin: 0 }}>Documents ({docsCount})</p>
                 </div>
                 {docsLoading ? (
                   <div style={{ padding: "40px", textAlign: "center" }}>
