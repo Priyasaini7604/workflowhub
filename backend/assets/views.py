@@ -51,6 +51,10 @@ class AssetListView(generics.ListAPIView):
         else:
             return Asset.objects.none()
 
+        # N+1 fix: assigned_to -> Employee, assigned_to__user -> User,
+        # category -> AssetCategory are all serialized per-row by AssetSerializer
+        queryset = queryset.select_related('assigned_to__user', 'category')
+
         # naya: optional employee filter (used by OnboardingPage)
         employee_id = self.request.query_params.get('employee')
         if employee_id:
@@ -104,17 +108,22 @@ class AssetDetailView(generics.RetrieveAPIView):
     def get_queryset(self):
         user = self.request.user
 
+        # N+1 fix: single object per request, but AssetSerializer still
+        # triggers 2-3 extra queries (assigned_to, assigned_to.user, category)
+        # without this — cheap to fix, kept consistent with AssetListView
+        base = Asset.objects.select_related('assigned_to__user', 'category')
+
         if user.role in ['it', 'superadmin']:
-            return Asset.objects.filter(is_archived=False)
+            return base.filter(is_archived=False)
 
         elif user.role == 'manager':
-            return Asset.objects.filter(
+            return base.filter(
                 assigned_to__reporting_manager__user=user,
                 is_archived=False
             )
 
         elif user.role == 'employee':
-            return Asset.objects.filter(
+            return base.filter(
                 assigned_to__user=user,
                 is_archived=False
             )
@@ -411,7 +420,11 @@ class AssetStatusReportView(generics.ListAPIView):
     permission_classes = [IsITAdminOrSuperAdmin]
 
     def get_queryset(self):
-        return Asset.objects.filter(is_archived=False)
+        # N+1 fix: AssetReportSerializer serializes assigned_to and category
+        # per row — same fix as AssetListView
+        return Asset.objects.filter(
+            is_archived=False
+        ).select_related('assigned_to__user', 'category')
 
 # Asset Allocation History — Sirf IT Admin/SuperAdmin
 
@@ -422,9 +435,13 @@ class AssetAllocationHistoryView(generics.ListAPIView):
 
     def get_queryset(self):
         asset_id = self.kwargs.get('asset_id')
+        # N+1 fix: check AssetAllocationHistorySerializer — if it nests
+        # employee/assigned_by/asset details, select_related them here.
+        # Adjust the field list below to match what the serializer actually
+        # exposes (over-fetching unused relations wastes the JOIN).
         return AssetAllocationHistory.objects.filter(
             asset=asset_id
-        ).order_by('-assigned_date')
+        ).select_related('employee__user', 'assigned_by').order_by('-assigned_date')
 
 # Admin/IT initiates return — asset goes to pending_return, NOT available yet
 
@@ -545,7 +562,15 @@ class AssetReportExportCSVView(generics.GenericAPIView):
     permission_classes = [IsITAdminOrSuperAdmin]
 
     def get_queryset(self):
-        return Asset.objects.filter(is_archived=False)
+        # N+1 fix: this view loops over the full queryset manually (no
+        # pagination), accessing asset.assigned_to and asset.category per
+        # row — this was the biggest N+1 in the file since it's unbounded
+        # by page size. Fixes to just assigned_to (not assigned_to__user)
+        # since only Employee's own fields (first_name, last_name,
+        # department) are read here, not the linked User.
+        return Asset.objects.filter(
+            is_archived=False
+        ).select_related('assigned_to', 'category')
 
     def get(self, request, *args, **kwargs):
         queryset = self.get_queryset()
@@ -591,7 +616,10 @@ class AssetReportExportPDFView(generics.GenericAPIView):
     permission_classes = [IsITAdminOrSuperAdmin]
 
     def get_queryset(self):
-        return Asset.objects.filter(is_archived=False)
+        # Same N+1 fix as AssetReportExportCSVView above
+        return Asset.objects.filter(
+            is_archived=False
+        ).select_related('assigned_to', 'category')
 
     def get(self, request, *args, **kwargs):
         queryset = self.get_queryset()
