@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import axiosInstance from "../api/axiosInstance";
 import { getEmployeeDocuments, verifyDocument, getEmployeeAssets } from "../api/documents";
 import { getAuditLogsFor } from "../api/auditLogs";
+import { idsMatch } from '../utils/idUtils';
 
 const statusColors = {
   pending: { bg: "#451a03", text: "#f59e0b" },
@@ -235,7 +236,7 @@ const OnboardingPage = () => {
                     padding: "12px 16px",
                     borderBottom: "0.5px solid #1e293b",
                     cursor: "pointer",
-                    background: selectedEmployee?.id === emp.id ? "#1e3a5f" : "transparent",
+                    background: idsMatch(selectedEmployee?.id, emp.id) ? "#1e3a5f" : "transparent",
                     display: "flex",
                     alignItems: "center",
                     gap: "10px",

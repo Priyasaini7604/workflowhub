@@ -20,7 +20,7 @@ const MyAssetsPage = () => {
 
       const assetsResponse = await axiosInstance.get("/assets/");
       const allAssets = assetsResponse.data.results || assetsResponse.data;
-      const myAssets = allAssets.filter(a => a.assigned_to?.id === profileResponse.data.id);
+      const myAssets = allAssets.filter((a) => idsMatch(a.assigned_to?.id== profileResponse.data.id));
       setAssets(myAssets);
     } catch (err) {
       console.error("Failed to load assets");

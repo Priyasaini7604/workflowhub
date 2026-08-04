@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import axiosInstance from "../api/axiosInstance";
+import { idsMatch } from '../utils/idUtils';
 
 const statusColors = {
   pending: { bg: "#451a03", text: "#f59e0b" },
@@ -129,7 +130,7 @@ const ManagerOffboardingPage = () => {
                   padding: "12px 16px",
                   borderBottom: "0.5px solid #1e293b",
                   cursor: "pointer",
-                  background: selectedEmployee?.id === emp.id ? "#1e3a5f" : "transparent",
+                  background: idsMatch(selectedEmployee?.id, emp.id) ? "#1e3a5f" : "transparent",
                 }}
               >
                 <p style={{ fontSize: "13px", color: "#f1f5f9", margin: 0 }}>{emp.full_name}</p>

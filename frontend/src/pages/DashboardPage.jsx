@@ -335,7 +335,7 @@ const EmployeeDashboard = ({ navigate, username }) => {
         ]);
 
         const allAssets = assetRes.data.results || assetRes.data;
-        const myAssets = allAssets.filter((a) => a.assigned_to?.id === empId);
+        const myAssets = allAssets.filter((a) => idsMatch(a.assigned_to?.id, empId));
 
         const myDocuments = docRes.data.results || docRes.data;
 

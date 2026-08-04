@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import axiosInstance from "../api/axiosInstance";
+import { idsMatch } from '../utils/idUtils';
+
 
 const GENDER_CHOICES = [
   { value: "male", label: "Male" },
@@ -113,7 +115,7 @@ const MyProfilePage = () => {
     try {
       const response = await axiosInstance.get("/assets/");
       const allAssets = response.data.results || response.data;
-      setAssets(allAssets.filter(a => a.assigned_to?.id === empId));
+      setAssets(allAssets.filter((a) => idsMatch(a.assigned_to?.id== empId)));
     } catch (err) {
       console.error("Failed to load assets");
     }
