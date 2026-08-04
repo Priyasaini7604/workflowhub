@@ -52,7 +52,8 @@ class AssetListView(generics.ListAPIView):
             return Asset.objects.none()
 
         # N+1 fix: assigned_to -> Employee, assigned_to__user -> User,
-        # category -> AssetCategory are all serialized per-row by AssetSerializer
+        # category -> AssetCategory are all serialized per-row by
+        # AssetSerializer
         queryset = queryset.select_related('assigned_to__user', 'category')
 
         # naya: optional employee filter (used by OnboardingPage)
@@ -440,8 +441,9 @@ class AssetAllocationHistoryView(generics.ListAPIView):
         # Adjust the field list below to match what the serializer actually
         # exposes (over-fetching unused relations wastes the JOIN).
         return AssetAllocationHistory.objects.filter(
-            asset=asset_id
-        ).select_related('employee__user', 'assigned_by').order_by('-assigned_date')
+            asset=asset_id).select_related(
+            'employee__user',
+            'assigned_by').order_by('-assigned_date')
 
 # Admin/IT initiates return — asset goes to pending_return, NOT available yet
 

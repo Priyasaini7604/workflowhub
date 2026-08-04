@@ -45,3 +45,7 @@ class SoftwareAccess(models.Model):
         null=True,
         blank=True,
         related_name='access_archived')
+
+
+class Meta:
+    ordering = ['-granted_on']
