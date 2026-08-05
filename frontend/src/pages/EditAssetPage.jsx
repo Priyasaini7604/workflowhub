@@ -23,6 +23,8 @@ const STATUS_CHOICES = [
   { value: "available", label: "Available" },
   { value: "assigned", label: "Assigned" },
   { value: "under_repair", label: "Under Repair" },
+  {value: "lost", label : "Lost"},
+  {value: "reserved" , label : "Reserved"},
   { value: "retired", label: "Retired" },
 ];
 

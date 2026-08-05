@@ -9,6 +9,7 @@ class AssetCategorySerializer(serializers.ModelSerializer):
             'id',
             'name',
             'code',
+            'asset_id_prefix',
             'is_active',
             'created_at',
             'created_by']

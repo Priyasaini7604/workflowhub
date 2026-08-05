@@ -4,8 +4,11 @@ from django.conf import settings
 
 class AssetCategory(models.Model):
     name = models.CharField(max_length=50, unique=True)
-    # internal key, jaise 'laptop'
+
     code = models.SlugField(max_length=50, unique=True)
+
+    asset_id_prefix = models.CharField(
+        max_length=5, unique=True, null=True, blank=True)
     is_active = models.BooleanField(default=True)
 
     created_at = models.DateTimeField(auto_now_add=True)

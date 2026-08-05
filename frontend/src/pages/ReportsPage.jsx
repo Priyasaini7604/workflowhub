@@ -10,6 +10,8 @@ const statusColors = {
   assigned: { bg: "#1e3a5f", text: "#3b82f6" },
   under_repair: { bg: "#451a03", text: "#f59e0b" },
   retired: { bg: "#1e293b", text: "#94a3b8" },
+  lost: { bg: "#450a0a", text: "#f87171" },
+  reserved: { bg: "#312e81", text: "#a5b4fc" },
 };
 
 const ReportsPage = () => {
@@ -22,11 +24,13 @@ const ReportsPage = () => {
   // expects (that helper is for the regular /assets/ list shape). So this
   // page needs its own version for anything derived from assetReport.
   const getReportAssetStatus = (asset) => {
-    if (asset.status === "retired") return "retired";
-    if (asset.status === "under_repair") return "under_repair";
-    if (asset.assigned_to_name) return "assigned";
-    return "available";
-  };
+  if (asset.status === "retired") return "retired";
+  if (asset.status === "under_repair") return "under_repair";
+  if (asset.status === "lost") return "lost";
+  if (asset.status === "reserved") return "reserved";
+  if (asset.assigned_to_name) return "assigned";
+  return "available";
+};
 
   const [activeTab, setActiveTab] = useState(isAssetOnly ? "assets" : "employees");
   const [employeeReport, setEmployeeReport] = useState([]);
@@ -172,6 +176,18 @@ const ReportsPage = () => {
                 {assetReport.filter(a => getReportAssetStatus(a) === "retired").length}
               </p>
             </div>
+            <div style={{ background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "12px", padding: "16px" }}>
+    <p style={{ fontSize: "11px", color: "#64748b", margin: "0 0 6px", letterSpacing: "0.8px" }}>LOST</p>
+    <p style={{ fontSize: "24px", fontWeight: 500, color: "#f87171", margin: 0 }}>
+      {assetReport.filter(a => getReportAssetStatus(a) === "lost").length}
+    </p>
+  </div>
+  <div style={{ background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "12px", padding: "16px" }}>
+    <p style={{ fontSize: "11px", color: "#64748b", margin: "0 0 6px", letterSpacing: "0.8px" }}>RESERVED</p>
+    <p style={{ fontSize: "24px", fontWeight: 500, color: "#a5b4fc", margin: 0 }}>
+      {assetReport.filter(a => getReportAssetStatus(a) === "reserved").length}
+    </p>
+  </div>
           </>
         )}
       </div>
@@ -294,7 +310,7 @@ const ReportsPage = () => {
                         return (
                           <tr key={asset.asset_id} style={{ borderBottom: "0.5px solid #1e293b" }}>
                             <td style={{ padding: "14px 16px", fontSize: "12px", color: "#64748b" }}>{asset.asset_id}</td>
-                            <td style={{ padding: "14px 16px", fontSize: "12px", color: "#64748b" }}>{asset.asset_type}</td>
+                            <td style={{ padding: "14px 16px", fontSize: "12px", color: "#64748b" }}>{asset.category_name || "—"}</td>
                             <td style={{ padding: "14px 16px", fontSize: "12px", color: "#f1f5f9" }}>{asset.model_name || "—"}</td>
                             <td style={{ padding: "14px 16px", fontSize: "12px", color: "#64748b" }}>
                               {asset.assigned_to_name

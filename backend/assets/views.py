@@ -78,18 +78,22 @@ class AssetCreateView(generics.CreateAPIView):
     serializer_class = AssetCreateSerializer
     permission_classes = [IsITAdminOrSuperAdmin]
 
-    def generate_asset_id(self):
-        # Sab existing asset IDs dekho
-        existing_ids = Asset.objects.values_list('asset_id', flat=True)
+    def generate_asset_id(self, category):
+        prefix = f"MPRW{category.asset_id_prefix}"
+        existing_ids = Asset.objects.filter(
+            asset_id__startswith=prefix
+        ).values_list('asset_id', flat=True)
+
         num = 1
         while True:
-            new_id = f"AST{num:03d}"
+            new_id = f"{prefix}{num:03d}"
             if new_id not in existing_ids:
                 return new_id
             num += 1
 
     def perform_create(self, serializer):
-        asset_id = self.generate_asset_id()
+        category = serializer.validated_data['category']
+        asset_id = self.generate_asset_id(category)
         asset = serializer.save(asset_id=asset_id)
         create_audit_log(
             user=self.request.user,
@@ -100,8 +104,9 @@ class AssetCreateView(generics.CreateAPIView):
             request=self.request
         )
 
-
 # Asset Detail
+
+
 class AssetDetailView(generics.RetrieveAPIView):
     serializer_class = AssetSerializer
     permission_classes = [permissions.IsAuthenticated]

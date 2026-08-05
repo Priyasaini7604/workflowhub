@@ -8,7 +8,7 @@ const AssetCategoriesPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showForm, setShowForm] = useState(false);
-  const [formData, setFormData] = useState({ name: "", code: "" });
+  const [formData, setFormData] = useState({ name: "", code: "", asset_id_prefix: "" });
   const [submitting, setSubmitting] = useState(false);
   const [archivingId, setArchivingId] = useState(null);
 
@@ -32,7 +32,13 @@ const AssetCategoriesPage = () => {
   const handleNameChange = (e) => {
     const name = e.target.value;
     const code = name.trim().toLowerCase().replace(/\s+/g, "_");
-    setFormData({ name, code });
+    setFormData((prev) => ({ ...prev, name, code }));
+  };
+
+  // uppercase, max-5-char prefix used for physical Asset ID generation (e.g. "CHG")
+  const handlePrefixChange = (e) => {
+    const value = e.target.value.toUpperCase().slice(0, 5);
+    setFormData((prev) => ({ ...prev, asset_id_prefix: value }));
   };
 
   const handleSubmit = async (e) => {
@@ -41,7 +47,7 @@ const AssetCategoriesPage = () => {
     setSubmitting(true);
     try {
       await axiosInstance.post("/master-data/categories/", formData);
-      setFormData({ name: "", code: "" });
+      setFormData({ name: "", code: "", asset_id_prefix: "" });
       setShowForm(false);
       fetchCategories();
     } catch (err) {
@@ -138,7 +144,7 @@ const AssetCategoriesPage = () => {
             ➕ New Category
           </h3>
           <form onSubmit={handleSubmit}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "16px", marginBottom: "16px" }}>
               <div>
                 <label style={labelStyle}>CATEGORY NAME *</label>
                 <input
@@ -157,6 +163,18 @@ const AssetCategoriesPage = () => {
                   value={formData.code}
                   readOnly
                   style={{ ...inputStyle, color: "#64748b", cursor: "not-allowed" }}
+                />
+              </div>
+              <div>
+                <label style={labelStyle}>ASSET ID PREFIX *</label>
+                <input
+                  name="asset_id_prefix"
+                  value={formData.asset_id_prefix}
+                  onChange={handlePrefixChange}
+                  required
+                  maxLength={5}
+                  style={inputStyle}
+                  placeholder="e.g. CHG, WBC"
                 />
               </div>
             </div>
@@ -189,7 +207,9 @@ const AssetCategoriesPage = () => {
               >
                 <div>
                   <p style={{ fontSize: "13px", color: "#f1f5f9", margin: "0 0 2px", fontWeight: 500 }}>{cat.name}</p>
-                  <p style={{ fontSize: "11px", color: "#64748b", margin: 0 }}>code: {cat.code}</p>
+                  <p style={{ fontSize: "11px", color: "#64748b", margin: 0 }}>
+                    code: {cat.code} · prefix: {cat.asset_id_prefix || "—"}
+                  </p>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                   <span

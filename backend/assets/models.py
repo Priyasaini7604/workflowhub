@@ -22,7 +22,9 @@ class Asset(models.Model):
         ('assigned', 'Assigned'),
         ('pending_return', 'Pending Return'),
         ('under_repair', 'Under Repair'),
+        ('lost', 'Lost'),
         ('retired', 'Retired'),
+        ('reserved', 'Reserved'),
     ]
 
     # --- Condition & Warranty ---
@@ -81,6 +83,10 @@ class Asset(models.Model):
     # --- Soft Delete ---
     is_archived = models.BooleanField(default=False)
     archived_at = models.DateTimeField(null=True, blank=True)
+
+    qr_code_image = models.ImageField(
+        upload_to='qr_codes/', null=True, blank=True)
+    qr_generated_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         indexes = [

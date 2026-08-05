@@ -99,7 +99,7 @@ class AssetCreateSerializer(serializers.ModelSerializer):
 
         # --- Retired/Under Repair asset assign nahi ho sakta ---
         if new_assigned_to is not None and new_status in [
-                'retired', 'under_repair']:
+                'retired', 'under_repair', 'lost', 'reserved']:
             raise serializers.ValidationError({
                 'assigned_to': (
                     f"Cannot assign an asset that is currently "
@@ -124,7 +124,7 @@ class AssetCreateSerializer(serializers.ModelSerializer):
         # (bina unassign kiye) ---
         if (
             self.instance.status == 'assigned'
-            and new_status in ['retired', 'under_repair']
+            and new_status in ['retired', 'under_repair', 'lost']
             and new_assigned_to is not None
         ):
             raise serializers.ValidationError({
