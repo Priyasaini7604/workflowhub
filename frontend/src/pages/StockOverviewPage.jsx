@@ -2,15 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../api/axiosInstance";
 import { getEffectiveAssetStatus } from "../utils/assetStatus";
-
-const statusColors = {
-  available: { bg: "#064e3b", text: "#10b981" },
-  pending_acknowledgment: { bg: "#78350f", text: "#fbbf24" },
-   pending_return: { bg: "#78350f", text: "#fb923c" },
-  assigned: { bg: "#1e3a5f", text: "#3b82f6" },
-  under_repair: { bg: "#451a03", text: "#f59e0b" },
-  retired: { bg: "#1e293b", text: "#94a3b8" },
-};
+import { statusColors } from "../constants/statusColors";
 
 const STATUS_FILTERS = [
   { key: "all", label: "All Stock", color: "#f1f5f9" },

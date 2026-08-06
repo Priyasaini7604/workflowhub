@@ -78,21 +78,32 @@ const Sidebar = () => {
   };
 
   return (
-    <div style={{
-      width: "220px",
-      background: "#0a1628",
-      borderRight: "0.5px solid #1e293b",
-      display: "flex",
-      flexDirection: "column",
-      justifyContent: "space-between",
-      padding: "16px 12px",
-      flexShrink: 0,
-      minHeight: "100vh",
-      position: "fixed",
-      left: 0,
-      top: 0,
-      bottom: 0,
-    }}>
+    <div
+  style={{
+    width: "220px",
+    background: "#0a1628",
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "space-between",
+
+    padding: "16px 12px",
+
+    position: "fixed",
+    top: 0,
+    left: 0,
+
+    height: "100vh",
+
+    overflowY: "auto",      // ✅
+    overflowX: "hidden",    // ✅
+
+    flexShrink: 0,
+
+    borderRight: "none",
+    scrollbarWidth: "none",   // Firefox
+  msOverflowStyle: "none",      // ✅ vertical line bhi remove
+  }}
+>
 
       {/* Top — Logo + Menu */}
       <div>

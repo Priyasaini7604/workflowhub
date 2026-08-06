@@ -2,14 +2,8 @@ import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axiosInstance from "../api/axiosInstance";
 import SoftwareAccessSection from '../pages/SoftwareAccessSection';
+import { statusColors } from "../constants/statusColors";
 
-const statusColors = {
-  joining_pending: { bg: "#1e293b", text: "#94a3b8" },
-  active: { bg: "#064e3b", text: "#10b981" },
-  notice_period: { bg: "#451a03", text: "#f59e0b" },
-  offboarding: { bg: "#450a0a", text: "#f87171" },
-  exited: { bg: "#1e293b", text: "#64748b" },
-};
 
 const VALID_NEXT = {
   joining_pending: ["active"],

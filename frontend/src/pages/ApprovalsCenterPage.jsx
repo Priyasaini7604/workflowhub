@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../api/axiosInstance";
+import { statusColors } from "../constants/statusColors";
 
 const TYPE_CONFIG = {
   document: { icon: "📄", label: "Document" },
@@ -9,11 +10,6 @@ const TYPE_CONFIG = {
   asset_acknowledgment: { icon: "💻", label: "Asset" },
 };
 
-const STATUS_COLORS = {
-  pending: { bg: "#451a03", text: "#f59e0b" },
-  in_progress: { bg: "#1e3a5f", text: "#3b82f6" },
-  pending_acknowledgment: { bg: "#1e3a5f", text: "#3b82f6" },
-};
 
 const FILTERS = [
   { value: "all", label: "All" },
@@ -134,7 +130,7 @@ const ApprovalsCenterPage = () => {
           <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
             {filteredItems.map((item) => {
               const config = TYPE_CONFIG[item.type] || { icon: "📌", label: item.type };
-              const statusStyle = STATUS_COLORS[item.status] || STATUS_COLORS.pending;
+              const statusStyle = statusColors[item.status] || statusColors.pending;
               return (
                 <div
                   key={`${item.type}-${item.id}`}

@@ -26,7 +26,7 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['10.245.64.14', 'localhost', '127.0.0.1']
 
 # Application definition
 INSTALLED_APPS = [
@@ -127,6 +127,7 @@ STATIC_URL = 'static/'
 # CORS — React frontend allow
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
+    "http://10.245.64.14:5173",
 ]
 
 # JWT Authentication
@@ -153,4 +154,4 @@ SIMPLE_JWT = {
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-FRONTEND_BASE_URL = "http://localhost:5173"
+FRONTEND_BASE_URL = "http://10.245.64.14:5173"

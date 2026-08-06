@@ -1,12 +1,7 @@
 import { useState, useEffect } from "react";
 import axiosInstance from "../api/axiosInstance";
+import { actionColors } from "../constants/statusColors";
 
-const actionColors = {
-  create: { bg: "#064e3b", text: "#10b981" },
-  update: { bg: "#1e3a5f", text: "#3b82f6" },
-  delete: { bg: "#1a0a0a", text: "#fca5a5" },
-  view: { bg: "#1e293b", text: "#94a3b8" },
-};
 
 const AuditLogsPage = () => {
   const [logs, setLogs] = useState([]);

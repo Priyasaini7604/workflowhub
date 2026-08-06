@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import axiosInstance from "../api/axiosInstance";
+import { statusColors } from "../constants/statusColors";
 
 const MyAssetsPage = () => {
   const [assets, setAssets] = useState([]);
@@ -43,13 +44,7 @@ const MyAssetsPage = () => {
     }
   };
 
-  const statusColors = {
-    available: { bg: "#064e3b", text: "#10b981" },
-    pending_acknowledgment: { bg: "#78350f", text: "#fbbf24" },
-    assigned: { bg: "#1e3a5f", text: "#3b82f6" },
-    under_repair: { bg: "#451a03", text: "#f59e0b" },
-    retired: { bg: "#1e293b", text: "#94a3b8" },
-  };
+  
 
   const pendingAssets = assets.filter(a => a.status === "pending_acknowledgment");
   const confirmedAssets = assets.filter(a => a.status !== "pending_acknowledgment");

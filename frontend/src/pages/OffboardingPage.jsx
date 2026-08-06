@@ -3,17 +3,7 @@ import axiosInstance from "../api/axiosInstance";
 import { getEmployeeDocuments, verifyDocument, rejectDocument } from "../api/documents";
 import { getAuditLogsFor } from "../api/auditLogs";
 import { idsMatch } from '../utils/idUtils';
-
-
-const statusColors = {
-  pending: { bg: "#451a03", text: "#f59e0b" },
-  in_progress: { bg: "#1e3a5f", text: "#3b82f6" },
-  completed: { bg: "#064e3b", text: "#10b981" },
-  scheduled: { bg: "#1e3a5f", text: "#3b82f6" },
-  waived: { bg: "#1e293b", text: "#94a3b8" },
-  verified: { bg: "#064e3b", text: "#10b981" },
-  rejected: { bg: "#450a0a", text: "#ef4444" },
-};
+import { statusColors } from "../constants/statusColors";
 
 const DOCUMENT_TYPE_LABELS = {
   exit_document: "Exit Document",

@@ -1,11 +1,6 @@
 import { useState, useEffect } from "react";
 import axiosInstance from "../api/axiosInstance";
-
-const statusColors = {
-  active: { bg: "#064e3b", text: "#10b981" },
-  inactive: { bg: "#1e293b", text: "#94a3b8" },
-  on_leave: { bg: "#451a03", text: "#f59e0b" },
-};
+import { statusColors } from "../constants/statusColors";
 
 // reporting_manager may come back as a plain FK id or a nested object,
 // depending on the serializer — handle both.

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import axiosInstance from "../api/axiosInstance";
 import { idsMatch } from '../utils/idUtils';
+import { statusColors } from "../constants/statusColors";
 
 
 const GENDER_CHOICES = [
@@ -35,11 +36,7 @@ const DOCUMENT_TYPE_LABELS = {
   other: "Other",
 };
 
-const verificationColors = {
-  pending: { bg: "#451a03", text: "#f59e0b" },
-  verified: { bg: "#064e3b", text: "#10b981" },
-  rejected: { bg: "#1a0a0a", text: "#fca5a5" },
-};
+
 
 const MyProfilePage = () => {
   const { user } = useAuth();
@@ -115,7 +112,7 @@ const MyProfilePage = () => {
     try {
       const response = await axiosInstance.get("/assets/");
       const allAssets = response.data.results || response.data;
-      setAssets(allAssets.filter((a) => idsMatch(a.assigned_to?.id== empId)));
+      setAssets(allAssets.filter((a) => idsMatch(a.assigned_to?.id, empId)));
     } catch (err) {
       console.error("Failed to load assets");
     }
@@ -493,7 +490,7 @@ const MyProfilePage = () => {
               </thead>
               <tbody>
                 {documents.map((doc) => {
-                  const statusStyle = verificationColors[doc.verification_status] || verificationColors.pending;
+                  const statusStyle = statusColors[doc.verification_status] || statusColors.pending;
                   return (
                     <tr key={doc.id} style={{ borderBottom: "0.5px solid #1e293b" }}>
                       <td style={{ padding: "12px 0", fontSize: "13px", color: "#f1f5f9" }}>

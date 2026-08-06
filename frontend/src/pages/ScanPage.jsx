@@ -1,17 +1,9 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
+import { statusColors } from "../constants/statusColors";
 
-const statusColors = {
-  available: { bg: "#064e3b", text: "#10b981" },
-  assigned: { bg: "#1e3a5f", text: "#3b82f6" },
-  under_repair: { bg: "#451a03", text: "#f59e0b" },
-  retired: { bg: "#1e293b", text: "#94a3b8" },
-  lost: { bg: "#450a0a", text: "#f87171" },
-  reserved: { bg: "#312e81", text: "#a5b4fc" },
-  pending_acknowledgment: { bg: "#1e3a5f", text: "#3b82f6" },
-  pending_return: { bg: "#1e3a5f", text: "#3b82f6" },
-};
+
 
 const ScanPage = () => {
   const { assetId } = useParams();
@@ -28,8 +20,9 @@ const ScanPage = () => {
     setError("");
     try {
       const res = await axios.get(
-        `${import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api"}/assets/public/${assetId}/`
-      );
+  `${import.meta.env.VITE_API_BASE_URL || "http://10.245.64.14:8000/api"}/assets/public/${assetId}/`
+);
+      
       setAsset(res.data);
     } catch (err) {
       setError("Asset not found.");
@@ -97,12 +90,6 @@ const ScanPage = () => {
               {asset.brand} {asset.model_name}
             </p>
           </div>
-          <div>
-  <p style={{ fontSize: "11px", color: "#64748b", margin: "0 0 2px" }}>MODEL</p>
-  <p style={{ fontSize: "14px", color: "#f1f5f9", margin: 0 }}>
-    {asset.brand} {asset.model_name}
-  </p>
-</div>
 <div>
   <p style={{ fontSize: "11px", color: "#64748b", margin: "0 0 2px" }}>CURRENT OWNER</p>
   <p style={{ fontSize: "14px", color: "#f1f5f9", margin: 0 }}>

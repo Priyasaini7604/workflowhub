@@ -1,13 +1,6 @@
 import { useState, useEffect} from "react";
 import axiosInstance from "../api/axiosInstance";
-
-const ROLE_COLORS = {
-  superadmin: { bg: "#450a0a", text: "#f87171" },
-  hr: { bg: "#064e3b", text: "#10b981" },
-  it: { bg: "#1e3a5f", text: "#3b82f6" },
-  manager: { bg: "#451a03", text: "#f59e0b" },
-  employee: { bg: "#1e293b", text: "#94a3b8" },
-};
+import { statusColors } from "../constants/statusColors";
 
 const ROLE_FILTERS = [
   { value: "all", label: "All Roles" },
@@ -149,7 +142,7 @@ const UserManagementPage = () => {
             </thead>
             <tbody>
               {users.map((u) => {
-                const roleStyle = ROLE_COLORS[u.role] || ROLE_COLORS.employee;
+                const roleStyle = statusColors[u.role] || statusColors.employee;
                 return (
                   <tr key={u.id} style={{ borderBottom: "0.5px solid #1e293b" }}>
                     <td style={{ padding: "12px 16px", fontSize: "13px", color: "#f1f5f9" }}>{u.username}</td>

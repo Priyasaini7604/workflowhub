@@ -1,11 +1,7 @@
 import { useState, useEffect } from "react";
 import axiosInstance from "../api/axiosInstance";
+import { statusColors } from "../constants/statusColors";
 
-const accessStatusColors = {
-  active: { bg: "#064e3b", text: "#10b981" },
-  revoked: { bg: "#450a0a", text: "#f87171" },
-  pending: { bg: "#451a03", text: "#f59e0b" },
-};
 
 const sectionStyle = {
   background: "#0a1628",
@@ -131,7 +127,7 @@ const SoftwareAccessSection = ({ employeeId }) => {
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
           {accessList.map((item) => {
-            const statusStyle = accessStatusColors[item.status] || accessStatusColors.pending;
+            const statusStyle = StatusColors[item.status] || StatusColors.pending;
             return (
               <div
                 key={item.id}
