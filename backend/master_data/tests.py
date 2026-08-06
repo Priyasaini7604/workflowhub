@@ -135,7 +135,8 @@ class AssetCategoryArchiveTests(TestCase):
         self.category.save()
 
         request = self.factory.patch(
-            f"/api/master-data/categories/{self.category.id}/", {"name": "New Name"}
+            f"/api/master-data/categories/{self.category.id}/", {
+                "name": "New Name"}
         )
         force_authenticate(request, user=self.it_user)
         view = AssetCategoryUpdateView.as_view()

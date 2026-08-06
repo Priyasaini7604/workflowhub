@@ -244,8 +244,10 @@ class AssetAllocationHistorySerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['id', 'created_at']
 
+
 class AssetPublicSerializer(serializers.ModelSerializer):
-    category_name = serializers.CharField(source='category.name', read_only=True)
+    category_name = serializers.CharField(
+        source='category.name', read_only=True)
     assigned_to_name = serializers.SerializerMethodField()
 
     class Meta:

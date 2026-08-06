@@ -17,32 +17,54 @@ from .views import (
 )
 
 urlpatterns = [
-    path('public/<str:asset_id>/', AssetPublicDetailView.as_view(), name='asset-public-detail'),
-    path('', AssetListView.as_view(), name='asset-list'),
-    path('create/', AssetCreateView.as_view(), name='asset-create'),
+    path(
+        'public/<str:asset_id>/',
+        AssetPublicDetailView.as_view(),
+        name='asset-public-detail'),
+    path(
+        '',
+        AssetListView.as_view(),
+        name='asset-list'),
+    path(
+        'create/',
+        AssetCreateView.as_view(),
+        name='asset-create'),
     path(
         'report/',
         AssetStatusReportView.as_view(),
         name='asset-status-report'),
-    path('<int:pk>/', AssetDetailView.as_view(), name='asset-detail'),
-    path('<int:pk>/update/', AssetUpdateView.as_view(), name='asset-update'),
+    path(
+        '<int:pk>/',
+        AssetDetailView.as_view(),
+        name='asset-detail'),
+    path(
+        '<int:pk>/update/',
+        AssetUpdateView.as_view(),
+        name='asset-update'),
     path(
         '<int:pk>/archive/',
         AssetArchiveView.as_view(),
         name='asset-archive'),
-    path('<int:pk>/assign/', AssetAssignView.as_view(), name='asset-assign'),
+    path(
+        '<int:pk>/assign/',
+        AssetAssignView.as_view(),
+        name='asset-assign'),
     path(
         '<int:pk>/acknowledge/',
         AssetAcknowledgeView.as_view(),
         name='asset-acknowledge'),
-    path('<int:asset_id>/history/', AssetAllocationHistoryView.as_view(),
-         name='asset-allocation-history'),
-    path('<int:pk>/initiate-return/',
-         AssetInitiateReturnView.as_view(),
-         name='asset-initiate-return'),
-    path('<int:pk>/confirm-return/',
-         AssetConfirmReturnView.as_view(),
-         name='asset-confirm-return'),
+    path(
+        '<int:asset_id>/history/',
+        AssetAllocationHistoryView.as_view(),
+        name='asset-allocation-history'),
+    path(
+        '<int:pk>/initiate-return/',
+        AssetInitiateReturnView.as_view(),
+        name='asset-initiate-return'),
+    path(
+        '<int:pk>/confirm-return/',
+        AssetConfirmReturnView.as_view(),
+        name='asset-confirm-return'),
     path(
         'report/export/csv/',
         AssetReportExportCSVView.as_view(),

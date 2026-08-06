@@ -14,6 +14,10 @@ class Migration(migrations.Migration):
     operations = [
         migrations.AddIndex(
             model_name='employee',
-            index=models.Index(fields=['is_archived', 'current_status'], name='employee_archived_status_idx'),
+            index=models.Index(
+                fields=[
+                    'is_archived',
+                    'current_status'],
+                name='employee_archived_status_idx'),
         ),
     ]

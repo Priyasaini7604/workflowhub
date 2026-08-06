@@ -701,7 +701,6 @@ class AssetReportExportPDFView(generics.GenericAPIView):
         return response
 
 
-
 class AssetPublicDetailView(generics.RetrieveAPIView):
     serializer_class = AssetPublicSerializer
     permission_classes = [AllowAny]
