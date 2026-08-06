@@ -25,6 +25,9 @@ from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.units import mm
 from rest_framework.exceptions import ValidationError
 from django.db.models import Q
+from .services import generate_qr_for_asset
+from rest_framework.permissions import AllowAny
+from .serializers import AssetPublicSerializer
 
 # Asset List
 
@@ -95,6 +98,7 @@ class AssetCreateView(generics.CreateAPIView):
         category = serializer.validated_data['category']
         asset_id = self.generate_asset_id(category)
         asset = serializer.save(asset_id=asset_id)
+        generate_qr_for_asset(asset)
         create_audit_log(
             user=self.request.user,
             action='create',
@@ -695,3 +699,13 @@ class AssetReportExportPDFView(generics.GenericAPIView):
         doc.build(elements)
 
         return response
+
+
+
+class AssetPublicDetailView(generics.RetrieveAPIView):
+    serializer_class = AssetPublicSerializer
+    permission_classes = [AllowAny]
+    lookup_field = 'asset_id'
+
+    def get_queryset(self):
+        return Asset.objects.filter(is_archived=False)

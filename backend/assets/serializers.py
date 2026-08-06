@@ -25,6 +25,8 @@ class AssetSerializer(serializers.ModelSerializer):
             'status',
             'condition',
             'warranty_expiry_date',
+            'qr_code_image',
+            'qr_generated_at',
             'created_at',
             'updated_at',
         ]
@@ -241,3 +243,24 @@ class AssetAllocationHistorySerializer(serializers.ModelSerializer):
             'created_at',
         ]
         read_only_fields = ['id', 'created_at']
+
+class AssetPublicSerializer(serializers.ModelSerializer):
+    category_name = serializers.CharField(source='category.name', read_only=True)
+    assigned_to_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Asset
+        fields = [
+            'asset_id',
+            'category_name',
+            'brand',
+            'model_name',
+            'status',
+            'condition',
+            'assigned_to_name',
+        ]
+
+    def get_assigned_to_name(self, obj):
+        if obj.assigned_to:
+            return f"{obj.assigned_to.first_name} {obj.assigned_to.last_name}"
+        return None

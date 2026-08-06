@@ -28,6 +28,7 @@ import AssetCategoriesPage from "./pages/AssetCategoriesPage";
 import ApprovalsCenterPage from "./pages/ApprovalsCenterPage";
 import UserManagementPage from "./pages/UserManagementPage";
 import AccessMatrixPage from "./pages/AccessMatrixPage";
+import ScanPage from "./pages/ScanPage";
 
 
 
@@ -37,6 +38,7 @@ const App = () => {
       <Routes>
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/scan/:assetId" element={<ScanPage />} />
         <Route
           path="/dashboard"
           element={

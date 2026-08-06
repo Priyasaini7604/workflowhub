@@ -12,10 +12,12 @@ from .views import (
     AssetConfirmReturnView,
     AssetInitiateReturnView,
     AssetReportExportCSVView,
-    AssetReportExportPDFView
+    AssetReportExportPDFView,
+    AssetPublicDetailView
 )
 
 urlpatterns = [
+    path('public/<str:asset_id>/', AssetPublicDetailView.as_view(), name='asset-public-detail'),
     path('', AssetListView.as_view(), name='asset-list'),
     path('create/', AssetCreateView.as_view(), name='asset-create'),
     path(

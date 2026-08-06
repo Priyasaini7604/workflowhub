@@ -61,6 +61,54 @@ const AssetDetailPage = () => {
     }
   };
 
+  const handlePrintLabel = () => {
+  const printWindow = window.open('', '_blank', 'width=500,height=650');
+  printWindow.document.write(`
+    <html>
+      <head>
+        <title>${asset.asset_id} — Label</title>
+        <style>
+          @page { size: A4; margin: 0; }
+          body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+          }
+          .label {
+            border: 2px dashed #999;
+            border-radius: 12px;
+            padding: 30px 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+          }
+          img { width: 220px; height: 220px; margin-bottom: 14px; }
+          .company { font-size: 13px; color: #555; letter-spacing: 1.5px; margin: 0 0 4px; }
+          .asset-id { font-size: 24px; font-weight: bold; margin: 0 0 6px; }
+          .model { font-size: 14px; color: #333; margin: 2px 0; }
+        </style>
+      </head>
+      <body>
+        <div class="label">
+          <img src="${asset.qr_code_image}" alt="QR code" />
+          <p class="company">MPRW RESEARCH</p>
+          <p class="asset-id">${asset.asset_id}</p>
+          <p class="model">${asset.brand || ''} ${asset.model_name || ''}</p>
+          <p class="model">${asset.category_detail?.name || ''}</p>
+        </div>
+      </body>
+    </html>
+  `);
+  printWindow.document.close();
+  printWindow.onload = () => {
+    printWindow.print();
+  };
+};
+
   if (loading) return (
     <div style={{ textAlign: "center", padding: "60px 0" }}>
       <p style={{ color: "#64748b", fontSize: "13px" }}>Loading asset details...</p>
@@ -156,7 +204,7 @@ const AssetDetailPage = () => {
             {asset?.brand} {asset?.model_name}
           </h3>
           <p style={{ fontSize: "13px", color: "#64748b", margin: "0 0 8px" }}>
-            {asset?.asset_type} — {asset?.asset_id}
+            {asset?.category_detail?.name} — {asset?.asset_id}
           </p>
           <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
             <span style={{ background: statusStyle.bg, color: statusStyle.text, borderRadius: "20px", padding: "3px 10px", fontSize: "11px" }}>
@@ -169,6 +217,44 @@ const AssetDetailPage = () => {
         </div>
       </div>
 
+      {/* QR Code */}
+      <div style={sectionStyle}>
+        <h3 style={sectionTitleStyle}>📱 QR Code</h3>
+        {asset?.qr_code_image ? (
+          <div style={{ display: "flex", alignItems: "center", gap: "24px", flexWrap: "wrap" }}>
+            <img
+              src={asset.qr_code_image}
+              alt={`QR code for ${asset.asset_id}`}
+              style={{ width: "160px", height: "160px", background: "#fff", borderRadius: "8px", padding: "8px" }}
+            />
+            <div>
+              <p style={fieldLabel}>GENERATED AT</p>
+              <p style={{ ...fieldValue, marginBottom: "16px" }}>
+                {asset.qr_generated_at ? new Date(asset.qr_generated_at).toLocaleString() : "—"}
+              </p>
+              <div style={{ display: "flex", gap: "10px" }}>
+                <a
+                  href={asset.qr_code_image}
+                  download={`${asset.asset_id}_qr.png`}
+                  style={{ background: "#1e3a5f", color: "#3b82f6", border: "none", borderRadius: "8px", padding: "10px 18px", fontSize: "13px", fontWeight: 500, cursor: "pointer", textDecoration: "none", display: "inline-block" }}
+                >
+                  ⬇️ Download
+                </a>
+                <button
+  onClick={handlePrintLabel}
+  style={{ background: "#064e3b", color: "#10b981", border: "none", borderRadius: "8px", padding: "10px 18px", fontSize: "13px", fontWeight: 500, cursor: "pointer" }}
+>
+  🖨️ Print
+</button>
+                  
+              </div>
+            </div>
+          </div>
+        ) : (
+          <p style={{ fontSize: "13px", color: "#475569", margin: 0 }}>No QR code generated yet.</p>
+        )}
+      </div>
+
       {/* Asset Info */}
       <div style={sectionStyle}>
         <h3 style={sectionTitleStyle}>💻 Asset Information</h3>
@@ -179,7 +265,7 @@ const AssetDetailPage = () => {
           </div>
           <div>
             <p style={fieldLabel}>ASSET TYPE</p>
-            <p style={fieldValue}>{asset?.asset_type || "—"}</p>
+            <p style={fieldValue}>{asset?.category_detail?.name || "—"}</p>
           </div>
           <div>
             <p style={fieldLabel}>BRAND</p>
