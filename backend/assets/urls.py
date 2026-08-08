@@ -13,7 +13,9 @@ from .views import (
     AssetInitiateReturnView,
     AssetReportExportCSVView,
     AssetReportExportPDFView,
-    AssetPublicDetailView
+    AssetPublicDetailView,
+    AssetTransferView
+
 )
 
 urlpatterns = [
@@ -73,4 +75,6 @@ urlpatterns = [
         'report/export/pdf/',
         AssetReportExportPDFView.as_view(),
         name='asset-report-export-pdf'),
+    path('<int:pk>/transfer/', AssetTransferView.as_view(),
+         name='asset-transfer'),
 ]

@@ -12,7 +12,8 @@ from .serializers import (
     AssetReportSerializer,
     AssetArchiveSerializer,
     AssetAllocationHistorySerializer,
-    AssetInitiateReturnSerializer
+    AssetInitiateReturnSerializer,
+    AssetTransferSerializer
 )
 from permissions import IsITAdminOrSuperAdmin
 from notifications.models import Notification
@@ -455,6 +456,93 @@ class AssetAllocationHistoryView(generics.ListAPIView):
             'assigned_by').order_by('-assigned_date')
 
 # Admin/IT initiates return — asset goes to pending_return, NOT available yet
+
+# Asset Transfer & Reason Log — reallocate an already-assigned asset to a
+# different employee, capturing why. Reuses the existing
+# pending_acknowledgment / AssetAcknowledgeView flow so the new holder
+# still has to accept it, same as a fresh assignment.
+
+
+class AssetTransferView(APIView):
+    permission_classes = [IsITAdminOrSuperAdmin]
+
+    def post(self, request, pk):
+        try:
+            asset = Asset.objects.get(pk=pk, is_archived=False)
+        except Asset.DoesNotExist:
+            return Response({"error": "Asset not found"}, status=404)
+
+        serializer = AssetTransferSerializer(
+            data=request.data, context={'asset': asset}
+        )
+        serializer.is_valid(raise_exception=True)
+
+        new_employee = serializer.validated_data['new_employee']
+        transfer_reason = serializer.validated_data['transfer_reason']
+        remarks = serializer.validated_data['remarks']
+
+        old_employee = asset.assigned_to
+        today = timezone.now().date()
+
+        # Close the outgoing employee's open allocation record
+        open_history = AssetAllocationHistory.objects.filter(
+            asset=asset,
+            employee=old_employee,
+            returned_date__isnull=True
+        ).order_by('-assigned_date').first()
+        if open_history:
+            open_history.returned_date = today
+            open_history.save()
+
+        # Move the asset into pending_acknowledgment for the new employee —
+        # same acceptance step a fresh assignment goes through
+        asset.assigned_to = new_employee
+        asset.status = 'pending_acknowledgment'
+        asset.acknowledgment_requested_at = timezone.now()
+        asset.acknowledged_at = None
+        asset.save()
+
+        AssetAllocationHistory.objects.create(
+            asset=asset,
+            employee=new_employee,
+            assigned_date=today,
+            assigned_by=request.user,
+            acknowledgment_status='pending',
+            transfer_reason=transfer_reason,
+            remarks=remarks,
+        )
+
+        notify(
+            recipient=getattr(old_employee, 'user', None),
+            title='Asset transferred',
+            message=f'{asset.category} ({asset.asset_id}) has been '
+            f'transferred to {new_employee}.',
+            notification_type='asset',
+        )
+        notify(
+            recipient=getattr(new_employee, 'user', None),
+            title='Asset transferred to you',
+            message=f'{asset.category} ({asset.asset_id}) has been '
+            f'transferred to you from {old_employee}. Please '
+            'review and acknowledge.',
+            notification_type='asset',
+        )
+
+        create_audit_log(
+            user=request.user,
+            action='update',
+            model_name='Asset',
+            object_id=asset.id,
+            description=(
+                f'Asset {asset.asset_id} transferred from {old_employee} '
+                f'to {new_employee} — reason: '
+                f'{dict(AssetAllocationHistory.TRANSFER_REASON_CHOICES).get(transfer_reason)}'
+                + (f'. Note: {remarks}' if remarks else '')
+            ),
+            request=request,
+        )
+
+        return Response(AssetSerializer(asset).data)
 
 
 class AssetInitiateReturnView(generics.UpdateAPIView):

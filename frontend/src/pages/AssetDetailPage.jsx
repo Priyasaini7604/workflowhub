@@ -9,6 +9,13 @@ const conditionColors = {
   fair: { bg: "#451a03", text: "#f59e0b" },
   damaged: { bg: "#1a0a0a", text: "#fca5a5" },
 };
+const transferReasonLabels = {
+  reallocation: "Reallocation",
+  damage: "Damage / Replacement",
+  upgrade: "Upgrade",
+  role_change: "Role Change",
+  other: "Other",
+};
 
 const AssetDetailPage = () => {
   const { id } = useParams();
@@ -17,6 +24,11 @@ const AssetDetailPage = () => {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [showTransferModal, setShowTransferModal] = useState(false);
+  const [employees, setEmployees] = useState([]);
+  const [transferForm, setTransferForm] = useState({ new_employee: "", transfer_reason: "", remarks: "" });
+  const [transferError, setTransferError] = useState("");
+  const [transferLoading, setTransferLoading] = useState(false);
 
   useEffect(() => {
     fetchAsset();
@@ -51,6 +63,46 @@ const AssetDetailPage = () => {
       navigate("/assets");
     } catch (err) {
       setError("Failed to archive asset");
+    }
+  };
+
+  const openTransferModal = async () => {
+    setTransferError("");
+    setTransferForm({ new_employee: "", transfer_reason: "", remarks: "" });
+    setShowTransferModal(true);
+    try {
+      const response = await axiosInstance.get("/employees/?all=true");
+      const list = response.data.results || response.data;
+      // Current holder ko dropdown se hata do — usi ko transfer nahi kar sakte
+      setEmployees(list.filter((e) => e.id !== asset?.assigned_to?.id));
+    } catch (err) {
+      setTransferError("Failed to load employee list");
+    }
+  };
+
+  const handleTransfer = async () => {
+    if (!transferForm.new_employee || !transferForm.transfer_reason) {
+      setTransferError("Please select an employee and a reason");
+      return;
+    }
+    setTransferLoading(true);
+    setTransferError("");
+    try {
+      await axiosInstance.post(`/assets/${id}/transfer/`, transferForm);
+      setShowTransferModal(false);
+      fetchAsset();
+      fetchHistory();
+    } catch (err) {
+      const data = err.response?.data;
+      const msg =
+        data?.non_field_errors?.[0] ||
+        data?.new_employee?.[0] ||
+        data?.transfer_reason?.[0] ||
+        data?.detail ||
+        "Failed to transfer asset";
+      setTransferError(msg);
+    } finally {
+      setTransferLoading(false);
     }
   };
 
@@ -170,6 +222,15 @@ const AssetDetailPage = () => {
           </div>
         </div>
         <div style={{ display: "flex", gap: "10px" }}>
+          {asset?.status === "assigned" && (
+            <button
+              onClick={openTransferModal}
+              style={{ background: "#1e3a5f", color: "#3b82f6", border: "none", borderRadius: "8px", padding: "10px 18px", fontSize: "13px", fontWeight: 500, cursor: "pointer" }}
+            >
+              🔁 Transfer
+            </button>
+          )}
+          
           <button
             onClick={() => navigate(`/assets/${id}/edit`)}
             style={{ background: "#064e3b", color: "#10b981", border: "none", borderRadius: "8px", padding: "10px 18px", fontSize: "13px", fontWeight: 500, cursor: "pointer" }}
@@ -316,6 +377,7 @@ const AssetDetailPage = () => {
                 <th style={{ padding: "10px 0", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>EMPLOYEE</th>
                 <th style={{ padding: "10px 0", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>ASSIGNED DATE</th>
                 <th style={{ padding: "10px 0", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>RETURNED DATE</th>
+                <th style={{ padding: "10px 0", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>REASON</th>
                 <th style={{ padding: "10px 0", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>REMARKS</th>
               </tr>
             </thead>
@@ -329,6 +391,9 @@ const AssetDetailPage = () => {
                   </td>
                   <td style={{ padding: "12px 0", fontSize: "12px", color: "#64748b" }}>{h.assigned_date}</td>
                   <td style={{ padding: "12px 0", fontSize: "12px", color: "#64748b" }}>{h.returned_date || "—"}</td>
+                  <td style={{ padding: "12px 0", fontSize: "12px", color: "#64748b" }}>
+                    {transferReasonLabels[h.transfer_reason] || "—"}
+                  </td>
                   <td style={{ padding: "12px 0", fontSize: "12px", color: "#64748b" }}>{h.remarks || "—"}</td>
                 </tr>
               ))}
@@ -336,6 +401,95 @@ const AssetDetailPage = () => {
           </table>
         )}
       </div>
+      {/* Transfer Modal */}
+      {showTransferModal && (
+        <div
+          style={{
+            position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+            background: "rgba(0,0,0,0.6)", display: "flex",
+            alignItems: "center", justifyContent: "center", zIndex: 1000,
+          }}
+          onClick={() => !transferLoading && setShowTransferModal(false)}
+        >
+          <div
+            style={{ ...sectionStyle, width: "420px", maxWidth: "90vw", margin: 0 }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 style={sectionTitleStyle}>🔁 Transfer Asset</h3>
+
+            <p style={{ fontSize: "12px", color: "#64748b", margin: "0 0 16px" }}>
+              Currently with{" "}
+              <span style={{ color: "#f1f5f9" }}>
+                {asset?.assigned_to?.full_name || asset?.assigned_to?.employee_id || "—"}
+              </span>
+            </p>
+
+            {transferError && (
+              <div style={{ background: "#1a0a0a", border: "0.5px solid #7f1d1d", borderRadius: "8px", padding: "10px 12px", marginBottom: "16px" }}>
+                <p style={{ fontSize: "12px", color: "#fca5a5", margin: 0 }}>{transferError}</p>
+              </div>
+            )}
+
+            <div style={{ marginBottom: "14px" }}>
+              <p style={fieldLabel}>TRANSFER TO *</p>
+              <select
+                value={transferForm.new_employee}
+                onChange={(e) => setTransferForm({ ...transferForm, new_employee: e.target.value })}
+                style={{ width: "100%", background: "#060b14", border: "0.5px solid #1e293b", borderRadius: "8px", padding: "10px 12px", color: "#f1f5f9", fontSize: "13px" }}
+              >
+                <option value="">Select employee</option>
+                {employees.map((emp) => (
+                  <option key={emp.id} value={emp.id}>
+                    {emp.full_name || emp.employee_id} — {emp.designation}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div style={{ marginBottom: "14px" }}>
+              <p style={fieldLabel}>REASON *</p>
+              <select
+                value={transferForm.transfer_reason}
+                onChange={(e) => setTransferForm({ ...transferForm, transfer_reason: e.target.value })}
+                style={{ width: "100%", background: "#060b14", border: "0.5px solid #1e293b", borderRadius: "8px", padding: "10px 12px", color: "#f1f5f9", fontSize: "13px" }}
+              >
+                <option value="">Select reason</option>
+                {Object.entries(transferReasonLabels).map(([value, label]) => (
+                  <option key={value} value={value}>{label}</option>
+                ))}
+              </select>
+            </div>
+
+            <div style={{ marginBottom: "20px" }}>
+              <p style={fieldLabel}>JUSTIFICATION NOTE (OPTIONAL)</p>
+              <textarea
+                value={transferForm.remarks}
+                onChange={(e) => setTransferForm({ ...transferForm, remarks: e.target.value })}
+                rows={3}
+                placeholder="e.g. Ravi moved to design team, laptop reassigned to Sita"
+                style={{ width: "100%", background: "#060b14", border: "0.5px solid #1e293b", borderRadius: "8px", padding: "10px 12px", color: "#f1f5f9", fontSize: "13px", resize: "vertical", fontFamily: "inherit" }}
+              />
+            </div>
+
+            <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
+              <button
+                onClick={() => setShowTransferModal(false)}
+                disabled={transferLoading}
+                style={{ background: "transparent", border: "0.5px solid #1e293b", color: "#64748b", borderRadius: "8px", padding: "10px 18px", fontSize: "13px", cursor: "pointer" }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleTransfer}
+                disabled={transferLoading}
+                style={{ background: "#1e3a5f", color: "#3b82f6", border: "none", borderRadius: "8px", padding: "10px 18px", fontSize: "13px", fontWeight: 500, cursor: transferLoading ? "default" : "pointer", opacity: transferLoading ? 0.6 : 1 }}
+              >
+                {transferLoading ? "Transferring..." : "Confirm Transfer"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

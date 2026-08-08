@@ -131,6 +131,19 @@ class AssetAllocationHistory(models.Model):
              'Rejected')],
         default='pending')
     acknowledged_at = models.DateTimeField(null=True, blank=True)
+    # --- Transfer / Reallocation reason tracking ---
+    TRANSFER_REASON_CHOICES = [
+        ('reallocation', 'Reallocation'),
+        ('damage', 'Damage / Replacement'),
+        ('upgrade', 'Upgrade'),
+        ('role_change', 'Role Change'),
+        ('other', 'Other'),
+    ]
+    transfer_reason = models.CharField(
+        max_length=20,
+        choices=TRANSFER_REASON_CHOICES,
+        blank=True,
+    )
     assigned_date = models.DateField()
     returned_date = models.DateField(blank=True, null=True)
     assigned_by = models.ForeignKey(

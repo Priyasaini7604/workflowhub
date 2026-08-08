@@ -2,6 +2,7 @@ from rest_framework import serializers
 from .models import Asset, AssetAllocationHistory
 from employees.serializers import EmployeeListSerializer
 from master_data.serializers import AssetCategorySerializer
+from employees.models import Employee
 
 
 class AssetSerializer(serializers.ModelSerializer):
@@ -240,7 +241,7 @@ class AssetAllocationHistorySerializer(serializers.ModelSerializer):
         fields = [
             'id', 'asset', 'asset_id', 'asset_category', 'employee',
             'assigned_date', 'returned_date', 'assigned_by', 'remarks',
-            'created_at',
+            'transfer_reason', 'created_at',
         ]
         read_only_fields = ['id', 'created_at']
 
@@ -266,3 +267,54 @@ class AssetPublicSerializer(serializers.ModelSerializer):
         if obj.assigned_to:
             return f"{obj.assigned_to.first_name} {obj.assigned_to.last_name}"
         return None
+
+
+class AssetTransferSerializer(serializers.Serializer):
+    """
+    Reallocates an already-assigned asset to a different employee,
+    capturing the transfer reason + an optional justification note.
+    Does not touch the Asset model directly — AssetTransferView owns
+    the actual state transition so it can reuse the existing
+    pending_acknowledgment/acknowledge flow.
+    """
+    new_employee = serializers.PrimaryKeyRelatedField(
+        queryset=Employee.objects.filter(is_archived=False)
+    )
+    transfer_reason = serializers.ChoiceField(
+        choices=AssetAllocationHistory.TRANSFER_REASON_CHOICES
+    )
+    remarks = serializers.CharField(
+        required=False, allow_blank=True, default=''
+    )
+
+    def validate(self, data):
+        asset = self.context['asset']
+        new_employee = data['new_employee']
+
+        if asset.assigned_to_id is None:
+            raise serializers.ValidationError(
+                "This asset isn't currently assigned to anyone — "
+                "use the regular assign flow instead of transfer."
+            )
+
+        if asset.status != 'assigned':
+            raise serializers.ValidationError(
+                f"Cannot transfer an asset that is currently "
+                f"'{asset.get_status_display()}'. It must be in "
+                "'Assigned' status (not pending acknowledgment/return)."
+            )
+
+        if new_employee.id == asset.assigned_to_id:
+            raise serializers.ValidationError(
+                {"new_employee": "Asset is already assigned to this employee."}
+            )
+
+        if new_employee.current_status not in ['active', 'notice_period']:
+            raise serializers.ValidationError(
+                {"new_employee": (
+                    f"Cannot transfer an asset to an employee whose status "
+                    f"is '{new_employee.get_current_status_display()}'."
+                )}
+            )
+
+        return data
