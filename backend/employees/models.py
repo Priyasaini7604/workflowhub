@@ -32,7 +32,10 @@ class Employee(models.Model):
     ]
 
     STATUS_CHOICES = [
+        ('candidate', 'Candidate'),
+        ('offer_sent', 'Offer Sent'),
         ('joining_pending', 'Joining Pending'),
+        ('onboarding', 'Onboarding'),
         ('active', 'Active'),
         ('notice_period', 'Notice Period'),
         ('offboarding', 'Offboarding'),
@@ -42,7 +45,7 @@ class Employee(models.Model):
     # --- Validators ---
     phone_validator = RegexValidator(
         regex=r'^\d{10,15}$',
-        message='Mobile number 10 to 15 digits hona chahiye!'
+        message='Mobile number must be 10 to 15 digits only'
     )
 
     # --- 1. Basic Information ---

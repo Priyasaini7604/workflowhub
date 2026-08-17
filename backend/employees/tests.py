@@ -74,8 +74,14 @@ class EmployeeStatusTransitionTests(TestCase):
         self.assertFalse(is_valid)
 
     def test_full_lifecycle_path_is_all_valid(self):
-        # joining_pending -> active -> notice_period -> offboarding -> exited
-        path = ["active", "notice_period", "offboarding", "exited"]
+        # joining_pending -> onboarding -> active -> notice_period ->
+        # offboarding -> exited
+        path = [
+            "onboarding",
+            "active",
+            "notice_period",
+            "offboarding",
+            "exited"]
         self.employee.current_status = "joining_pending"
         self.employee.save()
 
@@ -84,6 +90,14 @@ class EmployeeStatusTransitionTests(TestCase):
             self.assertTrue(is_valid, f"{next_status} failed: {errors}")
             self.employee.current_status = next_status
             self.employee.save()
+
+    def test_joining_pending_cannot_skip_onboarding(self):
+        # joining_pending -> active directly should NOT be allowed anymore
+        self.employee.current_status = "joining_pending"
+        self.employee.save()
+        is_valid, errors = self._validate("active")
+        self.assertFalse(is_valid)
+        self.assertIn("new_status", errors)
 
 
 class GenerateEmployeeIdTests(TestCase):

@@ -138,7 +138,10 @@ class EmployeeStatusUpdateSerializer(serializers.Serializer):
 
     # Valid transitions
     VALID_TRANSITIONS = {
-        'joining_pending': ['active'],
+        'candidate': ['offer_sent'],
+        'offer_sent': ['joining_pending'],
+        'joining_pending': ['onboarding'],
+        'onboarding': ['active'],
         'active': ['notice_period'],
         'notice_period': ['offboarding'],
         'offboarding': ['exited'],
