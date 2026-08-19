@@ -278,6 +278,7 @@ class EmployeeListViewCandidateSafetyTests(TestCase):
         response = view(request)
         self.assertEqual(response.status_code, 200)
 
+
 class EmployeeStatusUpdateProvisioningTests(TestCase):
     """The joining_pending transition is where a candidate becomes a
     real employee — this is the only place a User account and
@@ -318,7 +319,9 @@ class EmployeeStatusUpdateProvisioningTests(TestCase):
         candidate.refresh_from_db()
         self.assertIsNotNone(candidate.user)
         self.assertIsNotNone(candidate.employee_id)
-        self.assertEqual(candidate.user.username, candidate.employee_id.lower())
+        self.assertEqual(
+            candidate.user.username,
+            candidate.employee_id.lower())
         self.assertEqual(candidate.user.role, "employee")
         self.assertEqual(candidate.current_status, "joining_pending")
 

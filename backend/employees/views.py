@@ -24,6 +24,7 @@ from django.db.models import Q
 from users.models import User
 # Employee List
 
+
 def _generate_employee_id():
     existing_ids = Employee.objects.values_list('employee_id', flat=True)
     num = 1
@@ -32,6 +33,8 @@ def _generate_employee_id():
         if new_id not in existing_ids:
             return new_id
         num += 1
+
+
 class EmployeeListView(generics.ListAPIView):
     serializer_class = EmployeeListSerializer
     permission_classes = [IsHROrManagerOrSuperAdmin | IsITAdmin]
