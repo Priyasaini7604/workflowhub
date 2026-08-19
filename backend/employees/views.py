@@ -1,3 +1,4 @@
+import secrets
 from rest_framework import generics, permissions, status
 from .models import Employee
 from django.utils import timezone
@@ -20,9 +21,17 @@ from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.units import mm
 from rest_framework.pagination import PageNumberPagination
 from django.db.models import Q
+from users.models import User
 # Employee List
 
-
+def _generate_employee_id():
+    existing_ids = Employee.objects.values_list('employee_id', flat=True)
+    num = 1
+    while True:
+        new_id = f"EMP{num:03d}"
+        if new_id not in existing_ids:
+            return new_id
+        num += 1
 class EmployeeListView(generics.ListAPIView):
     serializer_class = EmployeeListSerializer
     permission_classes = [IsHROrManagerOrSuperAdmin | IsITAdmin]
@@ -56,13 +65,7 @@ class EmployeeCreateView(generics.CreateAPIView):
     permission_classes = [IsHROrSuperAdmin]
 
     def generate_employee_id(self):
-        existing_ids = Employee.objects.values_list('employee_id', flat=True)
-        num = 1
-        while True:
-            new_id = f"EMP{num:03d}"
-            if new_id not in existing_ids:
-                return new_id
-            num += 1
+        return _generate_employee_id()
 
     def perform_create(self, serializer):
         employee_id = self.generate_employee_id()
@@ -240,6 +243,24 @@ class EmployeeStatusUpdateView(generics.GenericAPIView):
         elif new_status == 'exited':
             employee.exit_date = now.date()
 
+        # Candidate/offer_sent -> joining_pending: this is where a real
+        # employee account gets provisioned. No user/employee_id exist
+        # before this point.
+        temp_password = None
+        if new_status == 'joining_pending' and employee.user is None:
+            employee_id = _generate_employee_id()
+            username = employee_id.lower()
+            temp_password = secrets.token_urlsafe(9)
+
+            user = User.objects.create_user(
+                username=username,
+                password=temp_password,
+                role='employee'
+            )
+
+            employee.user = user
+            employee.employee_id = employee_id
+
         employee.updated_by = request.user
         employee.save()
 
@@ -253,11 +274,16 @@ class EmployeeStatusUpdateView(generics.GenericAPIView):
             request=request
         )
 
-        return Response(
-            {'message': f'Status updated to {new_status}',
-                'current_status': new_status},
-            status=status.HTTP_200_OK
-        )
+        response_data = {
+            'message': f'Status updated to {new_status}',
+            'current_status': new_status,
+        }
+        if temp_password:
+            response_data['username'] = employee.user.username
+            response_data['temp_password'] = temp_password
+            response_data['employee_id'] = employee.employee_id
+
+        return Response(response_data, status=status.HTTP_200_OK)
 
 
 class EmployeeReportExportCSVView(generics.GenericAPIView):

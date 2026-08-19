@@ -12,6 +12,7 @@ from .views import (
     EmployeeReactivateView,
     CandidateCreateView,
     EmployeeListView,
+    EmployeeStatusUpdateView,
 )
 
 _counter = 0
@@ -276,3 +277,78 @@ class EmployeeListViewCandidateSafetyTests(TestCase):
         view = EmployeeListView.as_view()
         response = view(request)
         self.assertEqual(response.status_code, 200)
+
+class EmployeeStatusUpdateProvisioningTests(TestCase):
+    """The joining_pending transition is where a candidate becomes a
+    real employee — this is the only place a User account and
+    employee_id should ever get created."""
+
+    def setUp(self):
+        self.factory = APIRequestFactory()
+        self.hr_user = User.objects.create_user(
+            username="hr_admin_provision", password="test123", role="hr"
+        )
+
+    def _patch(self, employee, new_status):
+        request = self.factory.patch(
+            f"/api/employees/{employee.id}/status/",
+            {"new_status": new_status},
+            format="json",
+        )
+        force_authenticate(request, user=self.hr_user)
+        request.data = {"new_status": new_status}
+        view = EmployeeStatusUpdateView.as_view()
+        return view(request, pk=employee.id)
+
+    def test_joining_pending_provisions_user_account(self):
+        candidate = Employee.objects.create(
+            first_name="Neha",
+            last_name="Gupta",
+            personal_email="neha.gupta@example.com",
+            current_status="offer_sent",
+        )
+
+        response = self._patch(candidate, "joining_pending")
+
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertIn("temp_password", response.data)
+        self.assertIn("username", response.data)
+        self.assertIn("employee_id", response.data)
+
+        candidate.refresh_from_db()
+        self.assertIsNotNone(candidate.user)
+        self.assertIsNotNone(candidate.employee_id)
+        self.assertEqual(candidate.user.username, candidate.employee_id.lower())
+        self.assertEqual(candidate.user.role, "employee")
+        self.assertEqual(candidate.current_status, "joining_pending")
+
+    def test_password_is_usable_for_login(self):
+        candidate = Employee.objects.create(
+            first_name="Karan",
+            last_name="Mehta",
+            personal_email="karan.mehta@example.com",
+            current_status="offer_sent",
+        )
+
+        response = self._patch(candidate, "joining_pending")
+        candidate.refresh_from_db()
+
+        self.assertTrue(
+            candidate.user.check_password(response.data["temp_password"])
+        )
+
+    def test_reactivating_status_change_does_not_touch_existing_user(self):
+        # An employee who already has a user (normal, non-candidate flow)
+        # must not get re-provisioned or have their account touched.
+        employee = make_employee(current_status="joining_pending")
+        original_user_id = employee.user.id
+        original_employee_id = employee.employee_id
+
+        response = self._patch(employee, "onboarding")
+
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertNotIn("temp_password", response.data)
+
+        employee.refresh_from_db()
+        self.assertEqual(employee.user.id, original_user_id)
+        self.assertEqual(employee.employee_id, original_employee_id)
