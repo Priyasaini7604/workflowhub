@@ -6,7 +6,13 @@ from rest_framework.test import APIRequestFactory, force_authenticate
 from users.models import User
 from .models import Employee
 from .serializers import EmployeeStatusUpdateSerializer
-from .views import EmployeeCreateView, EmployeeArchiveView, EmployeeReactivateView
+from .views import (
+    EmployeeCreateView,
+    EmployeeArchiveView,
+    EmployeeReactivateView,
+    CandidateCreateView,
+    EmployeeListView,
+)
 
 _counter = 0
 
@@ -190,3 +196,83 @@ class EmployeeArchiveViewTests(TestCase):
         response = view(request, pk=self.employee.id)
 
         self.assertEqual(response.status_code, 404)
+
+
+class CandidateCreateViewTests(TestCase):
+    """Candidate intake must stay minimal — no user account, no
+    employee_id, until the candidate is moved to joining_pending."""
+
+    def setUp(self):
+        self.factory = APIRequestFactory()
+        self.hr_user = User.objects.create_user(
+            username="hr_admin_candidate", password="test123", role="hr"
+        )
+
+    def _post(self, data):
+        request = self.factory.post("/api/employees/candidates/create/", data)
+        force_authenticate(request, user=self.hr_user)
+        view = CandidateCreateView.as_view()
+        return view(request)
+
+    def test_candidate_created_with_no_user_and_no_employee_id(self):
+        response = self._post({
+            "first_name": "Riya",
+            "last_name": "Sharma",
+            "personal_email": "riya.sharma@example.com",
+            "mobile_number": "9876543210",
+            "designation": "Software Engineer",
+            "department": "Tech",
+        })
+        self.assertEqual(response.status_code, 201, response.data)
+
+        employee = Employee.objects.get(id=response.data["id"])
+        self.assertIsNone(employee.user)
+        self.assertIsNone(employee.employee_id)
+        self.assertEqual(employee.current_status, "candidate")
+        self.assertIsNotNone(employee.status_start_date)
+
+    def test_candidate_creation_does_not_consume_an_employee_id(self):
+        # Regression guard: candidate creation must never touch
+        # generate_employee_id(), so the EMP series stays untouched.
+        self._post({
+            "first_name": "Aman",
+            "last_name": "Verma",
+            "personal_email": "aman.verma@example.com",
+            "mobile_number": "9876500000",
+            "designation": "Analyst",
+            "department": "Finance",
+        })
+        self.assertFalse(
+            Employee.objects.filter(employee_id__isnull=False).exists()
+        )
+
+    def test_candidate_missing_required_name_fields_rejected(self):
+        response = self._post({
+            "personal_email": "noname@example.com",
+        })
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("first_name", response.data)
+
+
+class EmployeeListViewCandidateSafetyTests(TestCase):
+    """A candidate has no linked User yet — the list endpoint must not
+    crash trying to read user.role for them."""
+
+    def setUp(self):
+        self.factory = APIRequestFactory()
+        self.hr_user = User.objects.create_user(
+            username="hr_admin_list", password="test123", role="hr"
+        )
+        Employee.objects.create(
+            first_name="Candidate",
+            last_name="Test",
+            personal_email="candidate.test@example.com",
+            current_status="candidate",
+        )
+
+    def test_list_does_not_crash_with_userless_candidate(self):
+        request = self.factory.get("/api/employees/")
+        force_authenticate(request, user=self.hr_user)
+        view = EmployeeListView.as_view()
+        response = view(request)
+        self.assertEqual(response.status_code, 200)

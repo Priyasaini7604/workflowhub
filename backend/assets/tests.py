@@ -50,6 +50,7 @@ def make_category(**overrides):
     defaults = {
         'name': f"Category{_counter}",
         'code': f"CAT{_counter}",
+        'asset_id_prefix': f"C{_counter}",
     }
     defaults.update(overrides)
     return AssetCategory.objects.create(**defaults)
@@ -184,14 +185,21 @@ class GenerateAssetIdTests(TestCase):
 
     def setUp(self):
         self.view = AssetCreateView()
+        self.category = make_category()
 
     def test_first_id_is_ast001(self):
-        self.assertEqual(self.view.generate_asset_id(), "AST001")
+        expected_prefix = f"MPRW{self.category.asset_id_prefix}"
+        self.assertEqual(
+            self.view.generate_asset_id(self.category), f"{expected_prefix}001"
+        )
 
     def test_fills_gap_if_middle_id_is_free(self):
-        make_asset(asset_id="AST001")
-        make_asset(asset_id="AST003")
-        self.assertEqual(self.view.generate_asset_id(), "AST002")
+        prefix = f"MPRW{self.category.asset_id_prefix}"
+        make_asset(asset_id=f"{prefix}001", category=self.category)
+        make_asset(asset_id=f"{prefix}003", category=self.category)
+        self.assertEqual(
+            self.view.generate_asset_id(self.category), f"{prefix}002"
+        )
 
 
 class AssetAcknowledgeViewTests(TestCase):

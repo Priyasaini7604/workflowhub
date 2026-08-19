@@ -65,7 +65,11 @@ class EmployeeListSerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField()
     # role lives on the linked User account, not on Employee itself —
     # pull it through so the frontend can show it (HR/Manager/IT/etc).
-    role = serializers.CharField(source='user.role', read_only=True)
+    # Candidates have no linked User yet, so this must stay null-safe.
+    role = serializers.SerializerMethodField()
+
+    def get_role(self, obj):
+        return obj.user.role if obj.user else None
 
     class Meta:
         model = Employee
@@ -159,3 +163,22 @@ class EmployeeStatusUpdateSerializer(serializers.Serializer):
                 f"Allowed next status: {allowed_next or 'none'}"
             )
         return value
+
+
+class CandidateCreateSerializer(serializers.ModelSerializer):
+    """Minimal intake form for the Candidate stage — no user account,
+    no employee_id yet. Those get created only once the candidate
+    is moved to joining_pending."""
+
+    class Meta:
+        model = Employee
+        fields = [
+            'id',
+            'first_name',
+            'middle_name',
+            'last_name',
+            'personal_email',
+            'mobile_number',
+            'designation',
+            'department',
+        ]

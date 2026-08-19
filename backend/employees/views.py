@@ -5,7 +5,8 @@ from rest_framework.response import Response
 from .serializers import (EmployeeSerializer,
                           EmployeeListSerializer,
                           EmployeeArchiveSerializer,
-                          EmployeeReportSerializer)
+                          EmployeeReportSerializer,
+                          CandidateCreateSerializer)
 from permissions import IsHROrSuperAdmin, IsHROrManagerOrSuperAdmin, IsITAdmin
 from .serializers import EmployeeStatusUpdateSerializer
 from rest_framework.exceptions import NotFound
@@ -78,6 +79,30 @@ class EmployeeCreateView(generics.CreateAPIView):
             request=self.request
         )
 
+# Candidate Create — lightweight intake, no user account / employee_id yet
+
+
+class CandidateCreateView(generics.CreateAPIView):
+    queryset = Employee.objects.all()
+    serializer_class = CandidateCreateSerializer
+    permission_classes = [IsHROrSuperAdmin]
+
+    def perform_create(self, serializer):
+        employee = serializer.save(
+            current_status='candidate',
+            status_start_date=timezone.now().date(),
+            created_by=self.request.user
+        )
+        create_audit_log(
+            user=self.request.user,
+            action='create',
+            model_name='Employee',
+            object_id=employee.id,
+            description=f'Candidate {
+                employee.first_name} {
+                employee.last_name} added',
+            request=self.request)
+
 
 # Employee Detail
 class EmployeeDetailView(generics.RetrieveAPIView):
@@ -123,8 +148,10 @@ class EmployeeArchiveView(generics.UpdateAPIView):
         )
 
         # Deactivate the linked user account so they can't log in anymore
-        employee.user.is_active = False
-        employee.user.save(update_fields=['is_active'])
+        # (candidates have no linked user yet — nothing to deactivate)
+        if employee.user:
+            employee.user.is_active = False
+            employee.user.save(update_fields=['is_active'])
 
         create_audit_log(
             user=self.request.user,
@@ -153,9 +180,9 @@ class EmployeeReactivateView(generics.UpdateAPIView):
             status_start_date=timezone.now().date(),
         )
 
-        # Linked user account ko wapas activate karo taaki wo login kar sake
-        employee.user.is_active = True
-        employee.user.save(update_fields=['is_active'])
+        if employee.user:
+            employee.user.is_active = True
+            employee.user.save(update_fields=['is_active'])
 
         create_audit_log(
             user=self.request.user,

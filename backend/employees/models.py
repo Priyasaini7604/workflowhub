@@ -52,9 +52,15 @@ class Employee(models.Model):
     user = models.OneToOneField(
         User,
         on_delete=models.CASCADE,
-        related_name='employee_profile'
+        related_name='employee_profile',
+        null=True,
+        blank=True
     )
-    employee_id = models.CharField(max_length=20, unique=True)
+    employee_id = models.CharField(
+        max_length=20,
+        unique=True,
+        null=True,
+        blank=True)
     first_name = models.CharField(max_length=50)
     middle_name = models.CharField(max_length=50, blank=True)
     last_name = models.CharField(max_length=50)
@@ -105,8 +111,8 @@ class Employee(models.Model):
         choices=EMPLOYEE_TYPE_CHOICES,
         default='permanent'
     )
-    designation = models.CharField(max_length=100)
-    department = models.CharField(max_length=100)
+    designation = models.CharField(max_length=100, blank=True)
+    department = models.CharField(max_length=100, blank=True)
     reporting_manager = models.ForeignKey(
         'self',
         on_delete=models.SET_NULL,
@@ -114,7 +120,7 @@ class Employee(models.Model):
         blank=True,
         related_name='team_members'
     )
-    date_of_joining = models.DateField()
+    date_of_joining = models.DateField(null=True, blank=True)
     confirmation_date = models.DateField(blank=True, null=True)
     probation_end_date = models.DateField(blank=True, null=True)
 
