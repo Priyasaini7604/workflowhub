@@ -6,6 +6,7 @@ import EmployeesPage from "./pages/EmployeesPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Layout from "./components/Layout";
 import AddEmployeePage from "./pages/AddEmployeePage";
+import AddCandidatePage from "./pages/AddCandidatePage";
 import EmployeeDetailPage from './pages/EmployeeDetailPage';
 import EditEmployeePage from "./pages/EditEmployeePage";
 import AssetsPage from "./pages/AssetsPage";
@@ -69,6 +70,16 @@ const App = () => {
             </ProtectedRoute>
         }
       />
+              <Route
+          path="/employees/add-candidate"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <AddCandidatePage />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
         <Route path="/employees/:id" element={
         <ProtectedRoute><Layout><EmployeeDetailPage /></Layout></ProtectedRoute>
           } />

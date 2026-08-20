@@ -5,7 +5,7 @@ import axiosInstance from "../api/axiosInstance";
 const ROLE_CHOICES = [
   { value: "employee", label: "Employee" },
   { value: "hr_admin", label: "HR Admin" },
-  { value: "it_manager", label: "IT Manager" },
+  { value: "it", label: "IT Admin" },
   { value: "manager", label: "Manager" },
   { value: "superadmin", label: "Super Admin" },
 ];

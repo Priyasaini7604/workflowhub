@@ -3,7 +3,15 @@
 
 export const statusColors = {
   // employee / lifecycle
+    // employee / lifecycle
+  candidate: { bg: "var(--color-border)", text: "var(--color-text-faint)" },
+  offer_sent: { bg: "var(--color-warning-bg)", text: "var(--color-warning-text)" },
+  joining_pending: { bg: "var(--color-warning-bg)", text: "var(--color-warning-text)" },
+  onboarding: { bg: "var(--color-accent-bg)", text: "var(--color-accent)" },
   active: { bg: "var(--color-success-bg)", text: "var(--color-success-text)" },
+  notice_period: { bg: "var(--color-warning-bg-alt)", text: "var(--color-warning-text-alt)" },
+  offboarding: { bg: "var(--color-danger-bg)", text: "var(--color-danger-text-soft)" },
+  exited: { bg: "var(--color-border)", text: "var(--color-text-faint)" },
   inactive: { bg: "var(--color-border)", text: "var(--color-text-faint)" },
   on_leave: { bg: "var(--color-warning-bg)", text: "var(--color-warning-text)" },
 

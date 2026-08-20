@@ -6,7 +6,10 @@ import { statusColors } from "../constants/statusColors";
 
 
 const VALID_NEXT = {
-  joining_pending: ["active"],
+  candidate: ["offer_sent"],
+  offer_sent: ["joining_pending"],
+  joining_pending: ["onboarding"],
+  onboarding: ["active"],
   active: ["notice_period"],
   notice_period: ["offboarding"],
   offboarding: ["exited"],
@@ -19,8 +22,9 @@ const EmployeeDetailPage = () => {
   const [employee, setEmployee] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [statusError, setStatusError] = useState("");
+    const [statusError, setStatusError] = useState("");
   const [changingStatus, setChangingStatus] = useState(false);
+  const [newCredentials, setNewCredentials] = useState(null);
 
   useEffect(() => {
     fetchEmployee();
@@ -58,12 +62,23 @@ const EmployeeDetailPage = () => {
     }
   };
 
-  const handleStatusChange = async (newStatus) => {
+    const handleStatusChange = async (newStatus) => {
     if (!window.confirm(`Change status to "${newStatus}"?`)) return;
     setChangingStatus(true);
     setStatusError("");
     try {
-      await axiosInstance.patch(`/employees/${id}/status/`, { new_status: newStatus });
+      const response = await axiosInstance.patch(`/employees/${id}/status/`, { new_status: newStatus });
+
+      // joining_pending transition provisions a login account — the temp
+      // password is only ever returned this one time, so show it now.
+      if (response.data?.temp_password) {
+        setNewCredentials({
+          username: response.data.username,
+          temp_password: response.data.temp_password,
+          employee_id: response.data.employee_id,
+        });
+      }
+
       fetchEmployee(); // refresh karke naya status dikhao
     } catch (err) {
       setStatusError(err.response?.data?.new_status?.[0] || "Failed to change status");
@@ -121,9 +136,64 @@ const EmployeeDetailPage = () => {
     gridTemplateColumns: "1fr 1fr",
     gap: "20px",
   };
+    const renderCredentialsModal = () => {
+    if (!newCredentials) return null;
+
+    const handleCopy = () => {
+      const text = `Username: ${newCredentials.username}\nPassword: ${newCredentials.temp_password}`;
+      navigator.clipboard.writeText(text);
+    };
+
+    return (
+      <div style={{
+        position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+        background: "rgba(0,0,0,0.6)", display: "flex",
+        alignItems: "center", justifyContent: "center", zIndex: 1000,
+      }}>
+        <div style={{
+          background: "#0a1628", border: "0.5px solid #1e293b",
+          borderRadius: "12px", padding: "28px", maxWidth: "420px", width: "90%",
+        }}>
+          <h3 style={{ fontSize: "16px", fontWeight: 500, color: "#f1f5f9", margin: "0 0 6px" }}>
+            🔐 Login account created
+          </h3>
+          <p style={{ fontSize: "12px", color: "#f59e0b", margin: "0 0 20px" }}>
+            This password won't be shown again — copy or share it with the employee now.
+          </p>
+
+          <div style={{ background: "#0f1a2e", border: "0.5px solid #1e3a5f", borderRadius: "8px", padding: "14px", marginBottom: "16px" }}>
+            <p style={{ fontSize: "11px", color: "#64748b", margin: "0 0 4px" }}>EMPLOYEE ID</p>
+            <p style={{ fontSize: "13px", color: "#f1f5f9", margin: "0 0 12px" }}>{newCredentials.employee_id}</p>
+
+            <p style={{ fontSize: "11px", color: "#64748b", margin: "0 0 4px" }}>USERNAME</p>
+            <p style={{ fontSize: "13px", color: "#f1f5f9", margin: "0 0 12px" }}>{newCredentials.username}</p>
+
+            <p style={{ fontSize: "11px", color: "#64748b", margin: "0 0 4px" }}>TEMPORARY PASSWORD</p>
+            <p style={{ fontSize: "13px", color: "#f1f5f9", margin: 0, fontFamily: "monospace" }}>{newCredentials.temp_password}</p>
+          </div>
+
+          <div style={{ display: "flex", gap: "10px" }}>
+            <button
+              onClick={handleCopy}
+              style={{ flex: 1, padding: "10px", background: "#1e3a5f", color: "#3b82f6", border: "none", borderRadius: "8px", fontSize: "13px", cursor: "pointer" }}
+            >
+              📋 Copy
+            </button>
+            <button
+              onClick={() => setNewCredentials(null)}
+              style={{ flex: 1, padding: "10px", background: "#2563eb", color: "#eff6ff", border: "none", borderRadius: "8px", fontSize: "13px", fontWeight: 500, cursor: "pointer" }}
+            >
+              Done
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div>
+    {renderCredentialsModal()}
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
