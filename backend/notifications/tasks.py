@@ -2,6 +2,7 @@ from celery import shared_task
 from django.core.mail import send_mail
 from datetime import date, timedelta
 
+
 @shared_task
 def send_email_notification_task(notification_id):
     from .models import Notification
@@ -18,6 +19,7 @@ def send_email_notification_task(notification_id):
         recipient_list=[n.recipient.email],
         fail_silently=True,
     )
+
 
 @shared_task
 def check_due_and_overdue_tasks():

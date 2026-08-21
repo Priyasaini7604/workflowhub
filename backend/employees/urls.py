@@ -41,7 +41,8 @@ urlpatterns = [
         'report/export/pdf/',
         EmployeeReportExportPDFView.as_view(),
         name='employee-report-export-pdf'),
-    path('candidates/create/', CandidateCreateView.as_view(), name='candidate-create'),
+    path('candidates/create/', CandidateCreateView.as_view(),
+         name='candidate-create'),
 
 
 ]

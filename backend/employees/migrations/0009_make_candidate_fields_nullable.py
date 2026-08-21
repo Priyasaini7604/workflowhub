@@ -26,7 +26,8 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name="employee",
             name="employee_id",
-            field=models.CharField(blank=True, max_length=20, null=True, unique=True),
+            field=models.CharField(
+                blank=True, max_length=20, null=True, unique=True),
         ),
         migrations.AlterField(
             model_name="employee",

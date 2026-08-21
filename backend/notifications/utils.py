@@ -7,7 +7,7 @@ def notify(recipient, title, message, notification_type='general'):
     recipient is None (e.g. an employee with no linked user) — does nothing."""
     if recipient is None:
         return None
-    notification =Notification.objects.create(
+    notification = Notification.objects.create(
         recipient=recipient,
         title=title,
         message=message,
