@@ -1,4 +1,5 @@
 from .models import Notification
+from .tasks import send_email_notification_task
 
 
 def notify(recipient, title, message, notification_type='general'):
@@ -6,12 +7,14 @@ def notify(recipient, title, message, notification_type='general'):
     recipient is None (e.g. an employee with no linked user) — does nothing."""
     if recipient is None:
         return None
-    return Notification.objects.create(
+    notification =Notification.objects.create(
         recipient=recipient,
         title=title,
         message=message,
         notification_type=notification_type,
     )
+    send_email_notification_task.delay(notification.id)
+    return notification
 
 
 def notify_many(recipients, title, message, notification_type='general'):
