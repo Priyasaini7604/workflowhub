@@ -60,31 +60,36 @@ const fetchEmployees = async () => {
           <p style={{ fontSize: "13px", color: "#64748b", margin: 0 }}>Manage all employees</p>
         </div>
         <div style={{ display: "flex", gap: "10px" }}>
-          <button
-            onClick={() => setShowArchived(!showArchived)}
-            style={{
-              background: showArchived ? "#451a03" : "#0a1628",
-              color: showArchived ? "#f59e0b" : "#94a3b8",
-              border: "0.5px solid #1e293b",
-              borderRadius: "8px",
-              padding: "10px 14px",
-              fontSize: "13px",
-              cursor: "pointer",
-            }}
-          >
-            {showArchived ? "🗄️ Showing Archived" : "👥 Showing Active"}
-          </button>
-          <button
-            onClick={() => navigate("/employees/add-candidate")}
-            style={{ background: "#0a1628", color: "#94a3b8", border: "0.5px solid #1e3a5f", borderRadius: "8px", padding: "10px 18px", fontSize: "13px", fontWeight: 500, cursor: "pointer" }}>
-            + Add Candidate
-          </button>
-          <button
-            onClick={() => navigate("/employees/add")}
-            style={{ background: "#2563eb", color: "#eff6ff", border: "none", borderRadius: "8px", padding: "10px 18px", fontSize: "13px", fontWeight: 500, cursor: "pointer" }}>
-            + Add Employee
-          </button>
-        </div>
+  <button
+    onClick={() => setShowArchived(!showArchived)}
+    style={{
+      background: showArchived ? "#451a03" : "#0a1628",
+      color: showArchived ? "#f59e0b" : "#94a3b8",
+      border: "0.5px solid #1e293b",
+      borderRadius: "8px",
+      padding: "10px 14px",
+      fontSize: "13px",
+      cursor: "pointer",
+    }}
+  >
+    {showArchived ? "🗄️ Showing Archived" : "👥 Showing Active"}
+  </button>
+  <button
+    onClick={() => navigate("/employees/bulk-import")}
+    style={{ background: "#0a1628", color: "#94a3b8", border: "0.5px solid #1e3a5f", borderRadius: "8px", padding: "10px 18px", fontSize: "13px", fontWeight: 500, cursor: "pointer" }}>
+    📤 Bulk Import
+  </button>
+  <button
+    onClick={() => navigate("/employees/add-candidate")}
+    style={{ background: "#0a1628", color: "#94a3b8", border: "0.5px solid #1e3a5f", borderRadius: "8px", padding: "10px 18px", fontSize: "13px", fontWeight: 500, cursor: "pointer" }}>
+    + Add Candidate
+  </button>
+  <button
+    onClick={() => navigate("/employees/add")}
+    style={{ background: "#2563eb", color: "#eff6ff", border: "none", borderRadius: "8px", padding: "10px 18px", fontSize: "13px", fontWeight: 500, cursor: "pointer" }}>
+    + Add Employee
+  </button>
+</div>
       </div>
 
       {/* Search */}

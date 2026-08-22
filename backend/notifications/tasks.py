@@ -51,12 +51,18 @@ def check_due_and_overdue_tasks():
             if task.due_date == tomorrow:
                 resolve_and_notify(
                     task,
-                    f"Task due tomorrow: {task.task_name}",
-                    f"The task '{task.task_name}' for {task.employee} is due on {task.due_date}."
-                )
+                    f"Task due tomorrow: {
+                        task.task_name}",
+                    f"The task '{
+                        task.task_name}' for {
+                        task.employee} is due on {
+                        task.due_date}.")
             elif task.due_date < today:
                 resolve_and_notify(
                     task,
-                    f"Overdue task: {task.task_name}",
-                    f"The task '{task.task_name}' for {task.employee} was due on {task.due_date} and is now overdue."
-                )
+                    f"Overdue task: {
+                        task.task_name}",
+                    f"The task '{
+                        task.task_name}' for {
+                        task.employee} was due on {
+                        task.due_date} and is now overdue.")

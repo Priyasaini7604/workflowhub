@@ -13,6 +13,8 @@ from .views import (
     EmployeeReportExportPDFView,
     CandidateCreateView,
 )
+from .views_bulk_import import EmployeeBulkImportPreviewView, EmployeeBulkImportCommitView
+
 
 urlpatterns = [
     path('', EmployeeListView.as_view(), name='employee-list'),
@@ -43,6 +45,10 @@ urlpatterns = [
         name='employee-report-export-pdf'),
     path('candidates/create/', CandidateCreateView.as_view(),
          name='candidate-create'),
+    path('bulk-import/preview/', EmployeeBulkImportPreviewView.as_view(),
+         name='employee-bulk-import-preview'),
+    path('bulk-import/commit/', EmployeeBulkImportCommitView.as_view(),
+         name='employee-bulk-import-commit'),
 
 
 ]

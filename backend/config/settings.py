@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     'access',
     'master_data',
     'approvals',
+
 ]
 
 MIDDLEWARE = [

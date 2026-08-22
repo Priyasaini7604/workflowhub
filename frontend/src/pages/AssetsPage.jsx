@@ -56,21 +56,29 @@ const AssetsPage = () => {
     <div>
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
-        <div>
-          <h2 style={{ fontSize: "22px", fontWeight: 500, color: "#f1f5f9", margin: "0 0 4px" }}>
-            {isITOnlyAssigned ? "Assigned Assets" : "IT Asset Management"}
-          </h2>
-          <p style={{ fontSize: "13px", color: "#64748b", margin: 0 }}>
-            {isITOnlyAssigned ? "Assets currently assigned to employees" : "Manage all IT assets"}
-          </p>
-        </div>
-        <button
-          onClick={() => navigate("/assets/add")}
-          style={{ background: "#2563eb", color: "#eff6ff", border: "none", borderRadius: "8px", padding: "10px 18px", fontSize: "13px", fontWeight: 500, cursor: "pointer" }}>
-          + Add Asset
-        </button>
-      </div>
-
+  <div>
+    <h2 style={{ fontSize: "22px", fontWeight: 500, color: "#f1f5f9", margin: "0 0 4px" }}>
+      {isITOnlyAssigned ? "Assigned Assets" : "IT Asset Management"}
+    </h2>
+    <p style={{ fontSize: "13px", color: "#64748b", margin: 0 }}>
+      {isITOnlyAssigned ? "Assets currently assigned to employees" : "Manage all IT assets"}
+    </p>
+  </div>
+  {!isITOnlyAssigned && (
+    <div style={{ display: "flex", gap: "10px" }}>
+      <button
+        onClick={() => navigate("/assets/bulk-import")}
+        style={{ background: "#0a1628", color: "#94a3b8", border: "0.5px solid #1e3a5f", borderRadius: "8px", padding: "10px 18px", fontSize: "13px", fontWeight: 500, cursor: "pointer" }}>
+        📤 Bulk Import
+      </button>
+      <button
+        onClick={() => navigate("/assets/add")}
+        style={{ background: "#2563eb", color: "#eff6ff", border: "none", borderRadius: "8px", padding: "10px 18px", fontSize: "13px", fontWeight: 500, cursor: "pointer" }}>
+        + Add Asset
+      </button>
+    </div>
+  )}
+</div>
       {/* Search */}
       <div style={{ display: "flex", alignItems: "center", gap: "10px", background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "8px", padding: "10px 14px", marginBottom: "16px", maxWidth: "320px" }}>
         <svg xmlns="http://www.w3.org/2000/svg" style={{ width: "15px", height: "15px" }} fill="none" viewBox="0 0 24 24" stroke="#475569" strokeWidth={1.5}>

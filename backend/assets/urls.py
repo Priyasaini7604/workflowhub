@@ -17,6 +17,7 @@ from .views import (
     AssetTransferView
 
 )
+from .views_bulk_import import AssetBulkImportPreviewView, AssetBulkImportCommitView
 
 urlpatterns = [
     path(
@@ -77,4 +78,8 @@ urlpatterns = [
         name='asset-report-export-pdf'),
     path('<int:pk>/transfer/', AssetTransferView.as_view(),
          name='asset-transfer'),
+    path('bulk-import/preview/', AssetBulkImportPreviewView.as_view(),
+         name='asset-bulk-import-preview'),
+    path('bulk-import/commit/', AssetBulkImportCommitView.as_view(),
+         name='asset-bulk-import-commit'),
 ]

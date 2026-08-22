@@ -30,7 +30,8 @@ import ApprovalsCenterPage from "./pages/ApprovalsCenterPage";
 import UserManagementPage from "./pages/UserManagementPage";
 import AccessMatrixPage from "./pages/AccessMatrixPage";
 import ScanPage from "./pages/ScanPage";
-
+import { EmployeeBulkImportPage } from "./pages/EmployeeBulkImportPage";
+import { AssetBulkImportPage } from "./pages/AssetBulkImportPage";
 
 
 const App = () => {
@@ -50,6 +51,26 @@ const App = () => {
             </ProtectedRoute>
           }
         />
+        <Route
+  path="/employees/bulk-import"
+  element={
+    <ProtectedRoute>
+      <Layout>
+        <EmployeeBulkImportPage />
+      </Layout>
+    </ProtectedRoute>
+  }
+/>
+<Route
+  path="/assets/bulk-import"
+  element={
+    <ProtectedRoute>
+      <Layout>
+        <AssetBulkImportPage />
+      </Layout>
+    </ProtectedRoute>
+  }
+/>
         <Route
           path="/employees"
           element={
