@@ -1,7 +1,12 @@
 import axios from "axios";
 
+// Reads from frontend/.env — VITE_API_BASE_URL=http://localhost:8000/api
+// Falls back to localhost if the env var isn't set, so local dev still
+// works even without a .env file present.
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
+
 const axiosInstance = axios.create({
-  baseURL: "http://10.10.27.87:8000/api",
+  baseURL: API_BASE_URL,
   headers: {
     "Content-Type": "application/json",
   },
@@ -75,8 +80,11 @@ axiosInstance.interceptors.response.use(
       }
 
       try {
+        // Previously hardcoded to "http://localhost:8000/api/users/token/refresh/"
+        // (inconsistent with the baseURL above, which pointed at a different
+        // host) — now uses the same env-driven base for both.
         const { data } = await axios.post(
-          "http://localhost:8000/api/users/token/refresh/",
+          `${API_BASE_URL}/users/token/refresh/`,
           { refresh: refreshToken }
         );
         const newAccessToken = data.access;

@@ -127,7 +127,7 @@ const SoftwareAccessSection = ({ employeeId }) => {
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
           {accessList.map((item) => {
-            const statusStyle = StatusColors[item.status] || StatusColors.pending;
+            const statusStyle = statusColors[item.status] || StatusColors.pending;
             return (
               <div
                 key={item.id}

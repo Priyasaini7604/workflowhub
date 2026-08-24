@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import axiosInstance from "../api/axiosInstance";
 import SoftwareAccessSection from '../pages/SoftwareAccessSection';
 import { statusColors } from "../constants/statusColors";
+import LifecycleStepper from "../components/LifecycleStepper";
 
 
 const VALID_NEXT = {
@@ -290,6 +291,10 @@ const EmployeeDetailPage = () => {
           )}
         </div>
       </div>
+      {/* Lifecycle Progress — NEW */}
+<div style={sectionStyle}>
+  <LifecycleStepper currentStatus={employee?.current_status} isArchived={employee?.is_archived} />
+</div>
 
       {/* Basic Info */}
       <div style={sectionStyle}>

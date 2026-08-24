@@ -3,6 +3,7 @@ import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../api/axiosInstance";
 import { getEffectiveAssetStatus } from "../utils/assetStatus";
+import LifecycleStepper from "../components/LifecycleStepper";
 
 // Shared responsive styles injected once for all dashboards
 const DashboardResponsiveStyles = () => (
@@ -320,6 +321,7 @@ const ManagerDashboard = ({ navigate }) => {
 // ============ EMPLOYEE DASHBOARD ============
 const EmployeeDashboard = ({ navigate, username }) => {
   const [stats, setStats] = useState({ assets: "--", documents: "--", pending: "--" });
+  const [myStatus, setMyStatus] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -328,6 +330,7 @@ const EmployeeDashboard = ({ navigate, username }) => {
         // Get own employee profile first (gives us the employee id)
         const profileRes = await axiosInstance.get("/employees/me/");
         const empId = profileRes.data.id;
+        setMyStatus({ current_status: profileRes.data.current_status, is_archived: profileRes.data.is_archived, });
 
         const [assetRes, docRes] = await Promise.all([
           axiosInstance.get("/assets/"),
@@ -362,6 +365,11 @@ const EmployeeDashboard = ({ navigate, username }) => {
         </h2>
         <p style={{ fontSize: "13px", color: "#64748b", margin: 0 }}>Your personal workspace</p>
       </div>
+      {myStatus && (
+  <div style={{ background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "12px", padding: "16px", marginBottom: "1.5rem" }}>
+    <LifecycleStepper currentStatus={myStatus.current_status} isArchived={myStatus.is_archived} variant="compact" />
+  </div>
+)}
 
       {/* Real-data stat cards */}
       <div className="dashboard-grid">
