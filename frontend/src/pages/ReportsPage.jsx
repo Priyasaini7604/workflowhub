@@ -2,6 +2,24 @@ import { useState, useEffect } from "react";
 import axiosInstance from "../api/axiosInstance";
 import { useAuth } from "../context/AuthContext";
 import { statusColors } from "../constants/statusColors";
+import FilterDrawer, { countActiveFilters, buildFilterParams } from "../components/FilterDrawer";
+
+// NOTE: dateRange here filters on Asset.asset_issue_date on the backend
+// (AssetStatusReportView). Swap the backend field name in views.py if the
+// report should filter on a different date instead (e.g. warranty_expiry_date).
+const ASSET_FILTER_CONFIG = [
+  {
+    key: "status",
+    label: "Status",
+    type: "multiselect",
+    options: ["available", "assigned", "pending_acknowledgment", "pending_return", "retired", "under_repair", "lost", "reserved"],
+  },
+  { key: "department", label: "Department", type: "text", placeholder: "IT, HR, Finance" },
+  { key: "owner", label: "Owner (Employee ID)", type: "text", placeholder: "EMP001, EMP002" },
+  { key: "dateRange", label: "Assigned Date Range", type: "daterange" },
+];
+
+const EMPTY_ASSET_FILTERS = { status: [], department: "", owner: "", dateRange: { from: "", to: "" } };
 
 const ReportsPage = () => {
   const { user } = useAuth();
@@ -13,23 +31,26 @@ const ReportsPage = () => {
   // expects (that helper is for the regular /assets/ list shape). So this
   // page needs its own version for anything derived from assetReport.
   const getReportAssetStatus = (asset) => {
-  if (asset.status === "retired") return "retired";
-  if (asset.status === "under_repair") return "under_repair";
-  if (asset.status === "lost") return "lost";
-  if (asset.status === "reserved") return "reserved";
-  if (asset.assigned_to_name) return "assigned";
-  return "available";
-};
+    if (asset.status === "retired") return "retired";
+    if (asset.status === "under_repair") return "under_repair";
+    if (asset.status === "lost") return "lost";
+    if (asset.status === "reserved") return "reserved";
+    if (asset.assigned_to_name) return "assigned";
+    return "available";
+  };
 
   const [activeTab, setActiveTab] = useState(isAssetOnly ? "assets" : "employees");
   const [employeeReport, setEmployeeReport] = useState([]);
   const [assetReport, setAssetReport] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [assetFilters, setAssetFilters] = useState(EMPTY_ASSET_FILTERS);
 
   useEffect(() => {
     fetchReports();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [assetFilters]);
 
   const [assetEmployeeIdMap, setAssetEmployeeIdMap] = useState({});
 
@@ -37,12 +58,17 @@ const ReportsPage = () => {
     setLoading(true);
     setError("");
     try {
+      const assetParams = new URLSearchParams();
+      const filterParams = buildFilterParams(assetFilters, ASSET_FILTER_CONFIG);
+      Object.entries(filterParams).forEach(([key, value]) => assetParams.append(key, value));
+      const assetReportUrl = `/assets/report/?${assetParams.toString()}`;
+
       if (isAssetOnly) {
         // Fetch report (for condition/warranty columns) AND the full assets
         // list (which has assigned_to.employee_id) so we can show the
         // employee ID next to the name — the report endpoint only gives a name.
         const [assetResponse, fullAssetsResponse] = await Promise.all([
-          axiosInstance.get("/assets/report/"),
+          axiosInstance.get(assetReportUrl),
           axiosInstance.get("/assets/"),
         ]);
         setAssetReport(assetResponse.data.results || assetResponse.data);
@@ -50,7 +76,7 @@ const ReportsPage = () => {
       } else {
         const [empResponse, assetResponse, fullAssetsResponse] = await Promise.all([
           axiosInstance.get("/employees/report/"),
-          axiosInstance.get("/assets/report/"),
+          axiosInstance.get(assetReportUrl),
           axiosInstance.get("/assets/"),
         ]);
         setEmployeeReport(empResponse.data.results || empResponse.data);
@@ -63,27 +89,28 @@ const ReportsPage = () => {
       setLoading(false);
     }
   };
+
   const handleExport = async (type, format) => {
-  try {
-    const url = type === "employees"
-      ? `/employees/report/export/${format}/`
-      : `/assets/report/export/${format}/`;
+    try {
+      const url = type === "employees"
+        ? `/employees/report/export/${format}/`
+        : `/assets/report/export/${format}/`;
 
-    const response = await axiosInstance.get(url, { responseType: "blob" });
+      const response = await axiosInstance.get(url, { responseType: "blob" });
 
-    const blob = new Blob([response.data]);
-    const downloadUrl = window.URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = downloadUrl;
-    link.setAttribute("download", `${type}_report.${format}`);
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    window.URL.revokeObjectURL(downloadUrl);
-  } catch (err) {
-    setError(`Failed to export ${type} report as ${format.toUpperCase()}`);
-  }
-};
+      const blob = new Blob([response.data]);
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+      link.setAttribute("download", `${type}_report.${format}`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(downloadUrl);
+    } catch (err) {
+      setError(`Failed to export ${type} report as ${format.toUpperCase()}`);
+    }
+  };
 
   // Maps asset_id (e.g. "AST001") -> assigned employee's employee_id (e.g. "EMP001")
   const buildEmployeeIdMap = (fullAssets) => {
@@ -106,6 +133,9 @@ const ReportsPage = () => {
     background: activeTab === tab ? "#2563eb" : "#0a1628",
     color: activeTab === tab ? "#eff6ff" : "#64748b",
   });
+
+  const showAssetFilterButton = isAssetOnly || activeTab === "assets";
+  const activeAssetFilterCount = countActiveFilters(assetFilters, ASSET_FILTER_CONFIG);
 
   return (
     <div>
@@ -166,51 +196,92 @@ const ReportsPage = () => {
               </p>
             </div>
             <div style={{ background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "12px", padding: "16px" }}>
-    <p style={{ fontSize: "11px", color: "#64748b", margin: "0 0 6px", letterSpacing: "0.8px" }}>LOST</p>
-    <p style={{ fontSize: "24px", fontWeight: 500, color: "#f87171", margin: 0 }}>
-      {assetReport.filter(a => getReportAssetStatus(a) === "lost").length}
-    </p>
-  </div>
-  <div style={{ background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "12px", padding: "16px" }}>
-    <p style={{ fontSize: "11px", color: "#64748b", margin: "0 0 6px", letterSpacing: "0.8px" }}>RESERVED</p>
-    <p style={{ fontSize: "24px", fontWeight: 500, color: "#a5b4fc", margin: 0 }}>
-      {assetReport.filter(a => getReportAssetStatus(a) === "reserved").length}
-    </p>
-  </div>
+              <p style={{ fontSize: "11px", color: "#64748b", margin: "0 0 6px", letterSpacing: "0.8px" }}>LOST</p>
+              <p style={{ fontSize: "24px", fontWeight: 500, color: "#f87171", margin: 0 }}>
+                {assetReport.filter(a => getReportAssetStatus(a) === "lost").length}
+              </p>
+            </div>
+            <div style={{ background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "12px", padding: "16px" }}>
+              <p style={{ fontSize: "11px", color: "#64748b", margin: "0 0 6px", letterSpacing: "0.8px" }}>RESERVED</p>
+              <p style={{ fontSize: "24px", fontWeight: 500, color: "#a5b4fc", margin: 0 }}>
+                {assetReport.filter(a => getReportAssetStatus(a) === "reserved").length}
+              </p>
+            </div>
           </>
         )}
       </div>
 
-      {/* Tabs + Export buttons */}
-<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", flexWrap: "wrap", gap: "10px" }}>
-  {!isAssetOnly ? (
-    <div style={{ display: "flex", gap: "8px" }}>
-      <button style={tabStyle("employees")} onClick={() => setActiveTab("employees")}>
-        👥 Employee Report
-      </button>
-      <button style={tabStyle("assets")} onClick={() => setActiveTab("assets")}>
-        💻 Asset Report
-      </button>
-    </div>
-  ) : (
-    <div />
-  )}
+      {/* Tabs + Filter + Export buttons */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", flexWrap: "wrap", gap: "10px" }}>
+        {!isAssetOnly ? (
+          <div style={{ display: "flex", gap: "8px" }}>
+            <button style={tabStyle("employees")} onClick={() => setActiveTab("employees")}>
+              👥 Employee Report
+            </button>
+            <button style={tabStyle("assets")} onClick={() => setActiveTab("assets")}>
+              💻 Asset Report
+            </button>
+          </div>
+        ) : (
+          <div />
+        )}
 
-  <div style={{ display: "flex", gap: "8px" }}>
-    <button
-      onClick={() => handleExport(activeTab, "csv")}
-      style={{ background: "#064e3b", color: "#10b981", border: "none", borderRadius: "8px", padding: "8px 14px", fontSize: "12px", fontWeight: 500, cursor: "pointer" }}
-    >
-      ⬇️ Export CSV
-    </button>
-    <button
-      onClick={() => handleExport(activeTab, "pdf")}
-      style={{ background: "#451a03", color: "#f59e0b", border: "none", borderRadius: "8px", padding: "8px 14px", fontSize: "12px", fontWeight: 500, cursor: "pointer" }}
-    >
-      ⬇️ Export PDF
-    </button>
-  </div>
-</div>
+        <div style={{ display: "flex", gap: "8px" }}>
+          {showAssetFilterButton && (
+            <button
+              onClick={() => setDrawerOpen(true)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                background: activeAssetFilterCount > 0 ? "#1e3a8a" : "#0a1628",
+                border: "0.5px solid #1e293b",
+                borderRadius: "8px",
+                padding: "8px 14px",
+                fontSize: "12px",
+                color: activeAssetFilterCount > 0 ? "#93c5fd" : "#64748b",
+                cursor: "pointer",
+              }}
+            >
+              ⚙️ Filters
+              {activeAssetFilterCount > 0 && (
+                <span
+                  style={{
+                    background: "#2563eb",
+                    color: "#eff6ff",
+                    borderRadius: "999px",
+                    fontSize: "11px",
+                    padding: "1px 7px",
+                  }}
+                >
+                  {activeAssetFilterCount}
+                </span>
+              )}
+            </button>
+          )}
+          <button
+            onClick={() => handleExport(activeTab, "csv")}
+            style={{ background: "#064e3b", color: "#10b981", border: "none", borderRadius: "8px", padding: "8px 14px", fontSize: "12px", fontWeight: 500, cursor: "pointer" }}
+          >
+            ⬇️ Export CSV
+          </button>
+          <button
+            onClick={() => handleExport(activeTab, "pdf")}
+            style={{ background: "#451a03", color: "#f59e0b", border: "none", borderRadius: "8px", padding: "8px 14px", fontSize: "12px", fontWeight: 500, cursor: "pointer" }}
+          >
+            ⬇️ Export PDF
+          </button>
+        </div>
+      </div>
+
+      <FilterDrawer
+        isOpen={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        filters={ASSET_FILTER_CONFIG}
+        appliedValues={assetFilters}
+        onApply={setAssetFilters}
+      />
+
       {/* Error */}
       {error && (
         <div style={{ background: "#1a0a0a", border: "0.5px solid #7f1d1d", borderRadius: "8px", padding: "12px", marginBottom: "16px" }}>

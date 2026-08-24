@@ -1,15 +1,32 @@
 import { useState, useEffect } from "react";
 import axiosInstance from "../api/axiosInstance";
 import { actionColors } from "../constants/statusColors";
+import FilterDrawer, { countActiveFilters, buildFilterParams } from "../components/FilterDrawer";
 
+// Adjust this options list to match the model_name values that actually
+// show up in your AuditLog table (create_audit_log() call sites).
+const AUDIT_FILTER_CONFIG = [
+  { key: "action", label: "Action", type: "multiselect", options: ["create", "update", "delete", "view"] },
+  {
+    key: "model_name",
+    label: "Model",
+    type: "multiselect",
+    options: ["Employee", "Asset", "OnboardingTask", "OffboardingTask", "SoftwareAccess", "Document", "AssetCategory"],
+  },
+  { key: "user", label: "User", type: "text", placeholder: "username1, username2" },
+  { key: "dateRange", label: "Date Range", type: "daterange" },
+];
+
+const EMPTY_FILTERS = { action: [], model_name: [], user: "", dateRange: { from: "", to: "" } };
 
 const AuditLogsPage = () => {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
-  const [filterAction, setFilterAction] = useState("");
   const [totalCount, setTotalCount] = useState(0);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [appliedFilters, setAppliedFilters] = useState(EMPTY_FILTERS);
 
   useEffect(() => {
     const delayDebounce = setTimeout(() => {
@@ -17,7 +34,7 @@ const AuditLogsPage = () => {
     }, 400); // typing rukne ke 400ms baad hi call jaaye
 
     return () => clearTimeout(delayDebounce);
-  }, [search, filterAction]);
+  }, [search, appliedFilters]);
 
   const fetchLogs = async () => {
     setLoading(true);
@@ -25,7 +42,9 @@ const AuditLogsPage = () => {
     try {
       const params = new URLSearchParams();
       if (search) params.append("search", search);
-      if (filterAction) params.append("action", filterAction);
+
+      const filterParams = buildFilterParams(appliedFilters, AUDIT_FILTER_CONFIG);
+      Object.entries(filterParams).forEach(([key, value]) => params.append(key, value));
 
       const response = await axiosInstance.get(`/audit/?${params.toString()}`);
       const results = response.data.results || response.data;
@@ -37,6 +56,8 @@ const AuditLogsPage = () => {
       setLoading(false);
     }
   };
+
+  const activeCount = countActiveFilters(appliedFilters, AUDIT_FILTER_CONFIG);
 
   return (
     <div>
@@ -60,18 +81,46 @@ const AuditLogsPage = () => {
             style={{ flex: 1, background: "transparent", border: "none", outline: "none", fontSize: "13px", color: "#f1f5f9" }}
           />
         </div>
-        <select
-          value={filterAction}
-          onChange={(e) => setFilterAction(e.target.value)}
-          style={{ background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "8px", padding: "10px 14px", fontSize: "13px", color: "#64748b", outline: "none" }}
+
+        <button
+          onClick={() => setDrawerOpen(true)}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            background: activeCount > 0 ? "#1e3a8a" : "#0a1628",
+            border: "0.5px solid #1e293b",
+            borderRadius: "8px",
+            padding: "10px 16px",
+            fontSize: "13px",
+            color: activeCount > 0 ? "#93c5fd" : "#64748b",
+            cursor: "pointer",
+          }}
         >
-          <option value="">All Actions</option>
-          <option value="create">Create</option>
-          <option value="update">Update</option>
-          <option value="delete">Delete</option>
-          <option value="view">View</option>
-        </select>
+          ⚙️ Filters
+          {activeCount > 0 && (
+            <span
+              style={{
+                background: "#2563eb",
+                color: "#eff6ff",
+                borderRadius: "999px",
+                fontSize: "11px",
+                padding: "1px 7px",
+              }}
+            >
+              {activeCount}
+            </span>
+          )}
+        </button>
       </div>
+
+      <FilterDrawer
+        isOpen={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        filters={AUDIT_FILTER_CONFIG}
+        appliedValues={appliedFilters}
+        onApply={setAppliedFilters}
+      />
 
       {/* Error */}
       {error && (

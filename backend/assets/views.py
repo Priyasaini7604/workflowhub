@@ -433,9 +433,52 @@ class AssetStatusReportView(generics.ListAPIView):
     def get_queryset(self):
         # N+1 fix: AssetReportSerializer serializes assigned_to and category
         # per row — same fix as AssetListView
-        return Asset.objects.filter(
+        queryset = Asset.objects.filter(
             is_archived=False
         ).select_related('assigned_to__user', 'category')
+
+        params = self.request.query_params
+
+        # naya: advanced filtering — status multi-select (comma-separated).
+        # Uses the literal Asset.status field values (available, assigned,
+        # pending_acknowledgment, pending_return, retired, under_repair,
+        # lost, reserved) — not the frontend's collapsed "assigned" bucket,
+        # so select both 'assigned' and the pending_* options if you want
+        # those included too.
+        status_param = params.get('status')
+        if status_param:
+            status_list = [
+                s.strip() for s in status_param.split(',') if s.strip()
+            ]
+            queryset = queryset.filter(status__in=status_list)
+
+        # naya: department multi-select — department lives on the assigned
+        # Employee, not on Asset itself
+        department = params.get('department')
+        if department:
+            dept_list = [
+                d.strip() for d in department.split(',') if d.strip()
+            ]
+            queryset = queryset.filter(assigned_to__department__in=dept_list)
+
+        # naya: owner multi-select, by employee_id
+        owner = params.get('owner')
+        if owner:
+            owner_list = [o.strip() for o in owner.split(',') if o.strip()]
+            queryset = queryset.filter(
+                assigned_to__employee_id__in=owner_list)
+
+        # naya: date range filter — on asset_issue_date (swap this field
+        # name if the report should filter on a different date instead,
+        # e.g. warranty_expiry_date)
+        date_from = params.get('date_from')
+        date_to = params.get('date_to')
+        if date_from:
+            queryset = queryset.filter(asset_issue_date__gte=date_from)
+        if date_to:
+            queryset = queryset.filter(asset_issue_date__lte=date_to)
+
+        return queryset
 
 # Asset Allocation History — Sirf IT Admin/SuperAdmin
 
