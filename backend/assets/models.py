@@ -123,15 +123,12 @@ class AssetAllocationHistory(models.Model):
     acknowledgment_status = models.CharField(
         max_length=20,
         choices=[
-            ('pending',
-             'Pending'),
-            ('acknowledged',
-             'Acknowledged'),
-            ('rejected',
-             'Rejected')],
+            ('pending', 'Pending'),
+            ('acknowledged', 'Acknowledged'),
+            ('rejected', 'Rejected')],
         default='pending')
     acknowledged_at = models.DateTimeField(null=True, blank=True)
-    # --- Transfer / Reallocation reason tracking ---
+
     TRANSFER_REASON_CHOICES = [
         ('reallocation', 'Reallocation'),
         ('damage', 'Damage / Replacement'),
@@ -146,6 +143,16 @@ class AssetAllocationHistory(models.Model):
     )
     assigned_date = models.DateField()
     returned_date = models.DateField(blank=True, null=True)
+
+    # --- NEW: Recommendation #15 fields ---
+    expected_return_date = models.DateField(null=True, blank=True)
+    condition_at_issue = models.CharField(
+        max_length=20,
+        choices=Asset.CONDITION_CHOICES,
+        blank=True,
+    )
+    # ----------------------------------------
+
     assigned_by = models.ForeignKey(
         'users.User',
         on_delete=models.SET_NULL,
@@ -160,9 +167,7 @@ class AssetAllocationHistory(models.Model):
     def save(self, *args, **kwargs):
         if self.asset:
             self.asset_id_snapshot = self.asset.asset_id
-            self.asset_name_snapshot = f"{
-                self.asset.brand} {
-                self.asset.model_name}".strip()
+            self.asset_name_snapshot = f"{self.asset.brand} {self.asset.model_name}".strip()
         super().save(*args, **kwargs)
 
     def __str__(self):

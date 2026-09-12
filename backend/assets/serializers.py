@@ -242,9 +242,9 @@ class AssetAllocationHistorySerializer(serializers.ModelSerializer):
             'id', 'asset', 'asset_id', 'asset_category', 'employee',
             'assigned_date', 'returned_date', 'assigned_by', 'remarks',
             'transfer_reason', 'created_at',
+            'expected_return_date', 'condition_at_issue',   # NEW
         ]
         read_only_fields = ['id', 'created_at']
-
 
 class AssetPublicSerializer(serializers.ModelSerializer):
     category_name = serializers.CharField(

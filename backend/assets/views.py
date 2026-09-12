@@ -170,7 +170,9 @@ class AssetUpdateView(generics.UpdateAPIView):
                 employee=new_assigned_to,
                 assigned_date=asset.asset_issue_date or today,
                 assigned_by=self.request.user,
-                acknowledgment_status='pending'
+                acknowledgment_status='pending',
+                condition_at_issue=asset.condition,
+    expected_return_date=self.request.data.get('expected_return_date') or None,
             )
 
             notify(
@@ -249,7 +251,9 @@ class AssetUpdateView(generics.UpdateAPIView):
                     asset=asset,
                     employee=new_assigned_to,
                     assigned_date=asset.asset_issue_date or today,
-                    assigned_by=self.request.user
+                    assigned_by=self.request.user,
+                    condition_at_issue=asset.condition,
+        expected_return_date=self.request.data.get('expected_return_date') or None,
                 )
 
                 notify(
@@ -334,7 +338,10 @@ class AssetAssignView(generics.UpdateAPIView):
                 employee=asset.assigned_to,
                 assigned_date=asset.asset_issue_date or timezone.now().date(),
                 assigned_by=self.request.user,
-                acknowledgment_status='pending'
+                acknowledgment_status='pending',
+                condition_at_issue=asset.condition,
+        expected_return_date=self.request.data.get('expected_return_date') or None,
+
             )
 
             # Notify the employee
@@ -553,6 +560,8 @@ class AssetTransferView(APIView):
             acknowledgment_status='pending',
             transfer_reason=transfer_reason,
             remarks=remarks,
+            condition_at_issue=asset.condition,
+    expected_return_date=request.data.get('expected_return_date') or None,
         )
 
         notify(
