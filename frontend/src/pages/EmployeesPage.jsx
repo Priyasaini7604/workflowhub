@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../api/axiosInstance";
 import { statusColors } from "../constants/statusColors";
+import EmptyState from "../components/EmptyState";
 
 const roleColors = {
   superadmin: { bg: "#1e1b4b", text: "#818cf8" },
@@ -27,6 +28,12 @@ const EmployeesPage = () => {
   const [search, setSearch] = useState("");
   const [showArchived, setShowArchived] = useState(false);
 
+  const employeeIcon = (
+  <svg xmlns="http://www.w3.org/2000/svg" style={{ width: "22px", height: "22px" }} fill="none" viewBox="0 0 24 24" stroke="#475569" strokeWidth={1.5}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+  </svg>
+);
+
   useEffect(() => {
   const delayDebounce = setTimeout(() => {
     fetchEmployees();
@@ -49,6 +56,7 @@ const fetchEmployees = async () => {
     setLoading(false);
   }
 };
+
 
 
   return (
@@ -135,12 +143,24 @@ const fetchEmployees = async () => {
               </thead>
               <tbody>
                 {employees.length === 0 ? (
-                  <tr>
-                    <td colSpan="7" style={{ padding: "40px", textAlign: "center", fontSize: "13px", color: "#475569" }}>
-                      {showArchived ? "No archived employees found" : "No employees found"}
-                    </td>
-                  </tr>
-                ) : (
+  <tr>
+    <td colSpan="7">
+      <EmptyState
+        icon={employeeIcon}
+        title={showArchived ? "No Archived Employees found" : "No Employees found"}
+        message={
+          search
+            ? "Try a different search term."
+            : showArchived
+            ? "Employees you archive will show up here."
+            : "Get started by adding your first employee."
+        }
+        actionLabel={!search && !showArchived ? "+ Add Employee" : undefined}
+        onAction={() => navigate("/employees/add")}
+      />
+    </td>
+  </tr>
+) : (
                   employees.map((emp) => {
                     const statusStyle = statusColors[emp.current_status] || statusColors.active;
                     const roleStyle = roleColors[emp.role] || roleColors.employee;

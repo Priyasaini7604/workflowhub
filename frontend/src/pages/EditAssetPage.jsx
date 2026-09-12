@@ -421,7 +421,6 @@ const fetchCategories = async () => {
             {loading ? "Saving..." : "Save Changes"}
           </button>
         </div>
-
       </form>
     </div>
   );

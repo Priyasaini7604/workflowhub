@@ -4,6 +4,7 @@ import axiosInstance from "../api/axiosInstance";
 import { useAuth } from "../context/AuthContext";
 import { getEffectiveAssetStatus } from "../utils/assetStatus";
 import { statusColors } from "../constants/statusColors";
+import EmptyState from "../components/EmptyState";
 
 const AssetsPage = () => {
   const navigate = useNavigate();
@@ -121,12 +122,21 @@ const AssetsPage = () => {
               </thead>
               <tbody>
                 {filteredAssets.length === 0 ? (
-                  <tr>
-                    <td colSpan="6" style={{ padding: "40px", textAlign: "center", fontSize: "13px", color: "#475569" }}>
-                      No assets found
-                    </td>
-                  </tr>
-                ) : (
+  <tr>
+    <td colSpan="6">
+      <EmptyState
+        title="No assets found"
+        message={
+          search
+            ? "Try a different search term."
+            : "Get started by adding your first asset."
+        }
+        actionLabel={!isITOnlyAssigned && !search ? "+ Add Asset" : undefined}
+        onAction={() => navigate("/assets/add")}
+      />
+    </td>
+  </tr>
+) : (
                   filteredAssets.map((asset) => {
                     const effectiveStatus = getEffectiveAssetStatus(asset);
                     const statusStyle = statusColors[effectiveStatus] || statusColors.available;
