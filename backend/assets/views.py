@@ -172,7 +172,7 @@ class AssetUpdateView(generics.UpdateAPIView):
                 assigned_by=self.request.user,
                 acknowledgment_status='pending',
                 condition_at_issue=asset.condition,
-    expected_return_date=self.request.data.get('expected_return_date') or None,
+                expected_return_date=self.request.data.get('expected_return_date') or None,
             )
 
             notify(
@@ -253,7 +253,7 @@ class AssetUpdateView(generics.UpdateAPIView):
                     assigned_date=asset.asset_issue_date or today,
                     assigned_by=self.request.user,
                     condition_at_issue=asset.condition,
-        expected_return_date=self.request.data.get('expected_return_date') or None,
+                    expected_return_date=self.request.data.get('expected_return_date') or None,
                 )
 
                 notify(
@@ -340,7 +340,7 @@ class AssetAssignView(generics.UpdateAPIView):
                 assigned_by=self.request.user,
                 acknowledgment_status='pending',
                 condition_at_issue=asset.condition,
-        expected_return_date=self.request.data.get('expected_return_date') or None,
+                expected_return_date=self.request.data.get('expected_return_date') or None,
 
             )
 
@@ -561,7 +561,7 @@ class AssetTransferView(APIView):
             transfer_reason=transfer_reason,
             remarks=remarks,
             condition_at_issue=asset.condition,
-    expected_return_date=request.data.get('expected_return_date') or None,
+            expected_return_date=request.data.get('expected_return_date') or None,
         )
 
         notify(

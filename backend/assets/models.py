@@ -167,7 +167,9 @@ class AssetAllocationHistory(models.Model):
     def save(self, *args, **kwargs):
         if self.asset:
             self.asset_id_snapshot = self.asset.asset_id
-            self.asset_name_snapshot = f"{self.asset.brand} {self.asset.model_name}".strip()
+            self.asset_name_snapshot = f"{
+                self.asset.brand} {
+                self.asset.model_name}".strip()
         super().save(*args, **kwargs)
 
     def __str__(self):
