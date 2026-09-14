@@ -58,31 +58,30 @@ const EditAssetPage = () => {
   }, [id]);
 
   const fetchAsset = async () => {
-    setFetchLoading(true);
-    try {
-      const response = await axiosInstance.get(`/assets/${id}/`);
-      const asset = response.data;
-      setFormData({
-        asset_id: asset.asset_id,
-        category: asset.category || "",
-        asset_type: asset.asset_type || "laptop",
-        brand: asset.brand || "",
-        model_name: asset.model_name || "",
-        serial_number: asset.serial_number || "",
-        condition: asset.condition || "good",
-        status: asset.status || "available",
-        warranty_expiry_date: asset.warranty_expiry_date || "",
-        assigned_to: asset.assigned_to?.id ?? "",
-        asset_issue_date: asset.asset_issue_date || "",
-        asset_return_date: asset.asset_return_date || "",
-      });
-    } catch (err) {
-      setError("Failed to load asset data");
-    } finally {
-      setFetchLoading(false);
-    }
-  };
-
+  setFetchLoading(true);
+  try {
+    const response = await axiosInstance.get(`/assets/${id}/`);
+    const asset = response.data;
+    setFormData({
+      asset_id: asset.asset_id,
+      category: asset.category != null ? String(asset.category) : "",
+      asset_type: asset.asset_type || "laptop",
+      brand: asset.brand || "",
+      model_name: asset.model_name || "",
+      serial_number: asset.serial_number || "",
+      condition: asset.condition || "good",
+      status: asset.status || "available",
+      warranty_expiry_date: asset.warranty_expiry_date || "",
+      assigned_to: asset.assigned_to?.id != null ? String(asset.assigned_to.id) : "",
+      asset_issue_date: asset.asset_issue_date || "",
+      asset_return_date: asset.asset_return_date || "",
+    });
+  } catch (err) {
+    setError("Failed to load asset data");
+  } finally {
+    setFetchLoading(false);
+  }
+};
   const fetchEmployees = async () => {
     try {
       const response = await axiosInstance.get("/employees/");
@@ -110,12 +109,13 @@ const EditAssetPage = () => {
     setLoading(true);
     try {
       const cleanedData = {
-        ...formData,
-        warranty_expiry_date: formData.warranty_expiry_date || null,
-        asset_issue_date: formData.asset_issue_date || null,
-        asset_return_date: formData.asset_return_date || null,
-        assigned_to: formData.assigned_to || null,
-      };
+  ...formData,
+  warranty_expiry_date: formData.warranty_expiry_date || null,
+  asset_issue_date: formData.asset_issue_date || null,
+  asset_return_date: formData.asset_return_date || null,
+  assigned_to: formData.assigned_to ? Number(formData.assigned_to) : null,
+  category: formData.category ? Number(formData.category) : null,
+};
 
       await axiosInstance.put(`/assets/${id}/update/`, cleanedData);
       navigate(`/assets/${id}`);
