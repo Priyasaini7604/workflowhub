@@ -2,9 +2,8 @@ import { useState, useEffect } from "react";
 import axiosInstance from "../api/axiosInstance";
 import { actionColors } from "../constants/statusColors";
 import FilterDrawer, { countActiveFilters, buildFilterParams } from "../components/FilterDrawer";
+import { thStyle, tdMutedStyle, badgeStyle } from "../utils/tableStyles";
 
-// Adjust this options list to match the model_name values that actually
-// show up in your AuditLog table (create_audit_log() call sites).
 const AUDIT_FILTER_CONFIG = [
   { key: "action", label: "Action", type: "multiselect", options: ["create", "update", "delete", "view"] },
   {
@@ -31,8 +30,7 @@ const AuditLogsPage = () => {
   useEffect(() => {
     const delayDebounce = setTimeout(() => {
       fetchLogs();
-    }, 400); // typing rukne ke 400ms baad hi call jaaye
-
+    }, 400);
     return () => clearTimeout(delayDebounce);
   }, [search, appliedFilters]);
 
@@ -61,13 +59,11 @@ const AuditLogsPage = () => {
 
   return (
     <div>
-      {/* Header */}
       <div style={{ marginBottom: "24px" }}>
         <h2 style={{ fontSize: "22px", fontWeight: 500, color: "#f1f5f9", margin: "0 0 4px" }}>Audit Logs</h2>
         <p style={{ fontSize: "13px", color: "#64748b", margin: 0 }}>Track all system activities</p>
       </div>
 
-      {/* Filters */}
       <div style={{ display: "flex", gap: "12px", marginBottom: "16px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "10px", background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "8px", padding: "10px 14px", flex: 1, maxWidth: "320px" }}>
           <svg xmlns="http://www.w3.org/2000/svg" style={{ width: "15px", height: "15px" }} fill="none" viewBox="0 0 24 24" stroke="#475569" strokeWidth={1.5}>
@@ -122,14 +118,12 @@ const AuditLogsPage = () => {
         onApply={setAppliedFilters}
       />
 
-      {/* Error */}
       {error && (
         <div style={{ background: "#1a0a0a", border: "0.5px solid #7f1d1d", borderRadius: "8px", padding: "12px", marginBottom: "16px" }}>
           <p style={{ fontSize: "13px", color: "#fca5a5", margin: 0 }}>{error}</p>
         </div>
       )}
 
-      {/* Loading */}
       {loading ? (
         <div style={{ textAlign: "center", padding: "60px 0" }}>
           <p style={{ color: "#64748b", fontSize: "13px" }}>Loading audit logs...</p>
@@ -142,12 +136,12 @@ const AuditLogsPage = () => {
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr style={{ borderBottom: "0.5px solid #1e293b" }}>
-                <th style={{ padding: "14px 16px", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>ACTION</th>
-                <th style={{ padding: "14px 16px", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>MODEL</th>
-                <th style={{ padding: "14px 16px", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>DESCRIPTION</th>
-                <th style={{ padding: "14px 16px", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>USER</th>
-                <th style={{ padding: "14px 16px", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>IP ADDRESS</th>
-                <th style={{ padding: "14px 16px", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>TIME</th>
+                <th style={thStyle}>ACTION</th>
+                <th style={thStyle}>MODEL</th>
+                <th style={thStyle}>DESCRIPTION</th>
+                <th style={thStyle}>USER</th>
+                <th style={thStyle}>IP ADDRESS</th>
+                <th style={thStyle}>TIME</th>
               </tr>
             </thead>
             <tbody>
@@ -163,17 +157,15 @@ const AuditLogsPage = () => {
                   return (
                     <tr key={log.id} style={{ borderBottom: "0.5px solid #1e293b" }}>
                       <td style={{ padding: "14px 16px" }}>
-                        <span style={{ background: actionStyle.bg, color: actionStyle.text, borderRadius: "20px", padding: "3px 10px", fontSize: "11px" }}>
-                          {log.action}
-                        </span>
+                        <span style={badgeStyle(actionStyle)}>{log.action}</span>
                       </td>
                       <td style={{ padding: "14px 16px", fontSize: "12px", color: "#f1f5f9" }}>{log.model_name}</td>
-                      <td style={{ padding: "14px 16px", fontSize: "12px", color: "#64748b", maxWidth: "300px" }}>{log.description}</td>
-                      <td style={{ padding: "14px 16px", fontSize: "12px", color: "#64748b" }}>
+                      <td style={{ ...tdMutedStyle, maxWidth: "300px" }}>{log.description}</td>
+                      <td style={tdMutedStyle}>
                         {log.user ? (log.user.username || log.user.email || "Unknown") : "System"}
                       </td>
-                      <td style={{ padding: "14px 16px", fontSize: "12px", color: "#64748b" }}>{log.ip_address || "—"}</td>
-                      <td style={{ padding: "14px 16px", fontSize: "12px", color: "#64748b" }}>
+                      <td style={tdMutedStyle}>{log.ip_address || "—"}</td>
+                      <td style={tdMutedStyle}>
                         {new Date(log.created_at).toLocaleString()}
                       </td>
                     </tr>

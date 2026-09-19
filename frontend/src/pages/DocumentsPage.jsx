@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import axiosInstance from "../api/axiosInstance";
 import { idsMatch } from '../utils/idUtils';
 import { statusColors } from "../constants/statusColors";
+import { thStyle, tdMutedStyle, badgeStyle, actionBtnStyle, viewBtnColors, editBtnColors, archiveBtnColors } from "../utils/tableStyles";
 
 const DOCUMENT_TYPE_LABELS = {
   resume: "Resume",
@@ -15,6 +16,19 @@ const DOCUMENT_TYPE_LABELS = {
   policy_acceptance: "Policy Acceptance Form",
   exit_document: "Exit Document",
   other: "Other",
+};
+
+// Local-only style — used only in this page's upload form
+const inputStyle = {
+  width: "100%",
+  background: "#0f1a2e",
+  border: "0.5px solid #1e3a5f",
+  borderRadius: "8px",
+  padding: "10px 14px",
+  fontSize: "13px",
+  color: "#f1f5f9",
+  outline: "none",
+  boxSizing: "border-box",
 };
 
 const DocumentsPage = () => {
@@ -111,21 +125,8 @@ const DocumentsPage = () => {
     }
   };
 
-  const inputStyle = {
-    width: "100%",
-    background: "#0f1a2e",
-    border: "0.5px solid #1e3a5f",
-    borderRadius: "8px",
-    padding: "10px 14px",
-    fontSize: "13px",
-    color: "#f1f5f9",
-    outline: "none",
-    boxSizing: "border-box",
-  };
-
   return (
     <div>
-      {/* Header */}
       <div style={{ marginBottom: "24px" }}>
         <h2 style={{ fontSize: "22px", fontWeight: 500, color: "#f1f5f9", margin: "0 0 4px" }}>Documents</h2>
         <p style={{ fontSize: "13px", color: "#64748b", margin: 0 }}>Manage employee documents</p>
@@ -133,7 +134,6 @@ const DocumentsPage = () => {
 
       <div style={{ display: "grid", gridTemplateColumns: "300px 1fr", gap: "16px" }}>
 
-        {/* Left — Employee List */}
         <div style={{ background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "12px", overflow: "hidden" }}>
           <div style={{ padding: "16px", borderBottom: "0.5px solid #1e293b" }}>
             <p style={{ fontSize: "13px", fontWeight: 500, color: "#f1f5f9", margin: 0 }}>Employees</p>
@@ -173,7 +173,6 @@ const DocumentsPage = () => {
           )}
         </div>
 
-        {/* Right — Documents */}
         <div>
           {!selectedEmployee ? (
             <div style={{ background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "12px", padding: "60px", textAlign: "center" }}>
@@ -181,7 +180,6 @@ const DocumentsPage = () => {
             </div>
           ) : (
             <div>
-              {/* Employee Header */}
               <div style={{ background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "12px", padding: "16px 20px", marginBottom: "16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                   <div style={{ width: "40px", height: "40px", background: "#1e3a5f", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -202,7 +200,6 @@ const DocumentsPage = () => {
                 </button>
               </div>
 
-              {/* Upload Form */}
               {showUploadForm && (
                 <div style={{ background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "12px", padding: "20px", marginBottom: "16px" }}>
                   <h3 style={{ fontSize: "14px", fontWeight: 500, color: "#f1f5f9", margin: "0 0 16px" }}>Upload Document</h3>
@@ -250,7 +247,6 @@ const DocumentsPage = () => {
                 </div>
               )}
 
-              {/* Documents List */}
               <div style={{ background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "12px", overflow: "hidden" }}>
                 <div style={{ padding: "16px", borderBottom: "0.5px solid #1e293b" }}>
                   <p style={{ fontSize: "13px", fontWeight: 500, color: "#f1f5f9", margin: 0 }}>Documents ({docsCount})</p>
@@ -267,10 +263,10 @@ const DocumentsPage = () => {
                   <table style={{ width: "100%", borderCollapse: "collapse" }}>
                     <thead>
                       <tr style={{ borderBottom: "0.5px solid #1e293b" }}>
-                        <th style={{ padding: "12px 16px", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>DOCUMENT TYPE</th>
-                        <th style={{ padding: "12px 16px", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>STATUS</th>
-                        <th style={{ padding: "12px 16px", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>UPLOADED</th>
-                        <th style={{ padding: "12px 16px", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>ACTIONS</th>
+                        <th style={thStyle}>DOCUMENT TYPE</th>
+                        <th style={thStyle}>STATUS</th>
+                        <th style={thStyle}>UPLOADED</th>
+                        <th style={thStyle}>ACTIONS</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -282,11 +278,11 @@ const DocumentsPage = () => {
                               {DOCUMENT_TYPE_LABELS[doc.document_type] || doc.document_type}
                             </td>
                             <td style={{ padding: "12px 16px" }}>
-                              <span style={{ background: statusStyle.bg, color: statusStyle.text, borderRadius: "20px", padding: "3px 10px", fontSize: "11px" }}>
+                              <span style={badgeStyle(statusStyle)}>
                                 {doc.verification_status}
                               </span>
                             </td>
-                            <td style={{ padding: "12px 16px", fontSize: "12px", color: "#64748b" }}>
+                            <td style={tdMutedStyle}>
                               {new Date(doc.created_at).toLocaleDateString()}
                             </td>
                             <td style={{ padding: "12px 16px" }}>
@@ -296,7 +292,7 @@ const DocumentsPage = () => {
                                     href={doc.document_file}
                                     target="_blank"
                                     rel="noreferrer"
-                                    style={{ background: "#1e3a5f", color: "#3b82f6", border: "none", borderRadius: "6px", padding: "5px 10px", fontSize: "11px", cursor: "pointer", textDecoration: "none" }}
+                                    style={{ ...actionBtnStyle(viewBtnColors), textDecoration: "none" }}
                                   >
                                     View
                                   </a>
@@ -304,14 +300,14 @@ const DocumentsPage = () => {
                                 {doc.verification_status === "pending" && (
                                   <button
                                     onClick={() => handleVerify(doc.id)}
-                                    style={{ background: "#064e3b", color: "#10b981", border: "none", borderRadius: "6px", padding: "5px 10px", fontSize: "11px", cursor: "pointer" }}
+                                    style={actionBtnStyle(editBtnColors)}
                                   >
                                     Verify
                                   </button>
                                 )}
                                 <button
                                   onClick={() => handleArchive(doc.id)}
-                                  style={{ background: "#451a03", color: "#f59e0b", border: "none", borderRadius: "6px", padding: "5px 10px", fontSize: "11px", cursor: "pointer" }}
+                                  style={actionBtnStyle(archiveBtnColors)}
                                 >
                                   Archive
                                 </button>

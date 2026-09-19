@@ -1,6 +1,7 @@
-import { useState, useEffect} from "react";
+import { useState, useEffect } from "react";
 import axiosInstance from "../api/axiosInstance";
 import { statusColors } from "../constants/statusColors";
+import { thStyle, tdMutedStyle, badgeStyle, actionBtnStyle } from "../utils/tableStyles";
 
 const ROLE_FILTERS = [
   { value: "all", label: "All Roles" },
@@ -11,6 +12,25 @@ const ROLE_FILTERS = [
   { value: "employee", label: "Employee" },
 ];
 
+// Local-only styles — used only on this page, so kept here (not in tableStyles.js)
+const inputStyle = {
+  background: "#0f1a2e",
+  border: "0.5px solid #1e293b",
+  borderRadius: "8px",
+  padding: "8px 12px",
+  fontSize: "12px",
+  color: "#f1f5f9",
+  outline: "none",
+  boxSizing: "border-box",
+};
+
+const sectionStyle = {
+  background: "#0a1628",
+  border: "0.5px solid #1e293b",
+  borderRadius: "12px",
+  overflow: "hidden",
+};
+
 const UserManagementPage = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -19,25 +39,28 @@ const UserManagementPage = () => {
   const [roleFilter, setRoleFilter] = useState("all");
   const [togglingId, setTogglingId] = useState(null);
 
-  useEffect(() => {
-    fetchUsers();
-  }, []);
-
   const fetchUsers = async () => {
-  setLoading(true);
-  try {
-    const params = new URLSearchParams();
-    if (searchTerm) params.append("search", searchTerm);
-    if (roleFilter !== "all") params.append("role", roleFilter);
+    setLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if (searchTerm) params.append("search", searchTerm);
+      if (roleFilter !== "all") params.append("role", roleFilter);
 
-    const res = await axiosInstance.get(`/users/list/?${params.toString()}`);
-    setUsers(res.data.results || res.data);
-  } catch (err) {
-    setError("Failed to load users");
-  } finally {
-    setLoading(false);
-  }
-};
+      const res = await axiosInstance.get(`/users/list/?${params.toString()}`);
+      setUsers(res.data.results || res.data);
+    } catch (err) {
+      setError("Failed to load users");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const delayDebounce = setTimeout(() => {
+      fetchUsers();
+    }, 400);
+    return () => clearTimeout(delayDebounce);
+  }, [searchTerm, roleFilter]);
 
   const handleToggleActive = async (user) => {
     const action = user.is_active ? "deactivate" : "activate";
@@ -54,36 +77,8 @@ const UserManagementPage = () => {
     }
   };
 
-
-  useEffect(() => {
-  const delayDebounce = setTimeout(() => {
-    fetchUsers();
-  }, 400); 
-
-  return () => clearTimeout(delayDebounce);
-}, [searchTerm, roleFilter]);
-
-  const inputStyle = {
-    background: "#0f1a2e",
-    border: "0.5px solid #1e293b",
-    borderRadius: "8px",
-    padding: "8px 12px",
-    fontSize: "12px",
-    color: "#f1f5f9",
-    outline: "none",
-    boxSizing: "border-box",
-  };
-
-  const sectionStyle = {
-    background: "#0a1628",
-    border: "0.5px solid #1e293b",
-    borderRadius: "12px",
-    overflow: "hidden",
-  };
-
   return (
     <div>
-      {/* Header */}
       <div style={{ marginBottom: "24px" }}>
         <h2 style={{ fontSize: "22px", fontWeight: 500, color: "#f1f5f9", margin: "0 0 4px" }}>
           User Management
@@ -99,7 +94,6 @@ const UserManagementPage = () => {
         </div>
       )}
 
-      {/* Filters */}
       <div style={{ display: "flex", gap: "10px", marginBottom: "16px", flexWrap: "wrap" }}>
         <input
           type="text"
@@ -119,7 +113,6 @@ const UserManagementPage = () => {
         </select>
       </div>
 
-      {/* Table */}
       <div style={sectionStyle}>
         {loading ? (
           <div style={{ padding: "24px", textAlign: "center" }}>
@@ -133,54 +126,38 @@ const UserManagementPage = () => {
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr style={{ borderBottom: "0.5px solid #1e293b" }}>
-                <th style={{ textAlign: "left", padding: "12px 16px", fontSize: "11px", color: "#64748b", letterSpacing: "0.8px" }}>USERNAME</th>
-                <th style={{ textAlign: "left", padding: "12px 16px", fontSize: "11px", color: "#64748b", letterSpacing: "0.8px" }}>EMAIL</th>
-                <th style={{ textAlign: "left", padding: "12px 16px", fontSize: "11px", color: "#64748b", letterSpacing: "0.8px" }}>ROLE</th>
-                <th style={{ textAlign: "left", padding: "12px 16px", fontSize: "11px", color: "#64748b", letterSpacing: "0.8px" }}>STATUS</th>
-                <th style={{ textAlign: "right", padding: "12px 16px", fontSize: "11px", color: "#64748b", letterSpacing: "0.8px" }}>ACTION</th>
+                <th style={thStyle}>USERNAME</th>
+                <th style={thStyle}>EMAIL</th>
+                <th style={thStyle}>ROLE</th>
+                <th style={thStyle}>STATUS</th>
+                <th style={{ ...thStyle, textAlign: "right" }}>ACTION</th>
               </tr>
             </thead>
             <tbody>
               {users.map((u) => {
                 const roleStyle = statusColors[u.role] || statusColors.employee;
+                const activeStyle = statusColors[u.is_active ? "active" : "inactive"];
+                const toggleStyle = u.is_active ? statusColors.offboarding : statusColors.active;
+                const isToggling = togglingId === u.id;
                 return (
                   <tr key={u.id} style={{ borderBottom: "0.5px solid #1e293b" }}>
                     <td style={{ padding: "12px 16px", fontSize: "13px", color: "#f1f5f9" }}>{u.username}</td>
-                    <td style={{ padding: "12px 16px", fontSize: "12px", color: "#64748b" }}>{u.email || "—"}</td>
+                    <td style={tdMutedStyle}>{u.email || "—"}</td>
                     <td style={{ padding: "12px 16px" }}>
-                      <span style={{ background: roleStyle.bg, color: roleStyle.text, borderRadius: "20px", padding: "3px 10px", fontSize: "11px" }}>
-                        {u.role}
-                      </span>
+                      <span style={badgeStyle(roleStyle)}>{u.role}</span>
                     </td>
                     <td style={{ padding: "12px 16px" }}>
-                      <span
-                        style={{
-                          background: u.is_active ? "#064e3b" : "#1e293b",
-                          color: u.is_active ? "#10b981" : "#64748b",
-                          borderRadius: "20px",
-                          padding: "3px 10px",
-                          fontSize: "11px",
-                        }}
-                      >
+                      <span style={badgeStyle(activeStyle)}>
                         {u.is_active ? "active" : "inactive"}
                       </span>
                     </td>
                     <td style={{ padding: "12px 16px", textAlign: "right" }}>
                       <button
                         onClick={() => handleToggleActive(u)}
-                        disabled={togglingId === u.id}
-                        style={{
-                          background: u.is_active ? "#450a0a" : "#064e3b",
-                          color: u.is_active ? "#fca5a5" : "#10b981",
-                          border: "none",
-                          borderRadius: "6px",
-                          padding: "6px 14px",
-                          fontSize: "11px",
-                          cursor: "pointer",
-                          opacity: togglingId === u.id ? 0.6 : 1,
-                        }}
+                        disabled={isToggling}
+                        style={{ ...actionBtnStyle(toggleStyle), opacity: isToggling ? 0.6 : 1 }}
                       >
-                        {togglingId === u.id
+                        {isToggling
                           ? "Working..."
                           : u.is_active
                           ? "Deactivate"

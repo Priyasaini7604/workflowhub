@@ -10,6 +10,7 @@
   /* Warning (amber) — general pending */
   --color-warning-bg: #451a03;
   --color-warning-text: #f59e0b;
+  --color-accent-text: #3b82f6;
 
   /* Warning-alt (orange) — notice period, pending return */
   --color-warning-bg-alt: #431407;

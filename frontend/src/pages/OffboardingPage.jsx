@@ -4,14 +4,13 @@ import { getEmployeeDocuments, verifyDocument, rejectDocument } from "../api/doc
 import { getAuditLogsFor } from "../api/auditLogs";
 import { idsMatch } from '../utils/idUtils';
 import { statusColors } from "../constants/statusColors";
+import { badgeStyle, actionBtnStyle, viewBtnColors, dangerBtnColors, neutralBtnColors } from "../utils/tableStyles";
 
 const DOCUMENT_TYPE_LABELS = {
   exit_document: "Exit Document",
   other: "Other",
 };
 
-// Only these document types are relevant to the offboarding stage —
-// everything else (resume, aadhaar, etc.) belongs to onboarding.
 const OFFBOARDING_DOCUMENT_TYPES = ["exit_document", "other"];
 
 const EXIT_REASON_CHOICES = [
@@ -46,7 +45,6 @@ const OffboardingPage = () => {
   const fetchEmployees = async () => {
     setLoading(true);
     try {
-      // ?all=true — sidebar needs the FULL employee list to pick from, not one paginated page
       const response = await axiosInstance.get("/employees/?all=true");
       setEmployees(response.data.results || response.data);
     } catch (err) {
@@ -83,11 +81,6 @@ const OffboardingPage = () => {
       );
       setDocuments(offboardingDocs);
 
-      // Audit logs — fetched scoped to this employee's actual record IDs
-      // (task IDs, checklist ID, document IDs) instead of pulling the entire
-      // system-wide log table and filtering client-side. That approach broke
-      // once /audit/ became paginated — only the most recent 20 logs came
-      // back, so older employees' timelines could go silently blank.
       const taskIds = tasksData.map((t) => t.id);
       const docIds = offboardingDocs.map((d) => d.id);
       const checklistId = checklistResponse.data?.id;
@@ -106,8 +99,6 @@ const OffboardingPage = () => {
 
       setAuditLogs(mergedLogs);
     } catch (err) {
-      // Backend now blocks starting offboarding for employees who aren't
-      // actually in an offboarding-eligible status (still 'active', etc.)
       const backendMessage = err.response?.data?.[0] || err.response?.data?.detail;
       if (err.response?.status === 400 && backendMessage) {
         setOffboardingError(backendMessage);
@@ -123,6 +114,7 @@ const OffboardingPage = () => {
       setTasksLoading(false);
     }
   };
+
   const handleEmployeeClick = (emp) => {
     setSelectedEmployee(emp);
     fetchOffboardingData(emp.id);
@@ -193,8 +185,6 @@ const OffboardingPage = () => {
     }
   };
 
-  // Filter employee list by name or employee_id as HR types in the search box.
-  // Safe to keep client-side since fetchEmployees now pulls the full (?all=true) list.
   const filteredEmployees = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
     if (!term) return employees;
@@ -205,13 +195,10 @@ const OffboardingPage = () => {
     );
   }, [employees, searchTerm]);
 
-  // auditLogs is already scoped + merged from the three backend calls above —
-  // no client-side filtering needed anymore.
   const timelineEvents = auditLogs;
 
   return (
     <div>
-      {/* Header */}
       <div style={{ marginBottom: "24px" }}>
         <h2 style={{ fontSize: "22px", fontWeight: 500, color: "#f1f5f9", margin: "0 0 4px" }}>Offboarding Management</h2>
         <p style={{ fontSize: "13px", color: "#64748b", margin: 0 }}>Track employee offboarding progress</p>
@@ -219,7 +206,6 @@ const OffboardingPage = () => {
 
       <div style={{ display: "grid", gridTemplateColumns: "300px 1fr", gap: "16px" }}>
 
-        {/* Left — Employee List */}
         <div style={{ background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "12px", overflow: "hidden" }}>
           <div style={{ padding: "16px", borderBottom: "0.5px solid #1e293b" }}>
             <p style={{ fontSize: "13px", fontWeight: 500, color: "#f1f5f9", margin: "0 0 10px" }}>Employees</p>
@@ -280,7 +266,6 @@ const OffboardingPage = () => {
           )}
         </div>
 
-        {/* Right — Checklist + Documents + Software Access + Tasks + Timeline */}
         <div>
           {!selectedEmployee ? (
             <div style={{ background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "12px", padding: "60px", textAlign: "center" }}>
@@ -288,7 +273,6 @@ const OffboardingPage = () => {
             </div>
           ) : (
             <div>
-              {/* Employee Header */}
               <div style={{ background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "12px", padding: "16px 20px", marginBottom: "16px", display: "flex", alignItems: "center", gap: "12px" }}>
                 <div style={{ width: "40px", height: "40px", background: "#1e3a5f", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <span style={{ fontSize: "16px", color: "#3b82f6", fontWeight: 500 }}>
@@ -313,7 +297,6 @@ const OffboardingPage = () => {
                 </div>
               ) : (
                 <>
-                  {/* Checklist */}
                   {checklist && (
                     <div style={{ background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "12px", padding: "20px", marginBottom: "16px" }}>
                       <h3 style={{ fontSize: "14px", fontWeight: 500, color: "#f1f5f9", margin: "0 0 16px", paddingBottom: "12px", borderBottom: "0.5px solid #1e293b" }}>
@@ -355,7 +338,7 @@ const OffboardingPage = () => {
                         </div>
                         <div>
                           <p style={{ fontSize: "11px", color: "#64748b", margin: "0 0 4px", letterSpacing: "0.8px" }}>EXIT INTERVIEW</p>
-                          <span style={{ background: statusColors[checklist.exit_interview_status]?.bg || "#1e293b", color: statusColors[checklist.exit_interview_status]?.text || "#94a3b8", borderRadius: "20px", padding: "2px 10px", fontSize: "11px" }}>
+                          <span style={badgeStyle(statusColors[checklist.exit_interview_status] || statusColors.pending)}>
                             {checklist.exit_interview_status}
                           </span>
                         </div>
@@ -388,7 +371,6 @@ const OffboardingPage = () => {
                     </div>
                   )}
 
-                  {/* Exit Documents — only exit_document/other types, not onboarding docs */}
                   <div style={{ background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "12px", padding: "20px", marginBottom: "16px" }}>
                     <h3 style={{ fontSize: "14px", fontWeight: 500, color: "#f1f5f9", margin: "0 0 16px", paddingBottom: "12px", borderBottom: "0.5px solid #1e293b" }}>
                       📄 Exit Documents
@@ -405,7 +387,7 @@ const OffboardingPage = () => {
                                 {DOCUMENT_TYPE_LABELS[doc.document_type] || doc.document_type}
                               </span>
                               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                                <span style={{ background: statusStyle.bg, color: statusStyle.text, borderRadius: "20px", padding: "3px 10px", fontSize: "11px" }}>
+                                <span style={badgeStyle(statusStyle)}>
                                   {doc.verification_status}
                                 </span>
                                 {doc.document_file ? (
@@ -413,7 +395,7 @@ const OffboardingPage = () => {
                                     href={doc.document_file}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    style={{ background: "#1e293b", color: "#94a3b8", border: "none", borderRadius: "6px", padding: "5px 10px", fontSize: "11px", textDecoration: "none" }}
+                                    style={{ ...actionBtnStyle(neutralBtnColors), textDecoration: "none" }}
                                   >
                                     View
                                   </a>
@@ -425,14 +407,14 @@ const OffboardingPage = () => {
                                     <button
                                       onClick={() => handleVerifyDocument(doc.id)}
                                       disabled={verifyingDocId === doc.id || rejectingDocId === doc.id}
-                                      style={{ background: "#1e3a5f", color: "#3b82f6", border: "none", borderRadius: "6px", padding: "5px 10px", fontSize: "11px", cursor: "pointer", opacity: verifyingDocId === doc.id ? 0.6 : 1 }}
+                                      style={{ ...actionBtnStyle(viewBtnColors), opacity: verifyingDocId === doc.id ? 0.6 : 1 }}
                                     >
                                       {verifyingDocId === doc.id ? "Verifying..." : "Verify"}
                                     </button>
                                     <button
                                       onClick={() => handleRejectDocument(doc.id)}
                                       disabled={verifyingDocId === doc.id || rejectingDocId === doc.id}
-                                      style={{ background: "#450a0a", color: "#fca5a5", border: "none", borderRadius: "6px", padding: "5px 10px", fontSize: "11px", cursor: "pointer", opacity: rejectingDocId === doc.id ? 0.6 : 1 }}
+                                      style={{ ...actionBtnStyle(dangerBtnColors), opacity: rejectingDocId === doc.id ? 0.6 : 1 }}
                                     >
                                       {rejectingDocId === doc.id ? "Rejecting..." : "Reject"}
                                     </button>
@@ -446,7 +428,6 @@ const OffboardingPage = () => {
                     )}
                   </div>
 
-                  {/* Software Access — pending access to revoke before offboarding completes */}
                   <div style={{ background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "12px", padding: "20px", marginBottom: "16px" }}>
                     <h3 style={{ fontSize: "14px", fontWeight: 500, color: "#f1f5f9", margin: "0 0 16px", paddingBottom: "12px", borderBottom: "0.5px solid #1e293b" }}>
                       🔑 Software Access to Revoke
@@ -467,13 +448,13 @@ const OffboardingPage = () => {
                               )}
                             </div>
                             <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                              <span style={{ background: "#064e3b", color: "#10b981", borderRadius: "20px", padding: "3px 10px", fontSize: "11px" }}>
+                              <span style={badgeStyle(statusColors.active)}>
                                 active
                               </span>
                               <button
                                 onClick={() => handleRevokeAccess(item.id)}
                                 disabled={revokingAccessId === item.id}
-                                style={{ background: "#450a0a", color: "#fca5a5", border: "none", borderRadius: "6px", padding: "5px 10px", fontSize: "11px", cursor: "pointer", opacity: revokingAccessId === item.id ? 0.6 : 1 }}
+                                style={{ ...actionBtnStyle(dangerBtnColors), opacity: revokingAccessId === item.id ? 0.6 : 1 }}
                               >
                                 {revokingAccessId === item.id ? "Revoking..." : "Revoke"}
                               </button>
@@ -484,7 +465,6 @@ const OffboardingPage = () => {
                     )}
                   </div>
 
-                  {/* Tasks */}
                   <div style={{ background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "12px", padding: "20px", marginBottom: "16px" }}>
                     <h3 style={{ fontSize: "14px", fontWeight: 500, color: "#f1f5f9", margin: "0 0 16px", paddingBottom: "12px", borderBottom: "0.5px solid #1e293b" }}>
                       ✅ Offboarding Tasks
@@ -506,13 +486,13 @@ const OffboardingPage = () => {
                                 </div>
                               </div>
                               <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
-                                <span style={{ background: statusStyle.bg, color: statusStyle.text, borderRadius: "20px", padding: "3px 10px", fontSize: "11px" }}>
+                                <span style={badgeStyle(statusStyle)}>
                                   {task.status}
                                 </span>
                                 {task.status !== "completed" && (
                                   <button
                                     onClick={() => handleTaskStatusUpdate(task.id, task.status === "pending" ? "in_progress" : "completed")}
-                                    style={{ background: "#1e3a5f", color: "#3b82f6", border: "none", borderRadius: "6px", padding: "5px 10px", fontSize: "11px", cursor: "pointer" }}
+                                    style={actionBtnStyle(viewBtnColors)}
                                   >
                                     {task.status === "pending" ? "Start" : "Complete"}
                                   </button>
@@ -525,7 +505,6 @@ const OffboardingPage = () => {
                     )}
                   </div>
 
-                  {/* Timeline — derived from Audit Logs, now fetched already scoped to this employee's records */}
                   <div style={{ background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "12px", padding: "20px" }}>
                     <h3 style={{ fontSize: "14px", fontWeight: 500, color: "#f1f5f9", margin: "0 0 16px", paddingBottom: "12px", borderBottom: "0.5px solid #1e293b" }}>
                       🕒 Timeline

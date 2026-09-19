@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import axiosInstance from "../api/axiosInstance";
 import { getEffectiveAssetStatus } from "../utils/assetStatus";
 import { statusColors } from "../constants/statusColors";
+import { thStyle, tdMutedStyle, badgeStyle, actionBtnStyle, viewBtnColors, editBtnColors } from "../utils/tableStyles";
 
 const STATUS_FILTERS = [
   { key: "all", label: "All Stock", color: "#f1f5f9" },
@@ -19,8 +20,7 @@ const StockOverviewPage = () => {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
 
-  // Assign modal state
-  const [assignAsset, setAssignAsset] = useState(null); // asset object being assigned
+  const [assignAsset, setAssignAsset] = useState(null);
   const [employees, setEmployees] = useState([]);
   const [selectedEmployee, setSelectedEmployee] = useState("");
   const [issueDate, setIssueDate] = useState("");
@@ -34,7 +34,10 @@ const StockOverviewPage = () => {
   const fetchAssets = async () => {
     setLoading(true);
     try {
-      const response = await axiosInstance.get("/assets/");
+      // ?all=true — Stock Overview needs the FULL asset list to compute
+      // accurate counts/filters, not one paginated page (else stock beyond
+      // the first 20 silently disappears from view).
+      const response = await axiosInstance.get("/assets/?all=true");
       setAssets(response.data.results || response.data);
     } catch (err) {
       setError("Failed to load assets");
@@ -49,7 +52,8 @@ const StockOverviewPage = () => {
     setIssueDate("");
     setAssignError("");
     try {
-      const res = await axiosInstance.get("/employees/");
+      // ?all=true — dropdown needs every employee to pick from, not one page
+      const res = await axiosInstance.get("/employees/?all=true");
       setEmployees(res.data.results || res.data);
     } catch (err) {
       setAssignError("Failed to load employees");
@@ -81,11 +85,9 @@ const StockOverviewPage = () => {
     }
   };
 
-  // Stock Overview only tracks unassigned, un-pending stock — assigned and
-  // pending-acknowledgment assets are shown on the IT Assets / Employee Assets pages instead.
   const stockAssets = assets.filter((a) => {
     const s = getEffectiveAssetStatus(a);
-    return s !== "assigned" && s !== "pending_acknowledgment"  && s !== "pending_return";
+    return s !== "assigned" && s !== "pending_acknowledgment" && s !== "pending_return";
   });
 
   const counts = {
@@ -100,13 +102,12 @@ const StockOverviewPage = () => {
     .filter(
       (a) =>
         a.asset_id?.toLowerCase().includes(search.toLowerCase()) ||
-        a.asset_type?.toLowerCase().includes(search.toLowerCase()) ||
+        a.category_detail?.name?.toLowerCase().includes(search.toLowerCase()) ||
         a.brand?.toLowerCase().includes(search.toLowerCase())
     );
 
   return (
     <div>
-      {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px", marginBottom: "24px" }}>
         <div>
           <h2 style={{ fontSize: "22px", fontWeight: 500, color: "#f1f5f9", margin: "0 0 4px" }}>Stock Overview</h2>
@@ -119,7 +120,6 @@ const StockOverviewPage = () => {
         </button>
       </div>
 
-      {/* Stat cards — click to filter */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "16px", marginBottom: "24px" }}>
         {STATUS_FILTERS.map((s) => (
           <div
@@ -140,7 +140,6 @@ const StockOverviewPage = () => {
         ))}
       </div>
 
-      {/* Search */}
       <div style={{ display: "flex", alignItems: "center", gap: "10px", background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "8px", padding: "10px 14px", marginBottom: "16px", maxWidth: "320px" }}>
         <svg xmlns="http://www.w3.org/2000/svg" style={{ width: "15px", height: "15px" }} fill="none" viewBox="0 0 24 24" stroke="#475569" strokeWidth={1.5}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
@@ -154,14 +153,12 @@ const StockOverviewPage = () => {
         />
       </div>
 
-      {/* Error */}
       {error && (
         <div style={{ background: "#1a0a0a", border: "0.5px solid #7f1d1d", borderRadius: "8px", padding: "12px", marginBottom: "16px" }}>
           <p style={{ fontSize: "13px", color: "#fca5a5", margin: 0 }}>{error}</p>
         </div>
       )}
 
-      {/* Table */}
       {loading ? (
         <div style={{ textAlign: "center", padding: "60px 0" }}>
           <p style={{ color: "#64748b", fontSize: "13px" }}>Loading assets...</p>
@@ -177,11 +174,11 @@ const StockOverviewPage = () => {
             <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "600px" }}>
               <thead>
                 <tr style={{ borderBottom: "0.5px solid #1e293b" }}>
-                  <th style={{ padding: "14px 16px", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>ASSET</th>
-                  <th style={{ padding: "14px 16px", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>TYPE</th>
-                  <th style={{ padding: "14px 16px", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>BRAND / MODEL</th>
-                  <th style={{ padding: "14px 16px", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>STATUS</th>
-                  <th style={{ padding: "14px 16px", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>ACTIONS</th>
+                  <th style={thStyle}>ASSET</th>
+                  <th style={thStyle}>TYPE</th>
+                  <th style={thStyle}>BRAND / MODEL</th>
+                  <th style={thStyle}>STATUS</th>
+                  <th style={thStyle}>ACTIONS</th>
                 </tr>
               </thead>
               <tbody>
@@ -201,13 +198,13 @@ const StockOverviewPage = () => {
                           <p style={{ fontSize: "13px", color: "#f1f5f9", margin: 0 }}>{asset.asset_id}</p>
                           <p style={{ fontSize: "11px", color: "#475569", margin: 0 }}>{asset.serial_number || "—"}</p>
                         </td>
-                        <td style={{ padding: "14px 16px", fontSize: "12px", color: "#64748b" }}>{asset.asset_type}</td>
+                        <td style={tdMutedStyle}>{asset.category_detail?.name || "—"}</td>
                         <td style={{ padding: "14px 16px" }}>
                           <p style={{ fontSize: "12px", color: "#f1f5f9", margin: 0 }}>{asset.brand || "—"}</p>
                           <p style={{ fontSize: "11px", color: "#475569", margin: 0 }}>{asset.model_name || "—"}</p>
                         </td>
                         <td style={{ padding: "14px 16px" }}>
-                          <span style={{ background: statusStyle.bg, color: statusStyle.text, borderRadius: "20px", padding: "3px 10px", fontSize: "11px" }}>
+                          <span style={badgeStyle(statusStyle)}>
                             {effectiveStatus}
                           </span>
                         </td>
@@ -215,13 +212,13 @@ const StockOverviewPage = () => {
                           <div style={{ display: "flex", gap: "6px" }}>
                             <button
                               onClick={() => navigate(`/assets/${asset.id}`)}
-                              style={{ background: "#1e3a5f", color: "#3b82f6", border: "none", borderRadius: "6px", padding: "5px 10px", fontSize: "11px", cursor: "pointer" }}>
+                              style={actionBtnStyle(viewBtnColors)}>
                               View
                             </button>
                             {effectiveStatus === "available" && (
                               <button
                                 onClick={() => openAssignModal(asset)}
-                                style={{ background: "#064e3b", color: "#10b981", border: "none", borderRadius: "6px", padding: "5px 10px", fontSize: "11px", cursor: "pointer" }}>
+                                style={actionBtnStyle(editBtnColors)}>
                                 Assign
                               </button>
                             )}
@@ -237,7 +234,6 @@ const StockOverviewPage = () => {
         </div>
       )}
 
-      {/* Assign Modal */}
       {assignAsset && (
         <div
           style={{

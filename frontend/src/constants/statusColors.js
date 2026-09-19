@@ -37,7 +37,7 @@ export const statusColors = {
   // user roles
   superadmin: { bg: "var(--color-danger-bg)", text: "var(--color-danger-text-soft)" },
   hr: { bg: "var(--color-success-bg)", text: "var(--color-success-text)" },
-  it: { bg: "var(--color-accent-bg)", text: "#3b82f6" },
+  it: { bg: "var(--color-accent-bg)", text: "var(--color-accent-text)" }, 
   manager: { bg: "var(--color-warning-bg)", text: "var(--color-warning-text)" },
   employee: { bg: "var(--color-neutral-bg)", text: "var(--color-neutral-text)" },
 };

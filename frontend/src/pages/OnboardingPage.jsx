@@ -4,6 +4,7 @@ import { getEmployeeDocuments, verifyDocument, getEmployeeAssets } from "../api/
 import { getAuditLogsFor } from "../api/auditLogs";
 import { idsMatch } from '../utils/idUtils';
 import { statusColors } from "../constants/statusColors";
+import { badgeStyle, actionBtnStyle, viewBtnColors, dangerBtnColors, neutralBtnColors } from "../utils/tableStyles";
 
 const DOCUMENT_TYPE_LABELS = {
   resume: "Resume",
@@ -46,7 +47,6 @@ const OnboardingPage = () => {
   const fetchEmployees = async () => {
     setLoading(true);
     try {
-      // ?all=true — sidebar needs the FULL employee list to pick from, not one paginated page
       const response = await axiosInstance.get("/employees/?all=true");
       setEmployees(response.data.results || response.data);
     } catch (err) {
@@ -59,17 +59,13 @@ const OnboardingPage = () => {
   const fetchOnboardingData = async (employeeId) => {
     setTasksLoading(true);
     try {
-      // Checklist must resolve FIRST — its get_or_create() on the backend is what
-      // bulk-creates the default onboarding tasks the very first time. Awaiting it
-      // separately guarantees tasks/ will already see those rows, avoiding the
-      // "click twice" race condition from fetching everything in one Promise.all.
       const checklistResponse = await axiosInstance.get(`/onboarding/${employeeId}/checklist/`);
       setChecklist(checklistResponse.data);
 
       const [tasksResponse, documentsResponse, assetsResponse] = await Promise.all([
         axiosInstance.get(`/onboarding/${employeeId}/tasks/`),
         getEmployeeDocuments(employeeId),
-        getEmployeeAssets(employeeId), // backend-filtered by employee now, not client-side
+        getEmployeeAssets(employeeId),
       ]);
 
       const tasksData = tasksResponse.data.results || tasksResponse.data;
@@ -83,11 +79,6 @@ const OnboardingPage = () => {
 
       setAssets(assetsResponse.data.results || assetsResponse.data);
 
-      // Audit logs — fetched scoped to this employee's actual record IDs
-      // (task IDs, checklist ID, document IDs) instead of pulling the entire
-      // system-wide log table and filtering client-side. That approach broke
-      // once /audit/ became paginated — only the most recent 20 logs came
-      // back, so older employees' timelines could go silently blank.
       const taskIds = tasksData.map((t) => t.id);
       const docIds = onboardingDocs.map((d) => d.id);
       const checklistId = checklistResponse.data?.id;
@@ -128,9 +119,6 @@ const OnboardingPage = () => {
     }
   };
 
-  // Manual override — 'failed' has no equivalent task status, so this is the
-  // only way to set it. Everything else (pending/in_progress/completed) stays
-  // synced automatically from the "Conduct background verification" task.
   const handleMarkVerificationFailed = async () => {
     if (!checklist?.id) return;
     try {
@@ -155,8 +143,6 @@ const OnboardingPage = () => {
     }
   };
 
-  // Filter employee list by name or employee_id as HR types in the search box.
-  // Safe to keep client-side since fetchEmployees now pulls the full (?all=true) list.
   const filteredEmployees = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
     if (!term) return employees;
@@ -167,14 +153,10 @@ const OnboardingPage = () => {
     );
   }, [employees, searchTerm]);
 
-  // auditLogs is now already scoped + merged from the three backend calls above,
-  // just needs re-sorting isn't required again here but timelineEvents name is
-  // kept so the render code below doesn't need to change.
   const timelineEvents = auditLogs;
 
   return (
     <div>
-      {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
         <div>
           <h2 style={{ fontSize: "22px", fontWeight: 500, color: "#f1f5f9", margin: "0 0 4px" }}>Onboarding Management</h2>
@@ -184,7 +166,6 @@ const OnboardingPage = () => {
 
       <div style={{ display: "grid", gridTemplateColumns: "300px 1fr", gap: "16px" }}>
 
-        {/* Left — Employee List */}
         <div style={{ background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "12px", overflow: "hidden" }}>
           <div style={{ padding: "16px", borderBottom: "0.5px solid #1e293b" }}>
             <p style={{ fontSize: "13px", fontWeight: 500, color: "#f1f5f9", margin: "0 0 10px" }}>Employees</p>
@@ -245,7 +226,6 @@ const OnboardingPage = () => {
           )}
         </div>
 
-        {/* Right — Checklist + Documents + Tasks */}
         <div>
           {!selectedEmployee ? (
             <div style={{ background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "12px", padding: "60px", textAlign: "center" }}>
@@ -253,7 +233,6 @@ const OnboardingPage = () => {
             </div>
           ) : (
             <div>
-              {/* Employee Header */}
               <div style={{ background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "12px", padding: "16px 20px", marginBottom: "16px", display: "flex", alignItems: "center", gap: "12px" }}>
                 <div style={{ width: "40px", height: "40px", background: "#1e3a5f", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <span style={{ fontSize: "16px", color: "#3b82f6", fontWeight: 500 }}>
@@ -272,7 +251,6 @@ const OnboardingPage = () => {
                 </div>
               ) : (
                 <>
-                  {/* Checklist */}
                   {checklist && (
                     <div style={{ background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "12px", padding: "20px", marginBottom: "16px" }}>
                       <h3 style={{ fontSize: "14px", fontWeight: 500, color: "#f1f5f9", margin: "0 0 16px", paddingBottom: "12px", borderBottom: "0.5px solid #1e293b" }}>
@@ -307,14 +285,14 @@ const OnboardingPage = () => {
 
                       <div style={{ marginTop: "12px", display: "flex", alignItems: "center", gap: "8px" }}>
                         <span style={{ fontSize: "12px", color: "#64748b" }}>Background Verification:</span>
-                        <span style={{ background: statusColors[checklist.background_verification_status]?.bg || "#1e293b", color: statusColors[checklist.background_verification_status]?.text || "#94a3b8", borderRadius: "20px", padding: "2px 10px", fontSize: "11px" }}>
+                        <span style={badgeStyle(statusColors[checklist.background_verification_status] || statusColors.pending)}>
                           {checklist.background_verification_status}
                         </span>
                         {checklist.background_verification_status !== "failed" &&
                           checklist.background_verification_status !== "completed" && (
                             <button
                               onClick={handleMarkVerificationFailed}
-                              style={{ background: "#450a0a", color: "#ef4444", border: "none", borderRadius: "6px", padding: "3px 10px", fontSize: "11px", cursor: "pointer" }}
+                              style={actionBtnStyle(dangerBtnColors)}
                             >
                               Mark as Failed
                             </button>
@@ -323,7 +301,6 @@ const OnboardingPage = () => {
                     </div>
                   )}
 
-                  {/* Documents — real backend data, per-document verify */}
                   <div style={{ background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "12px", padding: "20px", marginBottom: "16px" }}>
                     <h3 style={{ fontSize: "14px", fontWeight: 500, color: "#f1f5f9", margin: "0 0 16px", paddingBottom: "12px", borderBottom: "0.5px solid #1e293b" }}>
                       📄 Documents
@@ -340,7 +317,7 @@ const OnboardingPage = () => {
                                 {DOCUMENT_TYPE_LABELS[doc.document_type] || doc.document_type}
                               </span>
                               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                                <span style={{ background: statusStyle.bg, color: statusStyle.text, borderRadius: "20px", padding: "3px 10px", fontSize: "11px" }}>
+                                <span style={badgeStyle(statusStyle)}>
                                   {doc.verification_status}
                                 </span>
                                 {doc.document_file ? (
@@ -348,7 +325,7 @@ const OnboardingPage = () => {
                                     href={doc.document_file}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    style={{ background: "#1e293b", color: "#94a3b8", border: "none", borderRadius: "6px", padding: "5px 10px", fontSize: "11px", textDecoration: "none" }}
+                                    style={{ ...actionBtnStyle(neutralBtnColors), textDecoration: "none" }}
                                   >
                                     View
                                   </a>
@@ -359,7 +336,7 @@ const OnboardingPage = () => {
                                   <button
                                     onClick={() => handleVerifyDocument(doc.id)}
                                     disabled={verifyingDocId === doc.id}
-                                    style={{ background: "#1e3a5f", color: "#3b82f6", border: "none", borderRadius: "6px", padding: "5px 10px", fontSize: "11px", cursor: "pointer", opacity: verifyingDocId === doc.id ? 0.6 : 1 }}
+                                    style={{ ...actionBtnStyle(viewBtnColors), opacity: verifyingDocId === doc.id ? 0.6 : 1 }}
                                   >
                                     {verifyingDocId === doc.id ? "Verifying..." : "Verify"}
                                   </button>
@@ -372,7 +349,6 @@ const OnboardingPage = () => {
                     )}
                   </div>
 
-                  {/* IT Assets — now fetched backend-scoped to this employee via getEmployeeAssets() */}
                   <div style={{ background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "12px", padding: "20px", marginBottom: "16px" }}>
                     <h3 style={{ fontSize: "14px", fontWeight: 500, color: "#f1f5f9", margin: "0 0 16px", paddingBottom: "12px", borderBottom: "0.5px solid #1e293b" }}>
                       💻 IT Assets
@@ -391,7 +367,7 @@ const OnboardingPage = () => {
                                 </p>
                                 <p style={{ fontSize: "11px", color: "#64748b", margin: 0, textTransform: "capitalize" }}>{asset.category_detail?.name}</p>
                               </div>
-                              <span style={{ background: statusStyle.bg, color: statusStyle.text, borderRadius: "20px", padding: "3px 10px", fontSize: "11px", textTransform: "capitalize" }}>
+                              <span style={{ ...badgeStyle(statusStyle), textTransform: "capitalize" }}>
                                 {asset.status}
                               </span>
                             </div>
@@ -401,7 +377,6 @@ const OnboardingPage = () => {
                     )}
                   </div>
 
-                  {/* Tasks */}
                   <div style={{ background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "12px", padding: "20px", marginBottom: "16px" }}>
                     <h3 style={{ fontSize: "14px", fontWeight: 500, color: "#f1f5f9", margin: "0 0 16px", paddingBottom: "12px", borderBottom: "0.5px solid #1e293b" }}>
                       ✅ Onboarding Tasks
@@ -423,13 +398,13 @@ const OnboardingPage = () => {
                                 </div>
                               </div>
                               <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
-                                <span style={{ background: statusStyle.bg, color: statusStyle.text, borderRadius: "20px", padding: "3px 10px", fontSize: "11px" }}>
+                                <span style={badgeStyle(statusStyle)}>
                                   {task.status}
                                 </span>
                                 {task.status !== "completed" && (
                                   <button
                                     onClick={() => handleTaskStatusUpdate(task.id, task.status === "pending" ? "in_progress" : "completed")}
-                                    style={{ background: "#1e3a5f", color: "#3b82f6", border: "none", borderRadius: "6px", padding: "5px 10px", fontSize: "11px", cursor: "pointer" }}
+                                    style={actionBtnStyle(viewBtnColors)}
                                   >
                                     {task.status === "pending" ? "Start" : "Complete"}
                                   </button>
@@ -442,7 +417,6 @@ const OnboardingPage = () => {
                     )}
                   </div>
 
-                  {/* Timeline — derived from Audit Logs, now fetched already scoped to this employee's records */}
                   <div style={{ background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "12px", padding: "20px" }}>
                     <h3 style={{ fontSize: "14px", fontWeight: 500, color: "#f1f5f9", margin: "0 0 16px", paddingBottom: "12px", borderBottom: "0.5px solid #1e293b" }}>
                       🕒 Timeline
