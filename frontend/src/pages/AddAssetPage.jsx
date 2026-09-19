@@ -9,6 +9,41 @@ const CONDITION_CHOICES = [
   { value: "damaged", label: "Damaged" },
 ];
 
+// Friendly labels for field names, so errors read naturally instead of raw snake_case keys
+const FIELD_LABELS = {
+  category: "Asset Category",
+  brand: "Brand",
+  model_name: "Model Name",
+  serial_number: "Serial Number",
+  condition: "Condition",
+  warranty_expiry_date: "Warranty Expiry Date",
+};
+
+// Safely turns any shape of DRF error data into one readable string.
+// Handles: array of strings, plain string, nested object, or unexpected types.
+const parseApiError = (data) => {
+  if (!data) return "Something went wrong. Please try again.";
+  if (typeof data === "string") return data;
+
+  const firstKey = Object.keys(data)[0];
+  if (!firstKey) return "Something went wrong. Please try again.";
+
+  let firstError = data[firstKey];
+
+  // Unwrap arrays like ["This field may not be blank."]
+  if (Array.isArray(firstError)) {
+    firstError = firstError[0];
+  }
+
+  // If it's still an object (nested serializer errors), recurse one level
+  if (firstError && typeof firstError === "object") {
+    firstError = parseApiError(firstError);
+  }
+
+  const label = FIELD_LABELS[firstKey] || firstKey;
+  return `${label}: ${firstError}`;
+};
+
 const AddAssetPage = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -53,6 +88,13 @@ const AddAssetPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+
+    // Client-side check FIRST — avoids a backend round-trip for the common mistake
+    if (!formData.serial_number.trim()) {
+      setError("Please fill the serial number.");
+      return;
+    }
+
     setLoading(true);
     try {
       await axiosInstance.post("/assets/create/", {
@@ -61,14 +103,7 @@ const AddAssetPage = () => {
       });
       navigate("/assets");
     } catch (err) {
-      const data = err.response?.data;
-      if (data) {
-        const firstKey = Object.keys(data)[0];
-        const firstError = data[firstKey];
-        setError(`${firstKey}: ${Array.isArray(firstError) ? firstError[0] : firstError}`);
-      } else {
-        setError("Something went wrong. Please try again.");
-      }
+      setError(parseApiError(err.response?.data));
     } finally {
       setLoading(false);
     }
@@ -169,7 +204,7 @@ const AddAssetPage = () => {
               <input name="model_name" value={formData.model_name} onChange={handleChange} style={inputStyle} placeholder="Inspiron 15, MacBook Pro..." />
             </div>
             <div>
-              <label style={labelStyle}>SERIAL NUMBER</label>
+              <label style={labelStyle}>SERIAL NUMBER *</label>
               <input name="serial_number" value={formData.serial_number} onChange={handleChange} style={inputStyle} placeholder="SN123456789" />
             </div>
           </div>
