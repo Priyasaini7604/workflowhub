@@ -6,18 +6,80 @@ from .views import (
     AssetUpdateView,
     AssetArchiveView,
     AssetAssignView,
+    AssetAcknowledgeView,
     AssetStatusReportView,
     AssetAllocationHistoryView,
+    AssetConfirmReturnView,
+    AssetInitiateReturnView,
+    AssetReportExportCSVView,
+    AssetReportExportPDFView,
+    AssetPublicDetailView,
+    AssetTransferView
+
 )
+from .views_bulk_import import AssetBulkImportPreviewView, AssetBulkImportCommitView
 
 urlpatterns = [
-    path('', AssetListView.as_view(), name='asset-list'),
-    path('create/', AssetCreateView.as_view(), name='asset-create'),
-    path('report/', AssetStatusReportView.as_view(), name='asset-status-report'),
-    path('<int:pk>/', AssetDetailView.as_view(), name='asset-detail'),
-    path('<int:pk>/update/', AssetUpdateView.as_view(), name='asset-update'),
-    path('<int:pk>/archive/', AssetArchiveView.as_view(), name='asset-archive'),
-    path('<int:pk>/assign/', AssetAssignView.as_view(), name='asset-assign'),
-    path('<int:asset_id>/history/', AssetAllocationHistoryView.as_view(),
-         name='asset-allocation-history'),
+    path(
+        'public/<str:asset_id>/',
+        AssetPublicDetailView.as_view(),
+        name='asset-public-detail'),
+    path(
+        '',
+        AssetListView.as_view(),
+        name='asset-list'),
+    path(
+        'create/',
+        AssetCreateView.as_view(),
+        name='asset-create'),
+    path(
+        'report/',
+        AssetStatusReportView.as_view(),
+        name='asset-status-report'),
+    path(
+        '<int:pk>/',
+        AssetDetailView.as_view(),
+        name='asset-detail'),
+    path(
+        '<int:pk>/update/',
+        AssetUpdateView.as_view(),
+        name='asset-update'),
+    path(
+        '<int:pk>/archive/',
+        AssetArchiveView.as_view(),
+        name='asset-archive'),
+    path(
+        '<int:pk>/assign/',
+        AssetAssignView.as_view(),
+        name='asset-assign'),
+    path(
+        '<int:pk>/acknowledge/',
+        AssetAcknowledgeView.as_view(),
+        name='asset-acknowledge'),
+    path(
+        '<int:asset_id>/history/',
+        AssetAllocationHistoryView.as_view(),
+        name='asset-allocation-history'),
+    path(
+        '<int:pk>/initiate-return/',
+        AssetInitiateReturnView.as_view(),
+        name='asset-initiate-return'),
+    path(
+        '<int:pk>/confirm-return/',
+        AssetConfirmReturnView.as_view(),
+        name='asset-confirm-return'),
+    path(
+        'report/export/csv/',
+        AssetReportExportCSVView.as_view(),
+        name='asset-report-export-csv'),
+    path(
+        'report/export/pdf/',
+        AssetReportExportPDFView.as_view(),
+        name='asset-report-export-pdf'),
+    path('<int:pk>/transfer/', AssetTransferView.as_view(),
+         name='asset-transfer'),
+    path('bulk-import/preview/', AssetBulkImportPreviewView.as_view(),
+         name='asset-bulk-import-preview'),
+    path('bulk-import/commit/', AssetBulkImportCommitView.as_view(),
+         name='asset-bulk-import-commit'),
 ]

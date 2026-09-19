@@ -1,29 +1,53 @@
 import { useState, useEffect } from "react";
 import axiosInstance from "../api/axiosInstance";
+import { actionColors } from "../constants/statusColors";
+import FilterDrawer, { countActiveFilters, buildFilterParams } from "../components/FilterDrawer";
+import { thStyle, tdMutedStyle, badgeStyle } from "../utils/tableStyles";
 
-const actionColors = {
-  create: { bg: "#064e3b", text: "#10b981" },
-  update: { bg: "#1e3a5f", text: "#3b82f6" },
-  delete: { bg: "#1a0a0a", text: "#fca5a5" },
-  view: { bg: "#1e293b", text: "#94a3b8" },
-};
+const AUDIT_FILTER_CONFIG = [
+  { key: "action", label: "Action", type: "multiselect", options: ["create", "update", "delete", "view"] },
+  {
+    key: "model_name",
+    label: "Model",
+    type: "multiselect",
+    options: ["Employee", "Asset", "OnboardingTask", "OffboardingTask", "SoftwareAccess", "Document", "AssetCategory"],
+  },
+  { key: "user", label: "User", type: "text", placeholder: "username1, username2" },
+  { key: "dateRange", label: "Date Range", type: "daterange" },
+];
+
+const EMPTY_FILTERS = { action: [], model_name: [], user: "", dateRange: { from: "", to: "" } };
 
 const AuditLogsPage = () => {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
-  const [filterAction, setFilterAction] = useState("");
+  const [totalCount, setTotalCount] = useState(0);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [appliedFilters, setAppliedFilters] = useState(EMPTY_FILTERS);
 
   useEffect(() => {
-    fetchLogs();
-  }, []);
+    const delayDebounce = setTimeout(() => {
+      fetchLogs();
+    }, 400);
+    return () => clearTimeout(delayDebounce);
+  }, [search, appliedFilters]);
 
   const fetchLogs = async () => {
     setLoading(true);
+    setError("");
     try {
-      const response = await axiosInstance.get("/audit/");
-      setLogs(response.data.results || response.data);
+      const params = new URLSearchParams();
+      if (search) params.append("search", search);
+
+      const filterParams = buildFilterParams(appliedFilters, AUDIT_FILTER_CONFIG);
+      Object.entries(filterParams).forEach(([key, value]) => params.append(key, value));
+
+      const response = await axiosInstance.get(`/audit/?${params.toString()}`);
+      const results = response.data.results || response.data;
+      setLogs(results);
+      setTotalCount(response.data.count ?? results.length);
     } catch (err) {
       setError("Failed to load audit logs");
     } finally {
@@ -31,23 +55,15 @@ const AuditLogsPage = () => {
     }
   };
 
-  const filteredLogs = logs.filter((log) => {
-    const matchSearch =
-      log.model_name?.toLowerCase().includes(search.toLowerCase()) ||
-      log.description?.toLowerCase().includes(search.toLowerCase());
-    const matchAction = filterAction ? log.action === filterAction : true;
-    return matchSearch && matchAction;
-  });
+  const activeCount = countActiveFilters(appliedFilters, AUDIT_FILTER_CONFIG);
 
   return (
     <div>
-      {/* Header */}
       <div style={{ marginBottom: "24px" }}>
         <h2 style={{ fontSize: "22px", fontWeight: 500, color: "#f1f5f9", margin: "0 0 4px" }}>Audit Logs</h2>
         <p style={{ fontSize: "13px", color: "#64748b", margin: 0 }}>Track all system activities</p>
       </div>
 
-      {/* Filters */}
       <div style={{ display: "flex", gap: "12px", marginBottom: "16px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "10px", background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "8px", padding: "10px 14px", flex: 1, maxWidth: "320px" }}>
           <svg xmlns="http://www.w3.org/2000/svg" style={{ width: "15px", height: "15px" }} fill="none" viewBox="0 0 24 24" stroke="#475569" strokeWidth={1.5}>
@@ -61,27 +77,53 @@ const AuditLogsPage = () => {
             style={{ flex: 1, background: "transparent", border: "none", outline: "none", fontSize: "13px", color: "#f1f5f9" }}
           />
         </div>
-        <select
-          value={filterAction}
-          onChange={(e) => setFilterAction(e.target.value)}
-          style={{ background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "8px", padding: "10px 14px", fontSize: "13px", color: "#64748b", outline: "none" }}
+
+        <button
+          onClick={() => setDrawerOpen(true)}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            background: activeCount > 0 ? "#1e3a8a" : "#0a1628",
+            border: "0.5px solid #1e293b",
+            borderRadius: "8px",
+            padding: "10px 16px",
+            fontSize: "13px",
+            color: activeCount > 0 ? "#93c5fd" : "#64748b",
+            cursor: "pointer",
+          }}
         >
-          <option value="">All Actions</option>
-          <option value="create">Create</option>
-          <option value="update">Update</option>
-          <option value="delete">Delete</option>
-          <option value="view">View</option>
-        </select>
+          ⚙️ Filters
+          {activeCount > 0 && (
+            <span
+              style={{
+                background: "#2563eb",
+                color: "#eff6ff",
+                borderRadius: "999px",
+                fontSize: "11px",
+                padding: "1px 7px",
+              }}
+            >
+              {activeCount}
+            </span>
+          )}
+        </button>
       </div>
 
-      {/* Error */}
+      <FilterDrawer
+        isOpen={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        filters={AUDIT_FILTER_CONFIG}
+        appliedValues={appliedFilters}
+        onApply={setAppliedFilters}
+      />
+
       {error && (
         <div style={{ background: "#1a0a0a", border: "0.5px solid #7f1d1d", borderRadius: "8px", padding: "12px", marginBottom: "16px" }}>
           <p style={{ fontSize: "13px", color: "#fca5a5", margin: 0 }}>{error}</p>
         </div>
       )}
 
-      {/* Loading */}
       {loading ? (
         <div style={{ textAlign: "center", padding: "60px 0" }}>
           <p style={{ color: "#64748b", fontSize: "13px" }}>Loading audit logs...</p>
@@ -89,43 +131,41 @@ const AuditLogsPage = () => {
       ) : (
         <div style={{ background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "12px", overflow: "hidden" }}>
           <div style={{ padding: "16px", borderBottom: "0.5px solid #1e293b", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <p style={{ fontSize: "13px", fontWeight: 500, color: "#f1f5f9", margin: 0 }}>Total: {filteredLogs.length} logs</p>
+            <p style={{ fontSize: "13px", fontWeight: 500, color: "#f1f5f9", margin: 0 }}>Total: {totalCount} logs</p>
           </div>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr style={{ borderBottom: "0.5px solid #1e293b" }}>
-                <th style={{ padding: "14px 16px", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>ACTION</th>
-                <th style={{ padding: "14px 16px", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>MODEL</th>
-                <th style={{ padding: "14px 16px", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>DESCRIPTION</th>
-                <th style={{ padding: "14px 16px", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>USER</th>
-                <th style={{ padding: "14px 16px", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>IP ADDRESS</th>
-                <th style={{ padding: "14px 16px", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>TIME</th>
+                <th style={thStyle}>ACTION</th>
+                <th style={thStyle}>MODEL</th>
+                <th style={thStyle}>DESCRIPTION</th>
+                <th style={thStyle}>USER</th>
+                <th style={thStyle}>IP ADDRESS</th>
+                <th style={thStyle}>TIME</th>
               </tr>
             </thead>
             <tbody>
-              {filteredLogs.length === 0 ? (
+              {logs.length === 0 ? (
                 <tr>
                   <td colSpan="6" style={{ padding: "40px", textAlign: "center", fontSize: "13px", color: "#475569" }}>
                     No logs found
                   </td>
                 </tr>
               ) : (
-                filteredLogs.map((log) => {
+                logs.map((log) => {
                   const actionStyle = actionColors[log.action] || actionColors.view;
                   return (
                     <tr key={log.id} style={{ borderBottom: "0.5px solid #1e293b" }}>
                       <td style={{ padding: "14px 16px" }}>
-                        <span style={{ background: actionStyle.bg, color: actionStyle.text, borderRadius: "20px", padding: "3px 10px", fontSize: "11px" }}>
-                          {log.action}
-                        </span>
+                        <span style={badgeStyle(actionStyle)}>{log.action}</span>
                       </td>
                       <td style={{ padding: "14px 16px", fontSize: "12px", color: "#f1f5f9" }}>{log.model_name}</td>
-                      <td style={{ padding: "14px 16px", fontSize: "12px", color: "#64748b", maxWidth: "300px" }}>{log.description}</td>
-                      <td style={{ padding: "14px 16px", fontSize: "12px", color: "#64748b" }}>
-  {log.user ? (log.user.username || log.user.email || "Unknown") : "System"}
-</td>
-                      <td style={{ padding: "14px 16px", fontSize: "12px", color: "#64748b" }}>{log.ip_address || "—"}</td>
-                      <td style={{ padding: "14px 16px", fontSize: "12px", color: "#64748b" }}>
+                      <td style={{ ...tdMutedStyle, maxWidth: "300px" }}>{log.description}</td>
+                      <td style={tdMutedStyle}>
+                        {log.user ? (log.user.username || log.user.email || "Unknown") : "System"}
+                      </td>
+                      <td style={tdMutedStyle}>{log.ip_address || "—"}</td>
+                      <td style={tdMutedStyle}>
                         {new Date(log.created_at).toLocaleString()}
                       </td>
                     </tr>

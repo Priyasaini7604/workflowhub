@@ -1,10 +1,12 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import "./index.css";
 import LoginPage from "./pages/LoginPage";
 import DashboardPage from "./pages/DashboardPage";
 import EmployeesPage from "./pages/EmployeesPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Layout from "./components/Layout";
 import AddEmployeePage from "./pages/AddEmployeePage";
+import AddCandidatePage from "./pages/AddCandidatePage";
 import EmployeeDetailPage from './pages/EmployeeDetailPage';
 import EditEmployeePage from "./pages/EditEmployeePage";
 import AssetsPage from "./pages/AssetsPage";
@@ -23,6 +25,14 @@ import ITEmployeeAssetsPage from "./pages/ITEmployeeAssetsPage";
 import StockOverviewPage from "./pages/StockOverviewPage";
 import MyTeamPage from "./pages/MyTeamPage";
 import ManagerOffboardingPage from "./pages/ManagerOffboardingPage";
+import AssetCategoriesPage from "./pages/AssetCategoriesPage";
+import ApprovalsCenterPage from "./pages/ApprovalsCenterPage";
+import UserManagementPage from "./pages/UserManagementPage";
+import AccessMatrixPage from "./pages/AccessMatrixPage";
+import ScanPage from "./pages/ScanPage";
+import { EmployeeBulkImportPage } from "./pages/EmployeeBulkImportPage";
+import { AssetBulkImportPage } from "./pages/AssetBulkImportPage";
+
 
 const App = () => {
   return (
@@ -30,6 +40,7 @@ const App = () => {
       <Routes>
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/scan/:assetId" element={<ScanPage />} />
         <Route
           path="/dashboard"
           element={
@@ -40,6 +51,26 @@ const App = () => {
             </ProtectedRoute>
           }
         />
+        <Route
+  path="/employees/bulk-import"
+  element={
+    <ProtectedRoute>
+      <Layout>
+        <EmployeeBulkImportPage />
+      </Layout>
+    </ProtectedRoute>
+  }
+/>
+<Route
+  path="/assets/bulk-import"
+  element={
+    <ProtectedRoute>
+      <Layout>
+        <AssetBulkImportPage />
+      </Layout>
+    </ProtectedRoute>
+  }
+/>
         <Route
           path="/employees"
           element={
@@ -60,6 +91,16 @@ const App = () => {
             </ProtectedRoute>
         }
       />
+              <Route
+          path="/employees/add-candidate"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <AddCandidatePage />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
         <Route path="/employees/:id" element={
         <ProtectedRoute><Layout><EmployeeDetailPage /></Layout></ProtectedRoute>
           } />
@@ -222,6 +263,45 @@ const App = () => {
     <ProtectedRoute>
       <Layout>
         <ManagerOffboardingPage />
+      </Layout>
+    </ProtectedRoute>
+  }
+/>
+<Route
+      path="/assets/categories"
+      element={
+        <ProtectedRoute>
+          <Layout>
+            <AssetCategoriesPage />
+          </Layout>
+        </ProtectedRoute>
+      }
+    />
+<Route
+  path="/approvals"
+  element={
+    <ProtectedRoute>
+      <Layout>
+        <ApprovalsCenterPage />
+      </Layout>
+    </ProtectedRoute>
+  }
+/><Route
+  path="/users"
+  element={
+    <ProtectedRoute>
+      <Layout>
+        <UserManagementPage />
+      </Layout>
+    </ProtectedRoute>
+  }
+/>
+<Route
+  path="/access-matrix"
+  element={
+    <ProtectedRoute>
+      <Layout>
+        <AccessMatrixPage />
       </Layout>
     </ProtectedRoute>
   }

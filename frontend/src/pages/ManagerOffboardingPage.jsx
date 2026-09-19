@@ -1,11 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import axiosInstance from "../api/axiosInstance";
-
-const statusColors = {
-  pending: { bg: "#451a03", text: "#f59e0b" },
-  in_progress: { bg: "#1e3a5f", text: "#3b82f6" },
-  completed: { bg: "#064e3b", text: "#10b981" },
-};
+import { idsMatch } from '../utils/idUtils';
+import { statusColors } from "../constants/statusColors";
 
 // reporting_manager may come back as a plain FK id or a nested object.
 const getManagerId = (emp) => {
@@ -32,7 +28,7 @@ const ManagerOffboardingPage = () => {
       const meRes = await axiosInstance.get("/employees/me/");
       const myId = meRes.data.id;
 
-      const allRes = await axiosInstance.get("/employees/");
+      const allRes = await axiosInstance.get("/employees/?all=true");
       const allEmployees = allRes.data.results || allRes.data;
 
       setTeam(allEmployees.filter((emp) => getManagerId(emp) === myId));
@@ -129,7 +125,7 @@ const ManagerOffboardingPage = () => {
                   padding: "12px 16px",
                   borderBottom: "0.5px solid #1e293b",
                   cursor: "pointer",
-                  background: selectedEmployee?.id === emp.id ? "#1e3a5f" : "transparent",
+                  background: idsMatch(selectedEmployee?.id, emp.id) ? "#1e3a5f" : "transparent",
                 }}
               >
                 <p style={{ fontSize: "13px", color: "#f1f5f9", margin: 0 }}>{emp.full_name}</p>

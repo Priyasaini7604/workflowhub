@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import axiosInstance from "../api/axiosInstance";
+import { idsMatch } from '../utils/idUtils';
 
 const typeColors = {
   onboarding: { bg: "#064e3b", text: "#10b981" },
@@ -68,7 +69,7 @@ const NotificationBell = () => {
         is_read: true,
       });
       setNotifications((prev) =>
-        prev.map((n) => (n.id === notification.id ? { ...n, is_read: true } : n))
+        prev.map((n) => (idsMatch(n.id, notification.id) ? { ...n, is_read: true } : n))
       );
     } catch (err) {
       console.error("Failed to mark notification as read");

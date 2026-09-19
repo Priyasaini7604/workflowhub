@@ -25,3 +25,8 @@ frontend/.env
 # Media files
 backend/media/
 backend/Documents/*.pdf
+
+celerybeat-schedule*
+# Celery
+celerybeat-schedule*
+celerybeat.pid

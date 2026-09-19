@@ -90,3 +90,34 @@ class LogoutView(APIView):
                 {'error': 'Invalid token'},
                 status=status.HTTP_400_BAD_REQUEST
             )
+# List all users — for the User Management / Access Control page
+
+
+class UserListView(generics.ListAPIView):
+    serializer_class = UserSerializer
+    permission_classes = [IsHROrSuperAdmin]
+
+    def get_queryset(self):
+        queryset = User.objects.all().order_by('username')
+
+        search = self.request.query_params.get('search')
+        if search:
+            queryset = queryset.filter(
+                Q(username__icontains=search) | Q(email__icontains=search)
+            )
+
+        role = self.request.query_params.get('role')
+        if role:
+            queryset = queryset.filter(role=role)
+
+        return queryset
+
+
+# Reactivate a previously deactivated user
+class UserActivateView(generics.UpdateAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    permission_classes = [IsHROrSuperAdmin]
+
+    def perform_update(self, serializer):
+        serializer.save(is_active=True)

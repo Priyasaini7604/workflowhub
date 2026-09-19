@@ -1,20 +1,11 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../api/axiosInstance";
+import { statusColors } from "../constants/statusColors";
+import EmptyState from "../components/EmptyState";
 
-const statusColors = {
-  active: { bg: "#064e3b", text: "#10b981" },
-  inactive: { bg: "#1e293b", text: "#94a3b8" },
-  on_leave: { bg: "#451a03", text: "#f59e0b" },
-};
-
-const roleColors = {
-  superadmin: { bg: "#1e1b4b", text: "#818cf8" },
-  hr: { bg: "#064e3b", text: "#10b981" },
-  manager: { bg: "#451a03", text: "#f59e0b" },
-  it: { bg: "#1e3a5f", text: "#3b82f6" },
-  employee: { bg: "#1e293b", text: "#94a3b8" },
-};
+// Consolidated style constants — no more repeated inline style objects
+import { thStyle, tdMutedStyle, badgeStyle, actionBtnStyle, viewBtnColors, editBtnColors } from "../utils/tableStyles";
 
 const roleLabels = {
   superadmin: "Super Admin",
@@ -30,16 +21,38 @@ const EmployeesPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
+  const [showArchived, setShowArchived] = useState(false);
+
+  // Pagination state
+  const [page, setPage] = useState(1);
+  const [count, setCount] = useState(0);
+  const PAGE_SIZE = 20;
+  const totalPages = Math.max(1, Math.ceil(count / PAGE_SIZE));
+
+  const employeeIcon = (
+    <svg xmlns="http://www.w3.org/2000/svg" style={{ width: "22px", height: "22px" }} fill="none" viewBox="0 0 24 24" stroke="#475569" strokeWidth={1.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+    </svg>
+  );
 
   useEffect(() => {
-    fetchEmployees();
-  }, []);
+    const delayDebounce = setTimeout(() => {
+      fetchEmployees(1); // filter/search change hone par page 1 pe reset
+    }, 400);
+    return () => clearTimeout(delayDebounce);
+  }, [showArchived, search]);
 
-  const fetchEmployees = async () => {
+  const fetchEmployees = async (pageNum = page) => {
     setLoading(true);
+    setError("");
     try {
-      const response = await axiosInstance.get("/employees/");
-      setEmployees(response.data.results || response.data);
+      const response = await axiosInstance.get(
+        `/employees/?archived=${showArchived}&search=${encodeURIComponent(search)}&page=${pageNum}`
+      );
+      const payload = response.data;
+      setEmployees(payload.results || payload);
+      setCount(payload.count ?? (payload.results || payload).length);
+      setPage(pageNum);
     } catch (err) {
       setError("Failed to load employees");
     } finally {
@@ -47,27 +60,51 @@ const EmployeesPage = () => {
     }
   };
 
-  const filteredEmployees = employees.filter((emp) =>
-    emp.full_name?.toLowerCase().includes(search.toLowerCase()) ||
-    emp.employee_id?.toLowerCase().includes(search.toLowerCase())
-  );
+  const goToPage = (p) => {
+    if (p < 1 || p > totalPages) return;
+    fetchEmployees(p);
+  };
 
   return (
     <div>
-      {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
         <div>
           <h2 style={{ fontSize: "22px", fontWeight: 500, color: "#f1f5f9", margin: "0 0 4px" }}>Employee Management</h2>
           <p style={{ fontSize: "13px", color: "#64748b", margin: 0 }}>Manage all employees</p>
         </div>
-        <button
-          onClick={() => navigate("/employees/add")}
-          style={{ background: "#2563eb", color: "#eff6ff", border: "none", borderRadius: "8px", padding: "10px 18px", fontSize: "13px", fontWeight: 500, cursor: "pointer" }}>
-          + Add Employee
-        </button>
+        <div style={{ display: "flex", gap: "10px" }}>
+          <button
+            onClick={() => setShowArchived(!showArchived)}
+            style={{
+              background: showArchived ? "#451a03" : "#0a1628",
+              color: showArchived ? "#f59e0b" : "#94a3b8",
+              border: "0.5px solid #1e293b",
+              borderRadius: "8px",
+              padding: "10px 14px",
+              fontSize: "13px",
+              cursor: "pointer",
+            }}
+          >
+            {showArchived ? "🗄️ Showing Archived" : "👥 Showing Active"}
+          </button>
+          <button
+            onClick={() => navigate("/employees/bulk-import")}
+            style={{ background: "#0a1628", color: "#94a3b8", border: "0.5px solid #1e3a5f", borderRadius: "8px", padding: "10px 18px", fontSize: "13px", fontWeight: 500, cursor: "pointer" }}>
+            📤 Bulk Import
+          </button>
+          <button
+            onClick={() => navigate("/employees/add-candidate")}
+            style={{ background: "#0a1628", color: "#94a3b8", border: "0.5px solid #1e3a5f", borderRadius: "8px", padding: "10px 18px", fontSize: "13px", fontWeight: 500, cursor: "pointer" }}>
+            + Add Candidate
+          </button>
+          <button
+            onClick={() => navigate("/employees/add")}
+            style={{ background: "#2563eb", color: "#eff6ff", border: "none", borderRadius: "8px", padding: "10px 18px", fontSize: "13px", fontWeight: 500, cursor: "pointer" }}>
+            + Add Employee
+          </button>
+        </div>
       </div>
 
-      {/* Search */}
       <div style={{ display: "flex", alignItems: "center", gap: "10px", background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "8px", padding: "10px 14px", marginBottom: "16px", maxWidth: "320px" }}>
         <svg xmlns="http://www.w3.org/2000/svg" style={{ width: "15px", height: "15px" }} fill="none" viewBox="0 0 24 24" stroke="#475569" strokeWidth={1.5}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
@@ -81,14 +118,12 @@ const EmployeesPage = () => {
         />
       </div>
 
-      {/* Error */}
       {error && (
         <div style={{ background: "#1a0a0a", border: "0.5px solid #7f1d1d", borderRadius: "8px", padding: "12px", marginBottom: "16px" }}>
           <p style={{ fontSize: "13px", color: "#fca5a5", margin: 0 }}>{error}</p>
         </div>
       )}
 
-      {/* Loading */}
       {loading ? (
         <div style={{ textAlign: "center", padding: "60px 0" }}>
           <p style={{ color: "#64748b", fontSize: "13px" }}>Loading employees...</p>
@@ -99,26 +134,38 @@ const EmployeesPage = () => {
             <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "800px" }}>
               <thead>
                 <tr style={{ borderBottom: "0.5px solid #1e293b" }}>
-                  <th style={{ padding: "14px 16px", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>NAME</th>
-                  <th style={{ padding: "14px 16px", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>EMPLOYEE ID</th>
-                  <th style={{ padding: "14px 16px", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>DEPARTMENT</th>
-                  <th style={{ padding: "14px 16px", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>DESIGNATION</th>
-                  <th style={{ padding: "14px 16px", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>ROLE</th>
-                  <th style={{ padding: "14px 16px", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>STATUS</th>
-                  <th style={{ padding: "14px 16px", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>ACTIONS</th>
+                  <th style={thStyle}>NAME</th>
+                  <th style={thStyle}>EMPLOYEE ID</th>
+                  <th style={thStyle}>DEPARTMENT</th>
+                  <th style={thStyle}>DESIGNATION</th>
+                  <th style={thStyle}>ROLE</th>
+                  <th style={thStyle}>STATUS</th>
+                  <th style={thStyle}>ACTIONS</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredEmployees.length === 0 ? (
+                {employees.length === 0 ? (
                   <tr>
-                    <td colSpan="7" style={{ padding: "40px", textAlign: "center", fontSize: "13px", color: "#475569" }}>
-                      No employees found
+                    <td colSpan="7">
+                      <EmptyState
+                        icon={employeeIcon}
+                        title={showArchived ? "No Archived Employees found" : "No Employees found"}
+                        message={
+                          search
+                            ? "Try a different search term."
+                            : showArchived
+                            ? "Employees you archive will show up here."
+                            : "Get started by adding your first employee."
+                        }
+                        actionLabel={!search && !showArchived ? "+ Add Employee" : undefined}
+                        onAction={() => navigate("/employees/add")}
+                      />
                     </td>
                   </tr>
                 ) : (
-                  filteredEmployees.map((emp) => {
+                  employees.map((emp) => {
                     const statusStyle = statusColors[emp.current_status] || statusColors.active;
-                    const roleStyle = roleColors[emp.role] || roleColors.employee;
+                    const roleStyle = statusColors[emp.role] || statusColors.employee;
                     return (
                       <tr key={emp.id} style={{ borderBottom: "0.5px solid #1e293b" }}>
                         <td style={{ padding: "14px 16px" }}>
@@ -133,27 +180,27 @@ const EmployeesPage = () => {
                             </p>
                           </div>
                         </td>
-                        <td style={{ padding: "14px 16px", fontSize: "12px", color: "#64748b" }}>{emp.employee_id}</td>
-                        <td style={{ padding: "14px 16px", fontSize: "12px", color: "#64748b" }}>{emp.department}</td>
-                        <td style={{ padding: "14px 16px", fontSize: "12px", color: "#64748b" }}>{emp.designation}</td>
+                        <td style={tdMutedStyle}>{emp.employee_id || "—"}</td>
+                        <td style={tdMutedStyle}>{emp.department}</td>
+                        <td style={tdMutedStyle}>{emp.designation}</td>
                         <td style={{ padding: "14px 16px" }}>
-                          <span style={{ background: roleStyle.bg, color: roleStyle.text, borderRadius: "20px", padding: "3px 10px", fontSize: "11px" }}>
+                          <span style={badgeStyle(roleStyle)}>
                             {roleLabels[emp.role] || emp.role || "—"}
                           </span>
                         </td>
                         <td style={{ padding: "14px 16px" }}>
-                          <span style={{ background: statusStyle.bg, color: statusStyle.text, borderRadius: "20px", padding: "3px 10px", fontSize: "11px" }}>
+                          <span style={badgeStyle(statusStyle)}>
                             {emp.current_status}
                           </span>
                         </td>
                         <td style={{ padding: "14px 16px" }}>
                           <div style={{ display: "flex", gap: "6px" }}>
-                            <button
-                              onClick={() => navigate(`/employees/${emp.id}`)}
-                              style={{ background: "#1e3a5f", color: "#3b82f6", border: "none", borderRadius: "6px", padding: "5px 10px", fontSize: "11px", cursor: "pointer" }}>View</button>
-                            <button
-                              onClick={() => navigate(`/employees/${emp.id}/edit`)}
-                              style={{ background: "#064e3b", color: "#10b981", border: "none", borderRadius: "6px", padding: "5px 10px", fontSize: "11px", cursor: "pointer" }}>Edit</button>
+                           <button
+  onClick={() => navigate(`/employees/${emp.id}`)}
+  style={actionBtnStyle(viewBtnColors)}>View</button>
+<button
+  onClick={() => navigate(`/employees/${emp.id}/edit`)}
+  style={actionBtnStyle(editBtnColors)}>Edit</button>
                           </div>
                         </td>
                       </tr>
@@ -163,6 +210,41 @@ const EmployeesPage = () => {
               </tbody>
             </table>
           </div>
+
+          {totalPages > 1 && (
+            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "8px", padding: "16px", borderTop: "0.5px solid #1e293b" }}>
+              <button
+                onClick={() => goToPage(page - 1)}
+                disabled={page === 1}
+                style={{ background: "#0a1628", color: page === 1 ? "#334155" : "#94a3b8", border: "0.5px solid #1e293b", borderRadius: "6px", padding: "6px 12px", fontSize: "12px", cursor: page === 1 ? "not-allowed" : "pointer" }}>
+                Prev
+              </button>
+
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+                <button
+                  key={p}
+                  onClick={() => goToPage(p)}
+                  style={{
+                    background: p === page ? "#2563eb" : "#0a1628",
+                    color: p === page ? "#eff6ff" : "#94a3b8",
+                    border: "0.5px solid #1e293b",
+                    borderRadius: "6px",
+                    padding: "6px 12px",
+                    fontSize: "12px",
+                    cursor: "pointer",
+                  }}>
+                  {p}
+                </button>
+              ))}
+
+              <button
+                onClick={() => goToPage(page + 1)}
+                disabled={page === totalPages}
+                style={{ background: "#0a1628", color: page === totalPages ? "#334155" : "#94a3b8", border: "0.5px solid #1e293b", borderRadius: "6px", padding: "6px 12px", fontSize: "12px", cursor: page === totalPages ? "not-allowed" : "pointer" }}>
+                Next
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

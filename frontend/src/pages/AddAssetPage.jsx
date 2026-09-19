@@ -1,16 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../api/axiosInstance";
-
-const ASSET_TYPE_CHOICES = [
-  { value: "laptop", label: "Laptop" },
-  { value: "monitor", label: "Monitor" },
-  { value: "keyboard", label: "Keyboard" },
-  { value: "mouse", label: "Mouse" },
-  { value: "headset", label: "Headset" },
-  { value: "mobile", label: "Mobile Device" },
-  { value: "other", label: "Other" },
-];
 
 const CONDITION_CHOICES = [
   { value: "new", label: "New" },
@@ -19,19 +9,77 @@ const CONDITION_CHOICES = [
   { value: "damaged", label: "Damaged" },
 ];
 
+// Friendly labels for field names, so errors read naturally instead of raw snake_case keys
+const FIELD_LABELS = {
+  category: "Asset Category",
+  brand: "Brand",
+  model_name: "Model Name",
+  serial_number: "Serial Number",
+  condition: "Condition",
+  warranty_expiry_date: "Warranty Expiry Date",
+};
+
+// Safely turns any shape of DRF error data into one readable string.
+// Handles: array of strings, plain string, nested object, or unexpected types.
+const parseApiError = (data) => {
+  if (!data) return "Something went wrong. Please try again.";
+  if (typeof data === "string") return data;
+
+  const firstKey = Object.keys(data)[0];
+  if (!firstKey) return "Something went wrong. Please try again.";
+
+  let firstError = data[firstKey];
+
+  // Unwrap arrays like ["This field may not be blank."]
+  if (Array.isArray(firstError)) {
+    firstError = firstError[0];
+  }
+
+  // If it's still an object (nested serializer errors), recurse one level
+  if (firstError && typeof firstError === "object") {
+    firstError = parseApiError(firstError);
+  }
+
+  const label = FIELD_LABELS[firstKey] || firstKey;
+  return `${label}: ${firstError}`;
+};
+
 const AddAssetPage = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [categories, setCategories] = useState([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
 
   const [formData, setFormData] = useState({
-    asset_type: "laptop",
+    category: "",
     brand: "",
     model_name: "",
     serial_number: "",
     condition: "new",
     warranty_expiry_date: "",
   });
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  const fetchCategories = async () => {
+    setCategoriesLoading(true);
+    try {
+      const res = await axiosInstance.get("/master-data/categories/");
+      const activeCategories = res.data.filter((c) => c.is_active);
+      setCategories(activeCategories);
+      // default select first category once loaded
+      if (activeCategories.length > 0) {
+        setFormData((prev) => ({ ...prev, category: activeCategories[0].id }));
+      }
+    } catch (err) {
+      setError("Failed to load asset categories");
+    } finally {
+      setCategoriesLoading(false);
+    }
+  };
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -40,23 +88,22 @@ const AddAssetPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+
+    // Client-side check FIRST — avoids a backend round-trip for the common mistake
+    if (!formData.serial_number.trim()) {
+      setError("Please fill the serial number.");
+      return;
+    }
+
     setLoading(true);
     try {
       await axiosInstance.post("/assets/create/", {
         ...formData,
         warranty_expiry_date: formData.warranty_expiry_date || null,
-        
       });
       navigate("/assets");
     } catch (err) {
-      const data = err.response?.data;
-      if (data) {
-        const firstKey = Object.keys(data)[0];
-        const firstError = data[firstKey];
-        setError(`${firstKey}: ${Array.isArray(firstError) ? firstError[0] : firstError}`);
-      } else {
-        setError("Something went wrong. Please try again.");
-      }
+      setError(parseApiError(err.response?.data));
     } finally {
       setLoading(false);
     }
@@ -136,12 +183,17 @@ const AddAssetPage = () => {
           <h3 style={sectionTitleStyle}>💻 Asset Information</h3>
           <div style={gridStyle}>
             <div>
-              <label style={labelStyle}>ASSET TYPE *</label>
-              <select name="asset_type" value={formData.asset_type} onChange={handleChange} style={inputStyle}>
-                {ASSET_TYPE_CHOICES.map((t) => (
-                  <option key={t.value} value={t.value}>{t.label}</option>
-                ))}
-              </select>
+              <label style={labelStyle}>ASSET CATEGORY *</label>
+              {categoriesLoading ? (
+                <p style={{ fontSize: "12px", color: "#64748b" }}>Loading categories...</p>
+              ) : (
+                <select name="category" value={formData.category} onChange={handleChange} required style={inputStyle}>
+                  {categories.length === 0 && <option value="">No categories available</option>}
+                  {categories.map((c) => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+              )}
             </div>
             <div>
               <label style={labelStyle}>BRAND</label>
@@ -152,7 +204,7 @@ const AddAssetPage = () => {
               <input name="model_name" value={formData.model_name} onChange={handleChange} style={inputStyle} placeholder="Inspiron 15, MacBook Pro..." />
             </div>
             <div>
-              <label style={labelStyle}>SERIAL NUMBER</label>
+              <label style={labelStyle}>SERIAL NUMBER *</label>
               <input name="serial_number" value={formData.serial_number} onChange={handleChange} style={inputStyle} placeholder="SN123456789" />
             </div>
           </div>

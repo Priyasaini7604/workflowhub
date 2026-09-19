@@ -1,6 +1,9 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import axiosInstance from "../api/axiosInstance";
+import { idsMatch } from '../utils/idUtils';
+import { statusColors } from "../constants/statusColors";
+import { badgeStyle, actionBtnStyle, viewBtnColors } from "../utils/tableStyles";
 
 const GENDER_CHOICES = [
   { value: "male", label: "Male" },
@@ -33,11 +36,64 @@ const DOCUMENT_TYPE_LABELS = {
   other: "Other",
 };
 
-const verificationColors = {
-  pending: { bg: "#451a03", text: "#f59e0b" },
-  verified: { bg: "#064e3b", text: "#10b981" },
-  rejected: { bg: "#1a0a0a", text: "#fca5a5" },
+// Page-local styles — padding here is "12px 0" (no side padding, table sits
+// flush inside a card), which differs from the shared tableStyles.js pattern
+// ("14px 16px" for standalone tables), so kept local rather than shared.
+const inputStyle = {
+  width: "100%",
+  background: "#0f1a2e",
+  border: "0.5px solid #1e3a5f",
+  borderRadius: "8px",
+  padding: "10px 14px",
+  fontSize: "13px",
+  color: "#f1f5f9",
+  outline: "none",
+  boxSizing: "border-box",
 };
+
+const labelStyle = {
+  display: "block",
+  fontSize: "11px",
+  fontWeight: 500,
+  color: "#64748b",
+  marginBottom: "6px",
+  letterSpacing: "0.8px",
+};
+
+const sectionStyle = {
+  background: "#0a1628",
+  border: "0.5px solid #1e293b",
+  borderRadius: "12px",
+  padding: "24px",
+  marginBottom: "16px",
+};
+
+const sectionTitleStyle = {
+  fontSize: "14px",
+  fontWeight: 500,
+  color: "#f1f5f9",
+  margin: "0 0 20px",
+  paddingBottom: "12px",
+  borderBottom: "0.5px solid #1e293b",
+};
+
+const gridStyle = { display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" };
+const fieldLabel = { fontSize: "11px", color: "#64748b", margin: "0 0 4px", letterSpacing: "0.8px" };
+const fieldValue = { fontSize: "13px", color: "#f1f5f9", margin: 0 };
+
+const thStyle = { padding: "12px 0", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" };
+const tdMutedStyle = { padding: "12px 0", fontSize: "12px", color: "#64748b" };
+
+const tabStyle = (activeTab, tab) => ({
+  padding: "8px 20px",
+  fontSize: "13px",
+  fontWeight: 500,
+  cursor: "pointer",
+  border: "none",
+  borderRadius: "8px",
+  background: activeTab === tab ? "#2563eb" : "#0a1628",
+  color: activeTab === tab ? "#eff6ff" : "#64748b",
+});
 
 const MyProfilePage = () => {
   const { user } = useAuth();
@@ -56,7 +112,6 @@ const MyProfilePage = () => {
     document_file: null,
   });
   const [uploading, setUploading] = useState(false);
-  const [profilePhoto, setProfilePhoto] = useState(null);
 
   const [formData, setFormData] = useState({
     gender: "",
@@ -90,7 +145,6 @@ const MyProfilePage = () => {
         emergency_contact_number: response.data.emergency_contact_number || "",
         emergency_contact_relationship: response.data.emergency_contact_relationship || "",
       });
-      // Fetch documents & assets
       fetchDocuments(response.data.id);
       fetchAssets(response.data.id);
     } catch (err) {
@@ -113,7 +167,7 @@ const MyProfilePage = () => {
     try {
       const response = await axiosInstance.get("/assets/");
       const allAssets = response.data.results || response.data;
-      setAssets(allAssets.filter(a => a.assigned_to?.id === empId));
+      setAssets(allAssets.filter((a) => idsMatch(a.assigned_to?.id, empId)));
     } catch (err) {
       console.error("Failed to load assets");
     }
@@ -189,59 +243,6 @@ const MyProfilePage = () => {
     }
   };
 
-  const inputStyle = {
-    width: "100%",
-    background: "#0f1a2e",
-    border: "0.5px solid #1e3a5f",
-    borderRadius: "8px",
-    padding: "10px 14px",
-    fontSize: "13px",
-    color: "#f1f5f9",
-    outline: "none",
-    boxSizing: "border-box",
-  };
-
-  const labelStyle = {
-    display: "block",
-    fontSize: "11px",
-    fontWeight: 500,
-    color: "#64748b",
-    marginBottom: "6px",
-    letterSpacing: "0.8px",
-  };
-
-  const sectionStyle = {
-    background: "#0a1628",
-    border: "0.5px solid #1e293b",
-    borderRadius: "12px",
-    padding: "24px",
-    marginBottom: "16px",
-  };
-
-  const sectionTitleStyle = {
-    fontSize: "14px",
-    fontWeight: 500,
-    color: "#f1f5f9",
-    margin: "0 0 20px",
-    paddingBottom: "12px",
-    borderBottom: "0.5px solid #1e293b",
-  };
-
-  const gridStyle = { display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" };
-  const fieldLabel = { fontSize: "11px", color: "#64748b", margin: "0 0 4px", letterSpacing: "0.8px" };
-  const fieldValue = { fontSize: "13px", color: "#f1f5f9", margin: 0 };
-
-  const tabStyle = (tab) => ({
-    padding: "8px 20px",
-    fontSize: "13px",
-    fontWeight: 500,
-    cursor: "pointer",
-    border: "none",
-    borderRadius: "8px",
-    background: activeTab === tab ? "#2563eb" : "#0a1628",
-    color: activeTab === tab ? "#eff6ff" : "#64748b",
-  });
-
   if (loading) return (
     <div style={{ textAlign: "center", padding: "60px 0" }}>
       <p style={{ color: "#64748b", fontSize: "13px" }}>Loading profile...</p>
@@ -256,27 +257,23 @@ const MyProfilePage = () => {
 
   return (
     <div>
-      {/* Header */}
       <div style={{ marginBottom: "24px" }}>
         <h2 style={{ fontSize: "22px", fontWeight: 500, color: "#f1f5f9", margin: "0 0 4px" }}>My Profile</h2>
         <p style={{ fontSize: "13px", color: "#64748b", margin: 0 }}>View and update your information</p>
       </div>
 
-      {/* Success */}
       {success && (
         <div style={{ background: "#064e3b", border: "0.5px solid #10b981", borderRadius: "8px", padding: "12px", marginBottom: "16px" }}>
           <p style={{ fontSize: "13px", color: "#10b981", margin: 0 }}>{success}</p>
         </div>
       )}
 
-      {/* Error */}
       {error && (
         <div style={{ background: "#1a0a0a", border: "0.5px solid #7f1d1d", borderRadius: "8px", padding: "12px", marginBottom: "16px" }}>
           <p style={{ fontSize: "13px", color: "#fca5a5", margin: 0 }}>{error}</p>
         </div>
       )}
 
-      {/* Profile Card */}
       <div style={{ ...sectionStyle, display: "flex", alignItems: "center", gap: "20px" }}>
         <div style={{ position: "relative", flexShrink: 0 }}>
           <div style={{ width: "72px", height: "72px", background: "#1e3a5f", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
@@ -301,7 +298,7 @@ const MyProfilePage = () => {
             {profile.designation} — {profile.department}
           </p>
           <div style={{ display: "flex", gap: "10px" }}>
-            <span style={{ background: "#064e3b", color: "#10b981", borderRadius: "20px", padding: "3px 10px", fontSize: "11px" }}>
+            <span style={badgeStyle(statusColors[profile.current_status] || statusColors.active)}>
               {profile.current_status}
             </span>
             <span style={{ fontSize: "12px", color: "#475569" }}>{profile.employee_id}</span>
@@ -309,17 +306,14 @@ const MyProfilePage = () => {
         </div>
       </div>
 
-      {/* Tabs */}
       <div style={{ display: "flex", gap: "8px", marginBottom: "16px" }}>
-        <button style={tabStyle("profile")} onClick={() => setActiveTab("profile")}>👤 Profile</button>
-        <button style={tabStyle("documents")} onClick={() => setActiveTab("documents")}>📄 Documents</button>
-        <button style={tabStyle("assets")} onClick={() => setActiveTab("assets")}>💻 My Assets</button>
+        <button style={tabStyle(activeTab, "profile")} onClick={() => setActiveTab("profile")}>👤 Profile</button>
+        <button style={tabStyle(activeTab, "documents")} onClick={() => setActiveTab("documents")}>📄 Documents</button>
+        <button style={tabStyle(activeTab, "assets")} onClick={() => setActiveTab("assets")}>💻 My Assets</button>
       </div>
 
-      {/* Profile Tab */}
       {activeTab === "profile" && (
         <>
-          {/* Employment Info — Read Only */}
           <div style={sectionStyle}>
             <h3 style={sectionTitleStyle}>💼 Employment Information </h3>
             <div style={gridStyle}>
@@ -330,7 +324,6 @@ const MyProfilePage = () => {
             </div>
           </div>
 
-          {/* Personal Info — Editable */}
           {isEditing ? (
             <form onSubmit={handleSubmit}>
               <div style={sectionStyle}>
@@ -431,7 +424,6 @@ const MyProfilePage = () => {
         </>
       )}
 
-      {/* Documents Tab */}
       {activeTab === "documents" && (
         <div style={sectionStyle}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", paddingBottom: "12px", borderBottom: "0.5px solid #1e293b" }}>
@@ -483,32 +475,32 @@ const MyProfilePage = () => {
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
                 <tr style={{ borderBottom: "0.5px solid #1e293b" }}>
-                  <th style={{ padding: "12px 0", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>DOCUMENT TYPE</th>
-                  <th style={{ padding: "12px 0", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>STATUS</th>
-                  <th style={{ padding: "12px 0", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>UPLOADED</th>
-                  <th style={{ padding: "12px 0", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>VIEW</th>
+                  <th style={thStyle}>DOCUMENT TYPE</th>
+                  <th style={thStyle}>STATUS</th>
+                  <th style={thStyle}>UPLOADED</th>
+                  <th style={thStyle}>VIEW</th>
                 </tr>
               </thead>
               <tbody>
                 {documents.map((doc) => {
-                  const statusStyle = verificationColors[doc.verification_status] || verificationColors.pending;
+                  const statusStyle = statusColors[doc.verification_status] || statusColors.pending;
                   return (
                     <tr key={doc.id} style={{ borderBottom: "0.5px solid #1e293b" }}>
                       <td style={{ padding: "12px 0", fontSize: "13px", color: "#f1f5f9" }}>
                         {DOCUMENT_TYPE_LABELS[doc.document_type] || doc.document_type}
                       </td>
                       <td style={{ padding: "12px 0" }}>
-                        <span style={{ background: statusStyle.bg, color: statusStyle.text, borderRadius: "20px", padding: "3px 10px", fontSize: "11px" }}>
+                        <span style={badgeStyle(statusStyle)}>
                           {doc.verification_status}
                         </span>
                       </td>
-                      <td style={{ padding: "12px 0", fontSize: "12px", color: "#64748b" }}>
+                      <td style={tdMutedStyle}>
                         {new Date(doc.created_at).toLocaleDateString()}
                       </td>
                       <td style={{ padding: "12px 0" }}>
                         {doc.document_file && (
                           <a href={doc.document_file} target="_blank" rel="noreferrer"
-                            style={{ background: "#1e3a5f", color: "#3b82f6", borderRadius: "6px", padding: "4px 10px", fontSize: "11px", textDecoration: "none" }}>
+                            style={{ ...actionBtnStyle(viewBtnColors), padding: "4px 10px", textDecoration: "none" }}>
                             View
                           </a>
                         )}
@@ -522,7 +514,6 @@ const MyProfilePage = () => {
         </div>
       )}
 
-      {/* Assets Tab */}
       {activeTab === "assets" && (
         <div style={sectionStyle}>
           <h3 style={sectionTitleStyle}>💻 My Assigned Assets</h3>
@@ -532,19 +523,19 @@ const MyProfilePage = () => {
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
                 <tr style={{ borderBottom: "0.5px solid #1e293b" }}>
-                  <th style={{ padding: "12px 0", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>ASSET ID</th>
-                  <th style={{ padding: "12px 0", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>TYPE</th>
-                  <th style={{ padding: "12px 0", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>BRAND / MODEL</th>
-                  <th style={{ padding: "12px 0", textAlign: "left", fontSize: "11px", color: "#64748b", fontWeight: 500, letterSpacing: "0.8px" }}>ISSUE DATE</th>
+                  <th style={thStyle}>ASSET ID</th>
+                  <th style={thStyle}>TYPE</th>
+                  <th style={thStyle}>BRAND / MODEL</th>
+                  <th style={thStyle}>ISSUE DATE</th>
                 </tr>
               </thead>
               <tbody>
                 {assets.map((asset) => (
                   <tr key={asset.id} style={{ borderBottom: "0.5px solid #1e293b" }}>
-                    <td style={{ padding: "12px 0", fontSize: "12px", color: "#64748b" }}>{asset.asset_id}</td>
-                    <td style={{ padding: "12px 0", fontSize: "12px", color: "#64748b" }}>{asset.asset_type}</td>
+                    <td style={tdMutedStyle}>{asset.asset_id}</td>
+                    <td style={tdMutedStyle}>{asset.category_detail?.name || "—"}</td>
                     <td style={{ padding: "12px 0", fontSize: "13px", color: "#f1f5f9" }}>{asset.brand} {asset.model_name}</td>
-                    <td style={{ padding: "12px 0", fontSize: "12px", color: "#64748b" }}>{asset.asset_issue_date || "—"}</td>
+                    <td style={tdMutedStyle}>{asset.asset_issue_date || "—"}</td>
                   </tr>
                 ))}
               </tbody>

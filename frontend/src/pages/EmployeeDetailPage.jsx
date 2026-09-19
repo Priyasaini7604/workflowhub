@@ -1,11 +1,20 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axiosInstance from "../api/axiosInstance";
+import SoftwareAccessSection from '../pages/SoftwareAccessSection';
+import { statusColors } from "../constants/statusColors";
+import LifecycleStepper from "../components/LifecycleStepper";
 
-const statusColors = {
-  active: { bg: "#064e3b", text: "#10b981" },
-  inactive: { bg: "#1e293b", text: "#94a3b8" },
-  on_leave: { bg: "#451a03", text: "#f59e0b" },
+
+const VALID_NEXT = {
+  candidate: ["offer_sent"],
+  offer_sent: ["joining_pending"],
+  joining_pending: ["onboarding"],
+  onboarding: ["active"],
+  active: ["notice_period"],
+  notice_period: ["offboarding"],
+  offboarding: ["exited"],
+  exited: [],
 };
 
 const EmployeeDetailPage = () => {
@@ -14,6 +23,9 @@ const EmployeeDetailPage = () => {
   const [employee, setEmployee] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+    const [statusError, setStatusError] = useState("");
+  const [changingStatus, setChangingStatus] = useState(false);
+  const [newCredentials, setNewCredentials] = useState(null);
 
   useEffect(() => {
     fetchEmployee();
@@ -34,10 +46,45 @@ const EmployeeDetailPage = () => {
   const handleArchive = async () => {
     if (!window.confirm("Are you sure you want to archive this employee?")) return;
     try {
-      await axiosInstance.post(`/employees/${id}/archive/`);
+      await axiosInstance.patch(`/employees/${id}/archive/`);
       navigate("/employees");
     } catch (err) {
       setError("Failed to archive employee");
+    }
+  };
+
+  const handleReactivate = async () => {
+    if (!window.confirm("Are you sure you want to reactivate this employee?")) return;
+    try {
+      await axiosInstance.patch(`/employees/${id}/reactivate/`);
+      fetchEmployee();
+    } catch (err) {
+      setError("Failed to reactivate employee");
+    }
+  };
+
+    const handleStatusChange = async (newStatus) => {
+    if (!window.confirm(`Change status to "${newStatus}"?`)) return;
+    setChangingStatus(true);
+    setStatusError("");
+    try {
+      const response = await axiosInstance.patch(`/employees/${id}/status/`, { new_status: newStatus });
+
+      // joining_pending transition provisions a login account — the temp
+      // password is only ever returned this one time, so show it now.
+      if (response.data?.temp_password) {
+        setNewCredentials({
+          username: response.data.username,
+          temp_password: response.data.temp_password,
+          employee_id: response.data.employee_id,
+        });
+      }
+
+      fetchEmployee(); // refresh karke naya status dikhao
+    } catch (err) {
+      setStatusError(err.response?.data?.new_status?.[0] || "Failed to change status");
+    } finally {
+      setChangingStatus(false);
     }
   };
 
@@ -90,9 +137,64 @@ const EmployeeDetailPage = () => {
     gridTemplateColumns: "1fr 1fr",
     gap: "20px",
   };
+    const renderCredentialsModal = () => {
+    if (!newCredentials) return null;
+
+    const handleCopy = () => {
+      const text = `Username: ${newCredentials.username}\nPassword: ${newCredentials.temp_password}`;
+      navigator.clipboard.writeText(text);
+    };
+
+    return (
+      <div style={{
+        position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+        background: "rgba(0,0,0,0.6)", display: "flex",
+        alignItems: "center", justifyContent: "center", zIndex: 1000,
+      }}>
+        <div style={{
+          background: "#0a1628", border: "0.5px solid #1e293b",
+          borderRadius: "12px", padding: "28px", maxWidth: "420px", width: "90%",
+        }}>
+          <h3 style={{ fontSize: "16px", fontWeight: 500, color: "#f1f5f9", margin: "0 0 6px" }}>
+            🔐 Login account created
+          </h3>
+          <p style={{ fontSize: "12px", color: "#f59e0b", margin: "0 0 20px" }}>
+            This password won't be shown again — copy or share it with the employee now.
+          </p>
+
+          <div style={{ background: "#0f1a2e", border: "0.5px solid #1e3a5f", borderRadius: "8px", padding: "14px", marginBottom: "16px" }}>
+            <p style={{ fontSize: "11px", color: "#64748b", margin: "0 0 4px" }}>EMPLOYEE ID</p>
+            <p style={{ fontSize: "13px", color: "#f1f5f9", margin: "0 0 12px" }}>{newCredentials.employee_id}</p>
+
+            <p style={{ fontSize: "11px", color: "#64748b", margin: "0 0 4px" }}>USERNAME</p>
+            <p style={{ fontSize: "13px", color: "#f1f5f9", margin: "0 0 12px" }}>{newCredentials.username}</p>
+
+            <p style={{ fontSize: "11px", color: "#64748b", margin: "0 0 4px" }}>TEMPORARY PASSWORD</p>
+            <p style={{ fontSize: "13px", color: "#f1f5f9", margin: 0, fontFamily: "monospace" }}>{newCredentials.temp_password}</p>
+          </div>
+
+          <div style={{ display: "flex", gap: "10px" }}>
+            <button
+              onClick={handleCopy}
+              style={{ flex: 1, padding: "10px", background: "#1e3a5f", color: "#3b82f6", border: "none", borderRadius: "8px", fontSize: "13px", cursor: "pointer" }}
+            >
+              📋 Copy
+            </button>
+            <button
+              onClick={() => setNewCredentials(null)}
+              style={{ flex: 1, padding: "10px", background: "#2563eb", color: "#eff6ff", border: "none", borderRadius: "8px", fontSize: "13px", fontWeight: 500, cursor: "pointer" }}
+            >
+              Done
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div>
+    {renderCredentialsModal()}
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
@@ -107,6 +209,7 @@ const EmployeeDetailPage = () => {
             <p style={{ fontSize: "13px", color: "#64748b", margin: 0 }}>View employee information</p>
           </div>
         </div>
+
         <div style={{ display: "flex", gap: "10px" }}>
           <button
             onClick={() => navigate(`/employees/${id}/edit`)}
@@ -114,12 +217,30 @@ const EmployeeDetailPage = () => {
           >
             ✏️ Edit
           </button>
-          <button
-            onClick={handleArchive}
-            style={{ background: "#451a03", color: "#f59e0b", border: "none", borderRadius: "8px", padding: "10px 18px", fontSize: "13px", fontWeight: 500, cursor: "pointer" }}
-          >
-            🗄️ Archive
-          </button>
+
+          {employee?.is_archived ? (
+            <button
+              onClick={handleReactivate}
+              style={{ background: "#064e3b", color: "#10b981", border: "none", borderRadius: "8px", padding: "10px 18px", fontSize: "13px", fontWeight: 500, cursor: "pointer" }}
+            >
+              ♻️ Reactivate
+            </button>
+          ) : employee?.current_status === "exited" ? (
+            <button
+              onClick={handleArchive}
+              style={{ background: "#451a03", color: "#f59e0b", border: "none", borderRadius: "8px", padding: "10px 18px", fontSize: "13px", fontWeight: 500, cursor: "pointer" }}
+            >
+              🗄️ Archive
+            </button>
+          ) : (
+            <button
+              disabled
+              title="Employee must be marked as 'Exited' before archiving"
+              style={{ background: "#1e293b", color: "#475569", border: "none", borderRadius: "8px", padding: "10px 18px", fontSize: "13px", fontWeight: 500, cursor: "not-allowed" }}
+            >
+              🗄️ Archive
+            </button>
+          )}
         </div>
       </div>
 
@@ -137,6 +258,8 @@ const EmployeeDetailPage = () => {
           <p style={{ fontSize: "13px", color: "#64748b", margin: "0 0 8px" }}>
             {employee?.designation} — {employee?.department}
           </p>
+
+          {/* Status row — badge + id + type + change-status dropdown, all in ONE row */}
           <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
             <span style={{ background: statusStyle.bg, color: statusStyle.text, borderRadius: "20px", padding: "3px 10px", fontSize: "11px" }}>
               {employee?.current_status}
@@ -147,9 +270,31 @@ const EmployeeDetailPage = () => {
             <span style={{ fontSize: "12px", color: "#475569" }}>
               {employee?.employee_type}
             </span>
+
+            {VALID_NEXT[employee?.current_status]?.length > 0 && (
+              <select
+                disabled={changingStatus}
+                onChange={(e) => e.target.value && handleStatusChange(e.target.value)}
+                value=""
+                style={{ background: "#0f1a2e", border: "0.5px solid #1e3a5f", borderRadius: "6px", padding: "4px 8px", fontSize: "11px", color: "#f1f5f9" }}
+              >
+                <option value="">Change Status →</option>
+                {VALID_NEXT[employee?.current_status].map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
+            )}
           </div>
+
+          {statusError && (
+            <p style={{ color: "#fca5a5", fontSize: "12px", marginTop: "6px" }}>{statusError}</p>
+          )}
         </div>
       </div>
+      {/* Lifecycle Progress — NEW */}
+<div style={sectionStyle}>
+  <LifecycleStepper currentStatus={employee?.current_status} isArchived={employee?.is_archived} />
+</div>
 
       {/* Basic Info */}
       <div style={sectionStyle}>
@@ -254,7 +399,8 @@ const EmployeeDetailPage = () => {
           </div>
         </div>
       </div>
-
+      {/* Software Access */}
+      <SoftwareAccessSection employeeId={id} />
     </div>
   );
 };

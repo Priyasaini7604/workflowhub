@@ -1,16 +1,25 @@
 import { useState, useEffect } from "react";
 import axiosInstance from "../api/axiosInstance";
 import { useAuth } from "../context/AuthContext";
+import { statusColors } from "../constants/statusColors";
+import FilterDrawer, { countActiveFilters, buildFilterParams } from "../components/FilterDrawer";
 
-const statusColors = {
-  active: { bg: "#064e3b", text: "#10b981" },
-  inactive: { bg: "#1e293b", text: "#94a3b8" },
-  on_leave: { bg: "#451a03", text: "#f59e0b" },
-  available: { bg: "#064e3b", text: "#10b981" },
-  assigned: { bg: "#1e3a5f", text: "#3b82f6" },
-  under_repair: { bg: "#451a03", text: "#f59e0b" },
-  retired: { bg: "#1e293b", text: "#94a3b8" },
-};
+// NOTE: dateRange here filters on Asset.asset_issue_date on the backend
+// (AssetStatusReportView). Swap the backend field name in views.py if the
+// report should filter on a different date instead (e.g. warranty_expiry_date).
+const ASSET_FILTER_CONFIG = [
+  {
+    key: "status",
+    label: "Status",
+    type: "multiselect",
+    options: ["available", "assigned", "pending_acknowledgment", "pending_return", "retired", "under_repair", "lost", "reserved"],
+  },
+  { key: "department", label: "Department", type: "text", placeholder: "IT, HR, Finance" },
+  { key: "owner", label: "Owner (Employee ID)", type: "text", placeholder: "EMP001, EMP002" },
+  { key: "dateRange", label: "Assigned Date Range", type: "daterange" },
+];
+
+const EMPTY_ASSET_FILTERS = { status: [], department: "", owner: "", dateRange: { from: "", to: "" } };
 
 const ReportsPage = () => {
   const { user } = useAuth();
@@ -24,6 +33,8 @@ const ReportsPage = () => {
   const getReportAssetStatus = (asset) => {
     if (asset.status === "retired") return "retired";
     if (asset.status === "under_repair") return "under_repair";
+    if (asset.status === "lost") return "lost";
+    if (asset.status === "reserved") return "reserved";
     if (asset.assigned_to_name) return "assigned";
     return "available";
   };
@@ -33,10 +44,13 @@ const ReportsPage = () => {
   const [assetReport, setAssetReport] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [assetFilters, setAssetFilters] = useState(EMPTY_ASSET_FILTERS);
 
   useEffect(() => {
     fetchReports();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [assetFilters]);
 
   const [assetEmployeeIdMap, setAssetEmployeeIdMap] = useState({});
 
@@ -44,12 +58,17 @@ const ReportsPage = () => {
     setLoading(true);
     setError("");
     try {
+      const assetParams = new URLSearchParams();
+      const filterParams = buildFilterParams(assetFilters, ASSET_FILTER_CONFIG);
+      Object.entries(filterParams).forEach(([key, value]) => assetParams.append(key, value));
+      const assetReportUrl = `/assets/report/?${assetParams.toString()}`;
+
       if (isAssetOnly) {
         // Fetch report (for condition/warranty columns) AND the full assets
         // list (which has assigned_to.employee_id) so we can show the
         // employee ID next to the name — the report endpoint only gives a name.
         const [assetResponse, fullAssetsResponse] = await Promise.all([
-          axiosInstance.get("/assets/report/"),
+          axiosInstance.get(assetReportUrl),
           axiosInstance.get("/assets/"),
         ]);
         setAssetReport(assetResponse.data.results || assetResponse.data);
@@ -57,7 +76,7 @@ const ReportsPage = () => {
       } else {
         const [empResponse, assetResponse, fullAssetsResponse] = await Promise.all([
           axiosInstance.get("/employees/report/"),
-          axiosInstance.get("/assets/report/"),
+          axiosInstance.get(assetReportUrl),
           axiosInstance.get("/assets/"),
         ]);
         setEmployeeReport(empResponse.data.results || empResponse.data);
@@ -68,6 +87,28 @@ const ReportsPage = () => {
       setError("Failed to load reports");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleExport = async (type, format) => {
+    try {
+      const url = type === "employees"
+        ? `/employees/report/export/${format}/`
+        : `/assets/report/export/${format}/`;
+
+      const response = await axiosInstance.get(url, { responseType: "blob" });
+
+      const blob = new Blob([response.data]);
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+      link.setAttribute("download", `${type}_report.${format}`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(downloadUrl);
+    } catch (err) {
+      setError(`Failed to export ${type} report as ${format.toUpperCase()}`);
     }
   };
 
@@ -92,6 +133,9 @@ const ReportsPage = () => {
     background: activeTab === tab ? "#2563eb" : "#0a1628",
     color: activeTab === tab ? "#eff6ff" : "#64748b",
   });
+
+  const showAssetFilterButton = isAssetOnly || activeTab === "assets";
+  const activeAssetFilterCount = countActiveFilters(assetFilters, ASSET_FILTER_CONFIG);
 
   return (
     <div>
@@ -151,21 +195,92 @@ const ReportsPage = () => {
                 {assetReport.filter(a => getReportAssetStatus(a) === "retired").length}
               </p>
             </div>
+            <div style={{ background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "12px", padding: "16px" }}>
+              <p style={{ fontSize: "11px", color: "#64748b", margin: "0 0 6px", letterSpacing: "0.8px" }}>LOST</p>
+              <p style={{ fontSize: "24px", fontWeight: 500, color: "#f87171", margin: 0 }}>
+                {assetReport.filter(a => getReportAssetStatus(a) === "lost").length}
+              </p>
+            </div>
+            <div style={{ background: "#0a1628", border: "0.5px solid #1e293b", borderRadius: "12px", padding: "16px" }}>
+              <p style={{ fontSize: "11px", color: "#64748b", margin: "0 0 6px", letterSpacing: "0.8px" }}>RESERVED</p>
+              <p style={{ fontSize: "24px", fontWeight: 500, color: "#a5b4fc", margin: 0 }}>
+                {assetReport.filter(a => getReportAssetStatus(a) === "reserved").length}
+              </p>
+            </div>
           </>
         )}
       </div>
 
-      {/* Tabs — only show Employee Report tab if not asset-only */}
-      {!isAssetOnly && (
-        <div style={{ display: "flex", gap: "8px", marginBottom: "16px" }}>
-          <button style={tabStyle("employees")} onClick={() => setActiveTab("employees")}>
-            👥 Employee Report
+      {/* Tabs + Filter + Export buttons */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", flexWrap: "wrap", gap: "10px" }}>
+        {!isAssetOnly ? (
+          <div style={{ display: "flex", gap: "8px" }}>
+            <button style={tabStyle("employees")} onClick={() => setActiveTab("employees")}>
+              👥 Employee Report
+            </button>
+            <button style={tabStyle("assets")} onClick={() => setActiveTab("assets")}>
+              💻 Asset Report
+            </button>
+          </div>
+        ) : (
+          <div />
+        )}
+
+        <div style={{ display: "flex", gap: "8px" }}>
+          {showAssetFilterButton && (
+            <button
+              onClick={() => setDrawerOpen(true)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                background: activeAssetFilterCount > 0 ? "#1e3a8a" : "#0a1628",
+                border: "0.5px solid #1e293b",
+                borderRadius: "8px",
+                padding: "8px 14px",
+                fontSize: "12px",
+                color: activeAssetFilterCount > 0 ? "#93c5fd" : "#64748b",
+                cursor: "pointer",
+              }}
+            >
+              ⚙️ Filters
+              {activeAssetFilterCount > 0 && (
+                <span
+                  style={{
+                    background: "#2563eb",
+                    color: "#eff6ff",
+                    borderRadius: "999px",
+                    fontSize: "11px",
+                    padding: "1px 7px",
+                  }}
+                >
+                  {activeAssetFilterCount}
+                </span>
+              )}
+            </button>
+          )}
+          <button
+            onClick={() => handleExport(activeTab, "csv")}
+            style={{ background: "#064e3b", color: "#10b981", border: "none", borderRadius: "8px", padding: "8px 14px", fontSize: "12px", fontWeight: 500, cursor: "pointer" }}
+          >
+            ⬇️ Export CSV
           </button>
-          <button style={tabStyle("assets")} onClick={() => setActiveTab("assets")}>
-            💻 Asset Report
+          <button
+            onClick={() => handleExport(activeTab, "pdf")}
+            style={{ background: "#451a03", color: "#f59e0b", border: "none", borderRadius: "8px", padding: "8px 14px", fontSize: "12px", fontWeight: 500, cursor: "pointer" }}
+          >
+            ⬇️ Export PDF
           </button>
         </div>
-      )}
+      </div>
+
+      <FilterDrawer
+        isOpen={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        filters={ASSET_FILTER_CONFIG}
+        appliedValues={assetFilters}
+        onApply={setAssetFilters}
+      />
 
       {/* Error */}
       {error && (
@@ -255,7 +370,7 @@ const ReportsPage = () => {
                         return (
                           <tr key={asset.asset_id} style={{ borderBottom: "0.5px solid #1e293b" }}>
                             <td style={{ padding: "14px 16px", fontSize: "12px", color: "#64748b" }}>{asset.asset_id}</td>
-                            <td style={{ padding: "14px 16px", fontSize: "12px", color: "#64748b" }}>{asset.asset_type}</td>
+                            <td style={{ padding: "14px 16px", fontSize: "12px", color: "#64748b" }}>{asset.category_name || "—"}</td>
                             <td style={{ padding: "14px 16px", fontSize: "12px", color: "#f1f5f9" }}>{asset.model_name || "—"}</td>
                             <td style={{ padding: "14px 16px", fontSize: "12px", color: "#64748b" }}>
                               {asset.assigned_to_name

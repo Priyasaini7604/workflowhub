@@ -4,4 +4,4 @@ from .models import Asset
 
 @admin.register(Asset)
 class AssetAdmin(admin.ModelAdmin):
-    list_display = ['asset_id', 'asset_type', 'brand', 'assigned_to', 'status']
+    list_display = ['asset_id', 'category', 'brand', 'assigned_to', 'status']

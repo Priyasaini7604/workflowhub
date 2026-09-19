@@ -6,8 +6,15 @@ from .views import (
     EmployeeUpdateView,
     EmployeeArchiveView,
     EmployeeStatusReportView,
+    EmployeeStatusUpdateView,
     MyProfileView,
+    EmployeeReactivateView,
+    EmployeeReportExportCSVView,
+    EmployeeReportExportPDFView,
+    CandidateCreateView,
 )
+from .views_bulk_import import EmployeeBulkImportPreviewView, EmployeeBulkImportCommitView
+
 
 urlpatterns = [
     path('', EmployeeListView.as_view(), name='employee-list'),
@@ -15,8 +22,33 @@ urlpatterns = [
     path('report/', EmployeeStatusReportView.as_view(),
          name='employee-status-report'),
     path('<int:pk>/', EmployeeDetailView.as_view(), name='employee-detail'),
-    path('<int:pk>/update/', EmployeeUpdateView.as_view(), name='employee-update'),
+    path(
+        '<int:pk>/update/',
+        EmployeeUpdateView.as_view(),
+        name='employee-update'),
+    path('<int:pk>/status/', EmployeeStatusUpdateView.as_view(),
+         name='employee-status-update'),
     path('<int:pk>/archive/', EmployeeArchiveView.as_view(),
          name='employee-archive'),
     path('me/', MyProfileView.as_view(), name='my-profile'),
+    path(
+        '<int:pk>/reactivate/',
+        EmployeeReactivateView.as_view(),
+        name='employee-reactivate'),
+    path(
+        'report/export/csv/',
+        EmployeeReportExportCSVView.as_view(),
+        name='employee-report-export-csv'),
+    path(
+        'report/export/pdf/',
+        EmployeeReportExportPDFView.as_view(),
+        name='employee-report-export-pdf'),
+    path('candidates/create/', CandidateCreateView.as_view(),
+         name='candidate-create'),
+    path('bulk-import/preview/', EmployeeBulkImportPreviewView.as_view(),
+         name='employee-bulk-import-preview'),
+    path('bulk-import/commit/', EmployeeBulkImportCommitView.as_view(),
+         name='employee-bulk-import-commit'),
+
+
 ]

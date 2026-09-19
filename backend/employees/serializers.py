@@ -45,8 +45,15 @@ class EmployeeSerializer(serializers.ModelSerializer):
             'updated_at',
             'created_by',
             'updated_by',
+            'is_archived', 'archived_at'
         ]
-        read_only_fields = ['id', 'employee_id', 'created_at', 'updated_at']
+        read_only_fields = [
+            'id',
+            'employee_id',
+            'created_at',
+            'updated_at',
+            'is_archived',
+            'archived_at']
 
     def get_full_name(self, obj):
         if obj.middle_name:
@@ -58,7 +65,11 @@ class EmployeeListSerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField()
     # role lives on the linked User account, not on Employee itself —
     # pull it through so the frontend can show it (HR/Manager/IT/etc).
-    role = serializers.CharField(source='user.role', read_only=True)
+    # Candidates have no linked User yet, so this must stay null-safe.
+    role = serializers.SerializerMethodField()
+
+    def get_role(self, obj):
+        return obj.user.role if obj.user else None
 
     class Meta:
         model = Employee
@@ -112,7 +123,9 @@ class EmployeeReportSerializer(serializers.ModelSerializer):
 
     def get_manager_name(self, obj):
         if obj.reporting_manager:
-            return f"{obj.reporting_manager.first_name} {obj.reporting_manager.last_name}"
+            return f"{
+                obj.reporting_manager.first_name} {
+                obj.reporting_manager.last_name}"
         return None
 
     def get_asset_count(self, obj):
@@ -122,3 +135,50 @@ class EmployeeReportSerializer(serializers.ModelSerializer):
         if hasattr(obj, 'onboarding_checklist'):
             return obj.onboarding_checklist.onboarding_completion_percentage
         return 0
+
+
+class EmployeeStatusUpdateSerializer(serializers.Serializer):
+    new_status = serializers.ChoiceField(choices=Employee.STATUS_CHOICES)
+
+    # Valid transitions
+    VALID_TRANSITIONS = {
+        'candidate': ['offer_sent'],
+        'offer_sent': ['joining_pending'],
+        'joining_pending': ['onboarding'],
+        'onboarding': ['active'],
+        'active': ['notice_period'],
+        'notice_period': ['offboarding'],
+        'offboarding': ['exited'],
+        'exited': [],
+    }
+
+    def validate_new_status(self, value):
+        employee = self.context['employee']
+        current = employee.current_status
+
+        allowed_next = self.VALID_TRANSITIONS.get(current, [])
+        if value not in allowed_next:
+            raise serializers.ValidationError(
+                f"Cannot change status from '{current}' to '{value}'. "
+                f"Allowed next status: {allowed_next or 'none'}"
+            )
+        return value
+
+
+class CandidateCreateSerializer(serializers.ModelSerializer):
+    """Minimal intake form for the Candidate stage — no user account,
+    no employee_id yet. Those get created only once the candidate
+    is moved to joining_pending."""
+
+    class Meta:
+        model = Employee
+        fields = [
+            'id',
+            'first_name',
+            'middle_name',
+            'last_name',
+            'personal_email',
+            'mobile_number',
+            'designation',
+            'department',
+        ]

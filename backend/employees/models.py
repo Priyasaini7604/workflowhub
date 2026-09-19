@@ -32,24 +32,35 @@ class Employee(models.Model):
     ]
 
     STATUS_CHOICES = [
+        ('candidate', 'Candidate'),
+        ('offer_sent', 'Offer Sent'),
+        ('joining_pending', 'Joining Pending'),
+        ('onboarding', 'Onboarding'),
         ('active', 'Active'),
-        ('inactive', 'Inactive'),
-        ('on_leave', 'On Leave'),
+        ('notice_period', 'Notice Period'),
+        ('offboarding', 'Offboarding'),
+        ('exited', 'Exited'),
     ]
 
     # --- Validators ---
     phone_validator = RegexValidator(
         regex=r'^\d{10,15}$',
-        message='Mobile number 10 to 15 digits hona chahiye!'
+        message='Mobile number must be 10 to 15 digits only'
     )
 
     # --- 1. Basic Information ---
     user = models.OneToOneField(
         User,
         on_delete=models.CASCADE,
-        related_name='employee_profile'
+        related_name='employee_profile',
+        null=True,
+        blank=True
     )
-    employee_id = models.CharField(max_length=20, unique=True)
+    employee_id = models.CharField(
+        max_length=20,
+        unique=True,
+        null=True,
+        blank=True)
     first_name = models.CharField(max_length=50)
     middle_name = models.CharField(max_length=50, blank=True)
     last_name = models.CharField(max_length=50)
@@ -100,8 +111,8 @@ class Employee(models.Model):
         choices=EMPLOYEE_TYPE_CHOICES,
         default='permanent'
     )
-    designation = models.CharField(max_length=100)
-    department = models.CharField(max_length=100)
+    designation = models.CharField(max_length=100, blank=True)
+    department = models.CharField(max_length=100, blank=True)
     reporting_manager = models.ForeignKey(
         'self',
         on_delete=models.SET_NULL,
@@ -109,7 +120,7 @@ class Employee(models.Model):
         blank=True,
         related_name='team_members'
     )
-    date_of_joining = models.DateField()
+    date_of_joining = models.DateField(null=True, blank=True)
     confirmation_date = models.DateField(blank=True, null=True)
     probation_end_date = models.DateField(blank=True, null=True)
 
@@ -159,6 +170,17 @@ class Employee(models.Model):
         blank=True,
         related_name='archived_employees'
     )
+
+    class Meta:
+        indexes = [
+            models.Index(
+                fields=[
+                    'is_archived',
+                    'current_status'],
+                name='employee_archived_status_idx'),
+        ]
+
+        ordering = ['id']
 
     def __str__(self):
         return f"{self.first_name} {self.last_name} - {self.designation}"

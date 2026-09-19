@@ -19,5 +19,8 @@ export const rejectDocument = (documentId) =>
     verification_status: "rejected",
   });
 
+export const getEmployeeAssets = (employeeId) =>
+  axiosInstance.get(`/assets/?employee=${employeeId}`);
+
 // GET all assets (role-based on backend), filtered client-side by employee
 export const getAllAssets = () => axiosInstance.get(`/assets/`);

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../api/axiosInstance";
+import { idsMatch } from '../utils/idUtils';
 
 const ITEmployeeAssetsPage = () => {
   const navigate = useNavigate();
@@ -30,8 +31,7 @@ const ITEmployeeAssetsPage = () => {
     }
   };
 
-  const getAssetsForEmployee = (empId) => assets.filter((a) => a.assigned_to?.id === empId);
-
+  const getAssetsForEmployee = (empId) => assets.filter((a) => idsMatch(a.assigned_to?.id, empId));
   const filteredEmployees = employees.filter(
     (emp) =>
       emp.full_name?.toLowerCase().includes(search.toLowerCase()) ||

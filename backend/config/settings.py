@@ -10,10 +10,12 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
+from celery.schedules import crontab
 from pathlib import Path
 from dotenv import load_dotenv
 import os
 from datetime import timedelta
+import sys
 
 load_dotenv()
 
@@ -26,7 +28,7 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '*').split(',')
 
 # Application definition
 INSTALLED_APPS = [
@@ -50,8 +52,12 @@ INSTALLED_APPS = [
     'onboarding',
     'offboarding',
     'notifications',
-    'Documents',
+    'documents',
     'audit',
+    'access',
+    'master_data',
+    'approvals',
+
 ]
 
 MIDDLEWARE = [
@@ -122,15 +128,16 @@ USE_TZ = True
 STATIC_URL = 'static/'
 
 # CORS — React frontend allow
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
-]
+CORS_ALLOWED_ORIGINS = os.getenv(
+    'CORS_ALLOWED_ORIGINS', 'http://localhost:5173'
+).split(',')
 
 # JWT Authentication
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-    ),
+        'rest_framework_simplejwt.authentication.JWTAuthentication',),
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 20,
 }
 
 # Custom User Model
@@ -147,3 +154,29 @@ SIMPLE_JWT = {
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+CELERY_BROKER_URL = os.environ.get(
+    'CELERY_BROKER_URL', 'redis://localhost:6379/0')
+CELERY_RESULT_BACKEND = os.environ.get(
+    'CELERY_BROKER_URL', 'redis://localhost:6379/0')
+
+if 'test' in sys.argv:
+    CELERY_TASK_ALWAYS_EAGER = True
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.gmail.com')
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
+DEFAULT_FROM_EMAIL = os.getenv(
+    'DEFAULT_FROM_EMAIL', 'WorkflowHub <noreply@workflowhub.com>'
+)
+FRONTEND_BASE_URL = os.getenv('FRONTEND_BASE_URL', 'http://localhost:5173')
+
+
+CELERY_BEAT_SCHEDULE = {
+    'check-due-and-overdue-tasks-daily': {
+        'task': 'notifications.tasks.check_due_and_overdue_tasks',
+        'schedule': crontab(hour=9, minute=0),
+    },
+}

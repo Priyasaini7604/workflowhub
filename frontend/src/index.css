@@ -1,5 +1,49 @@
 @import "tailwindcss";
 
+@theme {
+  /* ... existing variables ... */
+
+  /* Success (green) */
+  --color-success-bg: #064e3b;
+  --color-success-text: #10b981;
+
+  /* Warning (amber) — general pending */
+  --color-warning-bg: #451a03;
+  --color-warning-text: #f59e0b;
+  --color-accent-text: #3b82f6;
+
+  /* Warning-alt (orange) — notice period, pending return */
+  --color-warning-bg-alt: #431407;
+  --color-warning-text-alt: #fb923c;
+
+  /* Bright Yellow — pending_acknowledgment (alag dikhna chahiye) */
+  --color-yellow-bg: #422006;
+  --color-yellow-text: #facc15;
+
+  /* Danger (red) */
+  --color-danger-bg: #450a0a;
+  --color-danger-text: #f87171;
+  --color-danger-text-soft: #fca5a5;
+
+  /* Accent Blue — sirf onboarding ke liye */
+  --color-accent-bg: #1e3a5f;
+
+  /* Teal/Cyan — update action, assigned assets */
+  --color-teal-bg: #083344;
+  --color-teal-text: #22d3ee;
+
+  /* Indigo — scheduled */
+  --color-indigo-bg: #1e1b4b;
+  --color-indigo-text: #818cf8;
+
+  /* Purple — bulk_import, reserved assets */
+  --color-purple-bg: #3730a3;
+  --color-purple-text: #a5b4fc;
+
+  /* Neutral gray — candidate, exited, retired, view action */
+  --color-neutral-bg: #1e293b;
+  --color-neutral-text: #94a3b8;
+}
 * {
   margin: 0;
   padding: 0;
@@ -20,7 +64,7 @@ input:-webkit-autofill:focus {
 
 input[type="checkbox"] {
   accent-color: #2563eb;
-  colorScheme: dark;
+  color-scheme: dark;
 }
 
 @media (max-width: 768px) {

@@ -14,13 +14,3 @@ class AuditLogSerializer(serializers.ModelSerializer):
             'created_at',
         ]
         read_only_fields = ['id', 'created_at']
-
-
-class AuditLogCreateSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = AuditLog
-        fields = [
-            'user', 'action', 'model_name',
-            'object_id', 'description', 'ip_address',
-        ]
-        read_only_fields = ['user']

@@ -5,7 +5,7 @@ import axiosInstance from "../api/axiosInstance";
 const ROLE_CHOICES = [
   { value: "employee", label: "Employee" },
   { value: "hr_admin", label: "HR Admin" },
-  { value: "it_manager", label: "IT Manager" },
+  { value: "it", label: "IT Admin" },
   { value: "manager", label: "Manager" },
   { value: "superadmin", label: "Super Admin" },
 ];
@@ -59,7 +59,7 @@ const AddEmployeePage = () => {
     // Existing employees fetch karo reporting manager ke liye
     const fetchManagers = async () => {
       try {
-        const response = await axiosInstance.get("/employees/");
+        const response = await axiosInstance.get("/employees/?all=true");
         setManagers(response.data.results || response.data);
       } catch (err) {
         console.error("Failed to fetch managers");

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import axiosInstance from "../api/axiosInstance";
+import { statusColors } from "../constants/statusColors";
 
 const DOCUMENT_TYPE_LABELS = {
   resume: "Resume",
@@ -15,11 +16,6 @@ const DOCUMENT_TYPE_LABELS = {
   other: "Other",
 };
 
-const verificationColors = {
-  pending: { bg: "#451a03", text: "#f59e0b" },
-  verified: { bg: "#064e3b", text: "#10b981" },
-  rejected: { bg: "#1a0a0a", text: "#fca5a5" },
-};
 
 const MyDocumentsPage = () => {
   const [employeeId, setEmployeeId] = useState(null);
@@ -203,7 +199,7 @@ const MyDocumentsPage = () => {
               </thead>
               <tbody>
                 {documents.map((doc) => {
-                  const statusStyle = verificationColors[doc.verification_status] || verificationColors.pending;
+                  const statusStyle = statusColors[doc.verification_status] || statusColors.pending;
                   return (
                     <tr key={doc.id} style={{ borderBottom: "0.5px solid #1e293b" }}>
                       <td style={{ padding: "12px 0", fontSize: "13px", color: "#f1f5f9" }}>

@@ -1,5 +1,6 @@
 from django.db import models
 from employees.models import Employee
+from master_data.models import AssetCategory
 
 
 class Asset(models.Model):
@@ -17,9 +18,13 @@ class Asset(models.Model):
 
     ASSET_STATUS_CHOICES = [
         ('available', 'Available'),
+        ('pending_acknowledgment', 'Pending Acknowledgment'),
         ('assigned', 'Assigned'),
+        ('pending_return', 'Pending Return'),
         ('under_repair', 'Under Repair'),
+        ('lost', 'Lost'),
         ('retired', 'Retired'),
+        ('reserved', 'Reserved'),
     ]
 
     # --- Condition & Warranty ---
@@ -39,9 +44,11 @@ class Asset(models.Model):
 
     # --- Asset Information ---
     asset_id = models.CharField(max_length=20, unique=True)
-    asset_type = models.CharField(
-        max_length=20,
-        choices=ASSET_TYPE_CHOICES
+
+    category = models.ForeignKey(
+        AssetCategory,
+        on_delete=models.PROTECT,
+        related_name='assets'
     )
     brand = models.CharField(max_length=100, blank=True)
     model_name = models.CharField(max_length=100, blank=True)
@@ -59,10 +66,15 @@ class Asset(models.Model):
     asset_return_date = models.DateField(blank=True, null=True)
 
     status = models.CharField(
-        max_length=20,
+        max_length=25,
         choices=ASSET_STATUS_CHOICES,
         default='available'
     )
+
+    # Track the acknowledgment window
+
+    acknowledgment_requested_at = models.DateTimeField(null=True, blank=True)
+    acknowledged_at = models.DateTimeField(null=True, blank=True)
 
     # --- Audit Information ---
     created_at = models.DateTimeField(auto_now_add=True)
@@ -72,17 +84,35 @@ class Asset(models.Model):
     is_archived = models.BooleanField(default=False)
     archived_at = models.DateTimeField(null=True, blank=True)
 
+    qr_code_image = models.ImageField(
+        upload_to='qr_codes/', null=True, blank=True)
+    qr_generated_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['is_archived', 'status'],
+                         name='asset_archived_status_idx'),
+        ]
+
+        ordering = ['id']
+
     def __str__(self):
-        return f"{self.asset_type} - {self.asset_id}"
+        return f"{self.category} - {self.asset_id}"
 
 
 class AssetAllocationHistory(models.Model):
 
     asset = models.ForeignKey(
         Asset,
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
         related_name='allocation_history'
     )
+
+    asset_id_snapshot = models.CharField(max_length=20, blank=True)
+    asset_name_snapshot = models.CharField(max_length=255, blank=True)
+
     employee = models.ForeignKey(
         'employees.Employee',
         on_delete=models.SET_NULL,
@@ -90,8 +120,39 @@ class AssetAllocationHistory(models.Model):
         blank=True,
         related_name='asset_allocation_history'
     )
+    acknowledgment_status = models.CharField(
+        max_length=20,
+        choices=[
+            ('pending', 'Pending'),
+            ('acknowledged', 'Acknowledged'),
+            ('rejected', 'Rejected')],
+        default='pending')
+    acknowledged_at = models.DateTimeField(null=True, blank=True)
+
+    TRANSFER_REASON_CHOICES = [
+        ('reallocation', 'Reallocation'),
+        ('damage', 'Damage / Replacement'),
+        ('upgrade', 'Upgrade'),
+        ('role_change', 'Role Change'),
+        ('other', 'Other'),
+    ]
+    transfer_reason = models.CharField(
+        max_length=20,
+        choices=TRANSFER_REASON_CHOICES,
+        blank=True,
+    )
     assigned_date = models.DateField()
     returned_date = models.DateField(blank=True, null=True)
+
+    # --- NEW: Recommendation #15 fields ---
+    expected_return_date = models.DateField(null=True, blank=True)
+    condition_at_issue = models.CharField(
+        max_length=20,
+        choices=Asset.CONDITION_CHOICES,
+        blank=True,
+    )
+    # ----------------------------------------
+
     assigned_by = models.ForeignKey(
         'users.User',
         on_delete=models.SET_NULL,
@@ -102,6 +163,14 @@ class AssetAllocationHistory(models.Model):
     remarks = models.TextField(blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        if self.asset:
+            self.asset_id_snapshot = self.asset.asset_id
+            self.asset_name_snapshot = f"{
+                self.asset.brand} {
+                self.asset.model_name}".strip()
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.asset} - {self.employee} ({self.assigned_date})"

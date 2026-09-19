@@ -1,6 +1,7 @@
 from django.db import models
 from employees.models import Employee
 from users.models import User
+from .services import is_access_revoked
 
 
 class OffboardingTask(models.Model):
@@ -108,6 +109,10 @@ class OffboardingChecklist(models.Model):
     offboarding_completion_percentage = models.IntegerField(default=0)
 
     def save(self, *args, **kwargs):
+        # access_revocation_status is derived from live SoftwareAccess
+        # data instead of being trusted from input — see services.py
+        self.access_revocation_status = is_access_revoked(self.employee)
+
         fields_to_check = [
             self.exit_interview_status == 'completed',
             self.asset_recovery_status,

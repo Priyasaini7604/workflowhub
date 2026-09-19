@@ -6,11 +6,15 @@ const menuItems = {
     { label: "Dashboard", icon: "🏠", path: "/dashboard" },
     { label: "Employees", icon: "👥", path: "/employees" },
     { label: "IT Assets", icon: "💻", path: "/assets" },
+    { label: "Asset Categories", icon: "⚙️", path: "/assets/categories" },
     { label: "Documents", icon: "📄", path: "/documents" },
     { label: "Reports", icon: "📊", path: "/reports" },
     { label: "Onboarding", icon: "🚀", path: "/onboarding" },
     { label: "Offboarding", icon: "🚀", path: "/offboarding" },
+    { label: "Approvals", icon: "✅", path: "/approvals" },
     { label: "Audit Logs", icon: "📋", path: "/audit-logs" },
+    { label: "User Management", icon: "👤", path: "/users" },
+    { label: "Access Matrix", icon: "🔐", path: "/access-matrix" },
   ],
   hr: [
     { label: "Dashboard", icon: "🏠", path: "/dashboard" },
@@ -19,18 +23,25 @@ const menuItems = {
     { label: "Reports", icon: "📊", path: "/reports" },
     { label: "Onboarding", icon: "🚀", path: "/onboarding" },
     { label: "Offboarding", icon: "🚀", path: "/offboarding" },
+    { label: "Approvals", icon: "✅", path: "/approvals" },
   ],
   it: [
     { label: "Dashboard", icon: "🏠", path: "/dashboard" },
     { label: "IT Assets", icon: "💻", path: "/assets" },
+    { label: "Asset Categories", icon: "⚙️", path: "/assets/categories" },
     { label: "Stock Overview", icon: "📦", path: "/assets/stock-overview" },
     { label: "Employee Assets", icon: "👥", path: "/it/employee-assets" },
     { label: "Reports", icon: "📊", path: "/reports" },
+    { label: "Approvals", icon: "✅", path: "/approvals" },
+    { label: "My Profile", icon: "👤", path: "/my-profile" },
+    
+    
   ],
   manager: [
     { label: "Dashboard", icon: "🏠", path: "/dashboard" },
     { label: "My Team", icon: "👥", path: "/my-team" },
     { label: "Team Offboarding", icon: "📋", path: "/my-team/offboarding" },
+    { label: "Approvals", icon: "✅", path: "/approvals" },
   ],
   employee: [
     { label: "Dashboard", icon: "🏠", path: "/dashboard" },
@@ -67,21 +78,32 @@ const Sidebar = () => {
   };
 
   return (
-    <div style={{
-      width: "220px",
-      background: "#0a1628",
-      borderRight: "0.5px solid #1e293b",
-      display: "flex",
-      flexDirection: "column",
-      justifyContent: "space-between",
-      padding: "16px 12px",
-      flexShrink: 0,
-      minHeight: "100vh",
-      position: "fixed",
-      left: 0,
-      top: 0,
-      bottom: 0,
-    }}>
+    <div
+  style={{
+    width: "220px",
+    background: "#0a1628",
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "space-between",
+
+    padding: "16px 12px",
+
+    position: "fixed",
+    top: 0,
+    left: 0,
+
+    height: "100vh",
+
+    overflowY: "auto",      // ✅
+    overflowX: "hidden",    // ✅
+
+    flexShrink: 0,
+
+    borderRight: "none",
+    scrollbarWidth: "none",   // Firefox
+  msOverflowStyle: "none",      // ✅ vertical line bhi remove
+  }}
+>
 
       {/* Top — Logo + Menu */}
       <div>
