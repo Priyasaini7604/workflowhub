@@ -34,7 +34,7 @@ const EditAssetPage = () => {
   const [loading, setLoading] = useState(false);
   const [fetchLoading, setFetchLoading] = useState(true);
   const [error, setError] = useState("");           // general (non-field) errors only
-  const [fieldErrors, setFieldErrors] = useState({}); // 👈 naya — field-wise errors
+  const [fieldErrors, setFieldErrors] = useState({}); // naya — field-wise errors
   const [employees, setEmployees] = useState([]);
 
   const [formData, setFormData] = useState({
