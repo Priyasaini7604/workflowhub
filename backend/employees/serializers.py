@@ -7,6 +7,12 @@ class EmployeeSerializer(serializers.ModelSerializer):
     user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
     full_name = serializers.SerializerMethodField()
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        if self.instance is not None:
+            self.fields['user'] = serializers.PrimaryKeyRelatedField(read_only=True)
+
     class Meta:
         model = Employee
         fields = [
@@ -59,7 +65,6 @@ class EmployeeSerializer(serializers.ModelSerializer):
         if obj.middle_name:
             return f"{obj.first_name} {obj.middle_name} {obj.last_name}"
         return f"{obj.first_name} {obj.last_name}"
-
 
 class EmployeeListSerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField()

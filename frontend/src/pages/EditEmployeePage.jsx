@@ -20,26 +20,22 @@ const GENDER_CHOICES = [
   { value: "other", label: "Other" },
 ];
 
-const BLOOD_GROUP_CHOICES = [
-  { value: "A+", label: "A+" },
-  { value: "A-", label: "A-" },
-  { value: "B+", label: "B+" },
-  { value: "B-", label: "B-" },
-  { value: "O+", label: "O+" },
-  { value: "O-", label: "O-" },
-  { value: "AB+", label: "AB+" },
-  { value: "AB-", label: "AB-" },
-];
+const BLOOD_GROUP_CHOICES = ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"].map(
+  (b) => ({ value: b, label: b })
+);
+
+// Ye stages me employee ke paas designation/department/joining date nahi hoti
+const PRE_EMPLOYMENT_STATUSES = ["candidate", "offer_sent"];
 
 const EditEmployeePage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [fetchLoading, setFetchLoading] = useState(true);
-  const [error, setError] = useState("");             // general (non-field) errors only
-  const [fieldErrors, setFieldErrors] = useState({});  // 👈 naya — field-wise errors
+  const [error, setError] = useState(""); // general / unmapped errors
+  const [fieldErrors, setFieldErrors] = useState({});
   const [managers, setManagers] = useState([]);
-  const [originalEmployee, setOriginalEmployee] = useState(null); // 👈 Issue #2 fix ke liye
+  const [originalEmployee, setOriginalEmployee] = useState(null);
 
   const [formData, setFormData] = useState({
     first_name: "",
@@ -65,6 +61,10 @@ const EditEmployeePage = () => {
     probation_end_date: "",
   });
 
+  const isPreEmployment = PRE_EMPLOYMENT_STATUSES.includes(
+    originalEmployee?.current_status
+  );
+
   useEffect(() => {
     fetchEmployee();
     fetchManagers();
@@ -75,7 +75,7 @@ const EditEmployeePage = () => {
     try {
       const response = await axiosInstance.get(`/employees/${id}/`);
       const emp = response.data;
-      setOriginalEmployee(emp); // poora object save kar lo — Issue #2 fix
+      setOriginalEmployee(emp);
       setFormData({
         first_name: emp.first_name || "",
         middle_name: emp.middle_name || "",
@@ -108,7 +108,7 @@ const EditEmployeePage = () => {
 
   const fetchManagers = async () => {
     try {
-      const response = await axiosInstance.get("/employees/");
+      const response = await axiosInstance.get("/employees/?all=true");
       setManagers(response.data.results || response.data);
     } catch (err) {
       console.error("Failed to fetch managers");
@@ -117,15 +117,69 @@ const EditEmployeePage = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-    // Jaise hi user field change kare, uska purana error hata do
+    setFormData((prev) => ({ ...prev, [name]: value }));
     if (fieldErrors[name]) {
-      const updated = { ...fieldErrors };
-      delete updated[name];
-      setFieldErrors(updated);
+      setFieldErrors((prev) => {
+        const updated = { ...prev };
+        delete updated[name];
+        return updated;
+      });
     }
   };
 
+  // ---------- Form layout config ----------
+  const sections = [
+    {
+      title: "👤 Personal Information",
+      fields: [
+        { name: "first_name", label: "FIRST NAME", required: true },
+        { name: "middle_name", label: "MIDDLE NAME" },
+        { name: "last_name", label: "LAST NAME", required: true },
+        { name: "gender", label: "GENDER", select: GENDER_CHOICES, placeholder: "Select Gender" },
+        { name: "date_of_birth", label: "DATE OF BIRTH", type: "date" },
+        { name: "blood_group", label: "BLOOD GROUP", select: BLOOD_GROUP_CHOICES, placeholder: "Select Blood Group" },
+      ],
+    },
+    {
+      title: "📞 Contact Information",
+      fields: [
+        { name: "personal_email", label: "PERSONAL EMAIL", type: "email" },
+        { name: "official_email", label: "OFFICIAL EMAIL", type: "email" },
+        { name: "mobile_number", label: "MOBILE NUMBER" },
+        { name: "alternate_mobile_number", label: "ALTERNATE MOBILE" },
+      ],
+    },
+    {
+      title: "🚨 Emergency Contact",
+      fields: [
+        { name: "emergency_contact_name", label: "NAME" },
+        { name: "emergency_contact_number", label: "NUMBER" },
+        { name: "emergency_contact_relationship", label: "RELATIONSHIP" },
+      ],
+    },
+    {
+      title: "💼 Employment Information",
+      fields: [
+        { name: "designation", label: "DESIGNATION", requiredForEmployee: true },
+        { name: "department", label: "DEPARTMENT", requiredForEmployee: true },
+        { name: "date_of_joining", label: "DATE OF JOINING", type: "date", requiredForEmployee: true },
+        { name: "employee_type", label: "EMPLOYEE TYPE", select: EMPLOYEE_TYPE_CHOICES },
+        { name: "work_mode", label: "WORK MODE", select: WORK_MODE_CHOICES },
+        { name: "reporting_manager", label: "REPORTING MANAGER", manager: true },
+        { name: "confirmation_date", label: "CONFIRMATION DATE", type: "date" },
+      ],
+    },
+  ];
+
+  const knownFieldNames = new Set([
+    ...sections.flatMap((s) => s.fields.map((f) => f.name)),
+    "probation_end_date",
+  ]);
+
+  const toMessage = (val) =>
+    Array.isArray(val) ? val.join(" ") : typeof val === "string" ? val : JSON.stringify(val);
+
+  // ---------- Submit ----------
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -133,10 +187,12 @@ const EditEmployeePage = () => {
     setLoading(true);
 
     try {
+      // user / employee_id system-managed hain — edit form se kabhi nahi bhejte
       const cleanedData = {
         ...formData,
-        user: originalEmployee?.user,
-        employee_id: originalEmployee?.employee_id,
+        designation: formData.designation || null,
+        department: formData.department || null,
+        date_of_joining: formData.date_of_joining || null,
         date_of_birth: formData.date_of_birth || null,
         confirmation_date: formData.confirmation_date || null,
         probation_end_date: formData.probation_end_date || null,
@@ -145,20 +201,35 @@ const EditEmployeePage = () => {
 
       await axiosInstance.put(`/employees/${id}/update/`, cleanedData);
       navigate(`/employees/${id}`);
-
     } catch (err) {
       const data = err.response?.data;
       if (data && typeof data === "object") {
         setFieldErrors(data);
-        setError("Please fix the highlighted fields below.");
+
+        // Jo errors kisi visible input se map nahi hote, unko banner me naam ke saath dikhao
+        const unmapped = Object.entries(data)
+          .filter(([key]) => !knownFieldNames.has(key))
+          .map(([key, val]) =>
+            key === "non_field_errors" || key === "detail"
+              ? toMessage(val)
+              : `${key}: ${toMessage(val)}`
+          );
+
+        const hasMappedErrors = Object.keys(data).some((k) => knownFieldNames.has(k));
+        const parts = [];
+        if (hasMappedErrors) parts.push("Please fix the highlighted fields below.");
+        parts.push(...unmapped);
+        setError(parts.join(" | ") || "Something went wrong. Please try again.");
       } else {
         setError("Something went wrong. Please try again.");
       }
+      window.scrollTo({ top: 0, behavior: "smooth" });
     } finally {
       setLoading(false);
     }
   };
 
+  // ---------- Styles ----------
   const inputStyle = {
     width: "100%",
     background: "#0f1a2e",
@@ -171,10 +242,7 @@ const EditEmployeePage = () => {
     boxSizing: "border-box",
   };
 
-  const inputErrorStyle = {
-    ...inputStyle,
-    border: "0.5px solid #dc2626",
-  };
+  const inputErrorStyle = { ...inputStyle, border: "0.5px solid #dc2626" };
 
   const labelStyle = {
     display: "block",
@@ -215,20 +283,75 @@ const EditEmployeePage = () => {
     gap: "16px",
   };
 
-  // Har field ke neeche uska specific error dikhane ka helper
+  // ---------- Renderers ----------
   const renderFieldError = (fieldName) => {
     if (!fieldErrors[fieldName]) return null;
     const msg = Array.isArray(fieldErrors[fieldName])
       ? fieldErrors[fieldName][0]
-      : fieldErrors[fieldName];
+      : toMessage(fieldErrors[fieldName]);
     return <p style={fieldErrorTextStyle}>{msg}</p>;
   };
 
-  if (fetchLoading) return (
-    <div style={{ textAlign: "center", padding: "60px 0" }}>
-      <p style={{ color: "#64748b", fontSize: "13px" }}>Loading...</p>
-    </div>
-  );
+  const renderField = (f) => {
+    const isRequired = f.required || (f.requiredForEmployee && !isPreEmployment);
+    const style = fieldErrors[f.name] ? inputErrorStyle : inputStyle;
+
+    let control;
+    if (f.manager) {
+      control = (
+        <select name={f.name} value={formData[f.name]} onChange={handleChange} style={style}>
+          <option value="">Select Manager</option>
+          {managers
+            .filter((m) => m.id !== parseInt(id))
+            .map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.full_name} — {m.designation}
+              </option>
+            ))}
+        </select>
+      );
+    } else if (f.select) {
+      control = (
+        <select name={f.name} value={formData[f.name]} onChange={handleChange} style={style}>
+          {f.placeholder && <option value="">{f.placeholder}</option>}
+          {f.select.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+      );
+    } else {
+      control = (
+        <input
+          name={f.name}
+          type={f.type || "text"}
+          value={formData[f.name]}
+          onChange={handleChange}
+          required={isRequired}
+          style={style}
+        />
+      );
+    }
+
+    return (
+      <div key={f.name}>
+        <label style={labelStyle}>
+          {f.label}
+          {isRequired ? " *" : ""}
+        </label>
+        {control}
+        {renderFieldError(f.name)}
+      </div>
+    );
+  };
+
+  if (fetchLoading)
+    return (
+      <div style={{ textAlign: "center", padding: "60px 0" }}>
+        <p style={{ color: "#64748b", fontSize: "13px" }}>Loading...</p>
+      </div>
+    );
 
   return (
     <div>
@@ -246,7 +369,7 @@ const EditEmployeePage = () => {
         </div>
       </div>
 
-      {/* General error — ab sirf summary/fallback ke liye */}
+      {/* Error banner */}
       {error && (
         <div style={{ background: "#1a0a0a", border: "0.5px solid #7f1d1d", borderRadius: "8px", padding: "12px", marginBottom: "16px" }}>
           <p style={{ fontSize: "13px", color: "#fca5a5", margin: 0 }}>{error}</p>
@@ -254,269 +377,12 @@ const EditEmployeePage = () => {
       )}
 
       <form onSubmit={handleSubmit}>
-
-        {/* Section 1 — Personal Info */}
-        <div style={sectionStyle}>
-          <h3 style={sectionTitleStyle}>👤 Personal Information</h3>
-          <div style={gridStyle}>
-            <div>
-              <label style={labelStyle}>FIRST NAME *</label>
-              <input
-                name="first_name"
-                value={formData.first_name}
-                onChange={handleChange}
-                required
-                style={fieldErrors.first_name ? inputErrorStyle : inputStyle}
-              />
-              {renderFieldError("first_name")}
-            </div>
-            <div>
-              <label style={labelStyle}>MIDDLE NAME</label>
-              <input
-                name="middle_name"
-                value={formData.middle_name}
-                onChange={handleChange}
-                style={fieldErrors.middle_name ? inputErrorStyle : inputStyle}
-              />
-              {renderFieldError("middle_name")}
-            </div>
-            <div>
-              <label style={labelStyle}>LAST NAME *</label>
-              <input
-                name="last_name"
-                value={formData.last_name}
-                onChange={handleChange}
-                required
-                style={fieldErrors.last_name ? inputErrorStyle : inputStyle}
-              />
-              {renderFieldError("last_name")}
-            </div>
-            <div>
-              <label style={labelStyle}>GENDER</label>
-              <select
-                name="gender"
-                value={formData.gender}
-                onChange={handleChange}
-                style={fieldErrors.gender ? inputErrorStyle : inputStyle}
-              >
-                <option value="">Select Gender</option>
-                {GENDER_CHOICES.map((g) => (
-                  <option key={g.value} value={g.value}>{g.label}</option>
-                ))}
-              </select>
-              {renderFieldError("gender")}
-            </div>
-            <div>
-              <label style={labelStyle}>DATE OF BIRTH</label>
-              <input
-                name="date_of_birth"
-                type="date"
-                value={formData.date_of_birth}
-                onChange={handleChange}
-                style={fieldErrors.date_of_birth ? inputErrorStyle : inputStyle}
-              />
-              {renderFieldError("date_of_birth")}
-            </div>
-            <div>
-              <label style={labelStyle}>BLOOD GROUP</label>
-              <select
-                name="blood_group"
-                value={formData.blood_group}
-                onChange={handleChange}
-                style={fieldErrors.blood_group ? inputErrorStyle : inputStyle}
-              >
-                <option value="">Select Blood Group</option>
-                {BLOOD_GROUP_CHOICES.map((b) => (
-                  <option key={b.value} value={b.value}>{b.label}</option>
-                ))}
-              </select>
-              {renderFieldError("blood_group")}
-            </div>
+        {sections.map((section) => (
+          <div key={section.title} style={sectionStyle}>
+            <h3 style={sectionTitleStyle}>{section.title}</h3>
+            <div style={gridStyle}>{section.fields.map(renderField)}</div>
           </div>
-        </div>
-
-        {/* Section 2 — Contact Info */}
-        <div style={sectionStyle}>
-          <h3 style={sectionTitleStyle}>📞 Contact Information</h3>
-          <div style={gridStyle}>
-            <div>
-              <label style={labelStyle}>PERSONAL EMAIL</label>
-              <input
-                name="personal_email"
-                type="email"
-                value={formData.personal_email}
-                onChange={handleChange}
-                style={fieldErrors.personal_email ? inputErrorStyle : inputStyle}
-              />
-              {renderFieldError("personal_email")}
-            </div>
-            <div>
-              <label style={labelStyle}>OFFICIAL EMAIL</label>
-              <input
-                name="official_email"
-                type="email"
-                value={formData.official_email}
-                onChange={handleChange}
-                style={fieldErrors.official_email ? inputErrorStyle : inputStyle}
-              />
-              {renderFieldError("official_email")}
-            </div>
-            <div>
-              <label style={labelStyle}>MOBILE NUMBER</label>
-              <input
-                name="mobile_number"
-                value={formData.mobile_number}
-                onChange={handleChange}
-                style={fieldErrors.mobile_number ? inputErrorStyle : inputStyle}
-              />
-              {renderFieldError("mobile_number")}
-            </div>
-            <div>
-              <label style={labelStyle}>ALTERNATE MOBILE</label>
-              <input
-                name="alternate_mobile_number"
-                value={formData.alternate_mobile_number}
-                onChange={handleChange}
-                style={fieldErrors.alternate_mobile_number ? inputErrorStyle : inputStyle}
-              />
-              {renderFieldError("alternate_mobile_number")}
-            </div>
-          </div>
-        </div>
-
-        {/* Section 3 — Emergency Contact */}
-        <div style={sectionStyle}>
-          <h3 style={sectionTitleStyle}>🚨 Emergency Contact</h3>
-          <div style={gridStyle}>
-            <div>
-              <label style={labelStyle}>NAME</label>
-              <input
-                name="emergency_contact_name"
-                value={formData.emergency_contact_name}
-                onChange={handleChange}
-                style={fieldErrors.emergency_contact_name ? inputErrorStyle : inputStyle}
-              />
-              {renderFieldError("emergency_contact_name")}
-            </div>
-            <div>
-              <label style={labelStyle}>NUMBER</label>
-              <input
-                name="emergency_contact_number"
-                value={formData.emergency_contact_number}
-                onChange={handleChange}
-                style={fieldErrors.emergency_contact_number ? inputErrorStyle : inputStyle}
-              />
-              {renderFieldError("emergency_contact_number")}
-            </div>
-            <div>
-              <label style={labelStyle}>RELATIONSHIP</label>
-              <input
-                name="emergency_contact_relationship"
-                value={formData.emergency_contact_relationship}
-                onChange={handleChange}
-                style={fieldErrors.emergency_contact_relationship ? inputErrorStyle : inputStyle}
-              />
-              {renderFieldError("emergency_contact_relationship")}
-            </div>
-          </div>
-        </div>
-
-        {/* Section 4 — Employment Info */}
-        <div style={sectionStyle}>
-          <h3 style={sectionTitleStyle}>💼 Employment Information</h3>
-          <div style={gridStyle}>
-            <div>
-              <label style={labelStyle}>DESIGNATION *</label>
-              <input
-                name="designation"
-                value={formData.designation}
-                onChange={handleChange}
-                required
-                style={fieldErrors.designation ? inputErrorStyle : inputStyle}
-              />
-              {renderFieldError("designation")}
-            </div>
-            <div>
-              <label style={labelStyle}>DEPARTMENT *</label>
-              <input
-                name="department"
-                value={formData.department}
-                onChange={handleChange}
-                required
-                style={fieldErrors.department ? inputErrorStyle : inputStyle}
-              />
-              {renderFieldError("department")}
-            </div>
-            <div>
-              <label style={labelStyle}>DATE OF JOINING *</label>
-              <input
-                name="date_of_joining"
-                type="date"
-                value={formData.date_of_joining}
-                onChange={handleChange}
-                required
-                style={fieldErrors.date_of_joining ? inputErrorStyle : inputStyle}
-              />
-              {renderFieldError("date_of_joining")}
-            </div>
-            <div>
-              <label style={labelStyle}>EMPLOYEE TYPE</label>
-              <select
-                name="employee_type"
-                value={formData.employee_type}
-                onChange={handleChange}
-                style={fieldErrors.employee_type ? inputErrorStyle : inputStyle}
-              >
-                {EMPLOYEE_TYPE_CHOICES.map((t) => (
-                  <option key={t.value} value={t.value}>{t.label}</option>
-                ))}
-              </select>
-              {renderFieldError("employee_type")}
-            </div>
-            <div>
-              <label style={labelStyle}>WORK MODE</label>
-              <select
-                name="work_mode"
-                value={formData.work_mode}
-                onChange={handleChange}
-                style={fieldErrors.work_mode ? inputErrorStyle : inputStyle}
-              >
-                {WORK_MODE_CHOICES.map((w) => (
-                  <option key={w.value} value={w.value}>{w.label}</option>
-                ))}
-              </select>
-              {renderFieldError("work_mode")}
-            </div>
-            <div>
-              <label style={labelStyle}>REPORTING MANAGER</label>
-              <select
-                name="reporting_manager"
-                value={formData.reporting_manager}
-                onChange={handleChange}
-                style={fieldErrors.reporting_manager ? inputErrorStyle : inputStyle}
-              >
-                <option value="">Select Manager</option>
-                {managers.filter(m => m.id !== parseInt(id)).map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.full_name} — {m.designation}
-                  </option>
-                ))}
-              </select>
-              {renderFieldError("reporting_manager")}
-            </div>
-            <div>
-              <label style={labelStyle}>CONFIRMATION DATE</label>
-              <input
-                name="confirmation_date"
-                type="date"
-                value={formData.confirmation_date}
-                onChange={handleChange}
-                style={fieldErrors.confirmation_date ? inputErrorStyle : inputStyle}
-              />
-              {renderFieldError("confirmation_date")}
-            </div>
-          </div>
-        </div>
+        ))}
 
         {/* Buttons */}
         <div style={{ display: "flex", gap: "12px" }}>
@@ -535,7 +401,6 @@ const EditEmployeePage = () => {
             {loading ? "Saving..." : "Save Changes"}
           </button>
         </div>
-
       </form>
     </div>
   );
