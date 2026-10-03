@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 @theme {
-  /* ... existing variables ... */
+  /* ... existing variables ... */   /* <-- yahan apne purane saare variables jaise ke taise rehne dena */
 
   /* Success (green) */
   --color-success-bg: #064e3b;
@@ -44,14 +44,22 @@
   --color-neutral-bg: #1e293b;
   --color-neutral-text: #94a3b8;
 }
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
 
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+@layer base {
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+
+  input[type="checkbox"] {
+    accent-color: #2563eb;
+    color-scheme: dark;
+  }
 }
 
 input:-webkit-autofill,
@@ -60,11 +68,6 @@ input:-webkit-autofill:focus {
   -webkit-box-shadow: 0 0 0px 1000px #0f1a2e inset !important;
   -webkit-text-fill-color: #f1f5f9 !important;
   caret-color: #f1f5f9;
-}
-
-input[type="checkbox"] {
-  accent-color: #2563eb;
-  color-scheme: dark;
 }
 
 @media (max-width: 768px) {
